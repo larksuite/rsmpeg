@@ -1,5 +1,5 @@
-#![feature(unsafe_block_in_unsafe_fn)]
-#![deny(unsafe_op_in_unsafe_fn)]
+// Uncomment this after we get `unsafe_block_in_unsafe_fn` in the stable channel
+// #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(clippy::module_inception)]
 #![allow(clippy::upper_case_acronyms)]
 pub use rusty_ffmpeg::ffi;

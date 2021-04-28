@@ -1,6 +1,5 @@
-#![feature(once_cell)]
 // log.rs
-use std::lazy::SyncLazy;
+use once_cell::sync::Lazy as SyncLazy;
 pub static LOG_INIT: SyncLazy<()> = SyncLazy::new(|| {
     env_logger::init();
     log::info!("env_logger initialized");
@@ -187,7 +186,6 @@ fn init_filter<'graph, T: Into<Vec<u8>>>(
     encode_context: &mut AVCodecContext,
     filter_spec: T,
 ) -> Result<FilterContext<'graph>> {
-    let mut filter_graph = filter_graph;
     let (mut buffer_src_context, mut buffer_sink_context) =
         if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
             let buffer_src = AVFilter::get_by_name(cstr!("buffer")).unwrap();
@@ -204,15 +202,11 @@ fn init_filter<'graph, T: Into<Vec<u8>>>(
                 decode_context.sample_aspect_ratio.den,
             );
 
-            let (filter_graph_new, buffer_src_context) =
+            let buffer_src_context =
                 filter_graph.create_filter_context(&buffer_src, cstr!("in"), Some(cstr!(args)))?;
 
-            filter_graph = filter_graph_new;
-
-            let (filter_graph_new, mut buffer_sink_context) =
+            let mut buffer_sink_context =
                 filter_graph.create_filter_context(&buffer_sink, cstr!("out"), None)?;
-
-            filter_graph = filter_graph_new;
 
             buffer_sink_context.set_property(cstr!("pix_fmts"), &encode_context.pix_fmt)?;
             (buffer_src_context, buffer_sink_context)
@@ -234,15 +228,11 @@ fn init_filter<'graph, T: Into<Vec<u8>>>(
                 decode_context.channel_layout,
             );
 
-            let (filter_graph_new, buffer_src_context) =
+            let buffer_src_context =
                 filter_graph.create_filter_context(&buffer_src, cstr!("in"), Some(cstr!(args)))?;
 
-            filter_graph = filter_graph_new;
-
-            let (filter_graph_new, mut buffer_sink_context) =
+            let mut buffer_sink_context =
                 filter_graph.create_filter_context(&buffer_sink, cstr!("out"), None)?;
-
-            filter_graph = filter_graph_new;
 
             buffer_sink_context.set_property(cstr!("sample_fmts"), &encode_context.sample_fmt)?;
             buffer_sink_context
@@ -510,20 +500,31 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
 }
 
 #[test]
-fn transcoding_test() {
+fn transcoding_test0() {
+    std::fs::create_dir_all("tests/output/transcoding/").unwrap();
     transcoding(
-        "tests/utils/transcoding/bear.mp4",
-        "tests/utils/transcoding/bear_transcoded.mp4",
+        "tests/assets/vids/mov_sample.mov",
+        "tests/output/transcoding/mov_sample.mov",
     )
     .unwrap();
+}
+
+#[test]
+fn transcoding_test1() {
+    std::fs::create_dir_all("tests/output/transcoding/").unwrap();
     transcoding(
-        "tests/utils/transcoding/enlong.mp4",
-        "tests/utils/transcoding/enlong_transcoded.mp4",
+        "tests/assets/vids/centaur.mpg",
+        "tests/output/transcoding/centaur.mpg",
     )
     .unwrap();
+}
+
+#[test]
+fn transcoding_test2() {
+    std::fs::create_dir_all("tests/output/transcoding/").unwrap();
     transcoding(
-        "tests/utils/transcoding/emm.mp4",
-        "tests/utils/transcoding/emm_transcoded.mp4",
+        "tests/assets/vids/bear.mp4",
+        "tests/output/transcoding/bear.mp4",
     )
     .unwrap();
 }
@@ -531,7 +532,18 @@ fn transcoding_test() {
 #[test]
 fn transcoding_unpresent_file() {
     assert_eq!(
-        transcoding("asd;fklasdlfkadsfads/bear.mp4", "tests/bear_transcoded.mp4"),
+        transcoding(
+            "asd;fklasdlfkadsfads/bear.mp4",
+            "tests/output/transcoding/bear.mov"
+        ),
         Err(LibMediaError::RsmpegError(RsmpegError::OpenInputError))
+    );
+}
+
+#[test]
+fn transcoding_to_unpresent_folder() {
+    assert_eq!(
+        transcoding("tests/assets/vids/bear.mp4", "afsd;fkadfkadfdsa/bear.mov"),
+        Err(LibMediaError::RsmpegError(RsmpegError::AVIOOpenError))
     );
 }

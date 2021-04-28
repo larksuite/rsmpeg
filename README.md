@@ -35,7 +35,7 @@ Start by adding `rsmpeg` to your `Cargo.toml` file:
 
 ```rust
 [dependencies]
-rsmpeg = "x.x.x"
+rsmpeg = "0.2.0"
 ```
 
 Write your simple image info dumper:
@@ -58,7 +58,7 @@ fn main() {
 
 Prepare an simple image in your current folder:
 
-![test.jpg](tests/utils/image/a.jpg)
+![test.jpg](./assets/mountain.jpg)
 
 Run with `FFMPEG_PKG_CONFIG_PATH` set to the pkgconfig file path in your artifact folder(`xxx/lib/pkgconfig`).
 

@@ -3,6 +3,7 @@ use std::{ptr, slice};
 
 const AV_NUM_DATA_POINTERS: usize = ffi::AV_NUM_DATA_POINTERS as usize;
 
+/// `AVImage` is a image buffer holder. It's a self referential structure.
 pub struct AVImage {
     data: [*mut u8; AV_NUM_DATA_POINTERS],
     linesizes: [i32; AV_NUM_DATA_POINTERS],
@@ -13,7 +14,7 @@ pub struct AVImage {
 }
 
 impl AVImage {
-    /// Returns None when parameters is invalid, panic when no memory.
+    /// Returns `None` when parameters are invalid, panic when no memory.
     pub fn new(pix_fmt: ffi::AVPixelFormat, width: i32, height: i32, align: i32) -> Option<Self> {
         let num_of_bytes = Self::get_buffer_size(pix_fmt, width, height, align)?;
 

@@ -1,4 +1,5 @@
 use std::{
+    ffi::CStr,
     mem,
     ops::Drop,
     ptr::{self, NonNull},
@@ -26,6 +27,28 @@ impl AVCodec {
         unsafe { ffi::avcodec_find_encoder(id) }
             .upgrade()
             .map(|x| unsafe { Self::from_raw(x) })
+    }
+
+    pub fn find_decoder_by_name(name: &CStr) -> Option<Self> {
+        unsafe { ffi::avcodec_find_decoder_by_name(name.as_ptr()) }
+            .upgrade()
+            .map(|x| unsafe { Self::from_raw(x) })
+    }
+
+    pub fn find_encoder_by_name(name: &CStr) -> Option<Self> {
+        unsafe { ffi::avcodec_find_encoder_by_name(name.as_ptr()) }
+            .upgrade()
+            .map(|x| unsafe { Self::from_raw(x) })
+    }
+
+    /// Get name of the codec.
+    pub fn name(&self) -> &CStr {
+        unsafe { CStr::from_ptr(self.name) }
+    }
+
+    /// Get descriptive name for the codec.
+    pub fn long_name(&self) -> &CStr {
+        unsafe { CStr::from_ptr(self.long_name) }
     }
 }
 
@@ -97,6 +120,8 @@ settable!(AVCodecContext {
     flags: i32,
     bit_rate: i64,
     strict_std_compliance: i32,
+    gop_size: i32,
+    max_b_frames: i32,
 });
 
 impl AVCodecContext {
@@ -110,7 +135,7 @@ impl AVCodecContext {
     /// Initialize the AVCodecContext.
     ///
     /// dict: A dictionary filled with AVCodecContext and codec-private options.
-    /// Function return a dictionary filled with options that were not found if
+    /// Function returns a dictionary filled with options that were not found if
     /// given dictionary. It's can usually be ignored.
     pub fn open(&mut self, dict: Option<AVDictionary>) -> Result<Option<AVDictionary>> {
         if let Some(mut dict) = dict {

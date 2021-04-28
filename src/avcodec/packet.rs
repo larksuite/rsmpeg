@@ -7,7 +7,7 @@ settable!(AVPacket { stream_index: i32 });
 
 impl AVPacket {
     /// Allocate an AVPacket and set its fields to default values. The resulting
-    /// struct must be freed using av_packet_free().
+    /// struct must be freed using `av_packet_free()`.
     pub fn new() -> Self {
         let packet = unsafe { ffi::av_packet_alloc() };
         unsafe { Self::from_raw(NonNull::new(packet).unwrap()) }

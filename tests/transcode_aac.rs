@@ -1,4 +1,5 @@
-#![feature(once_cell)]
+use cstr::cstr;
+use once_cell::sync::Lazy as SyncLazy;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
@@ -7,23 +8,10 @@ use rsmpeg::{
     ffi,
     swresample::SwrContext,
 };
-use std::{
-    ffi::{CStr, CString},
-    lazy::SyncLazy,
-    sync::Mutex,
-};
-
-macro_rules! cstr {
-    ($s: literal) => {
-        &CString::new($s).unwrap()
-    };
-    ($s: expr) => {
-        &CString::new($s)?
-    };
-}
+use std::{ffi::CStr, sync::Mutex};
 
 fn open_input_file(input_file: &CStr) -> (AVFormatContextInput, AVCodecContext) {
-    let mut input_format_context = AVFormatContextInput::open(input_file).unwrap();
+    let input_format_context = AVFormatContextInput::open(input_file).unwrap();
     if input_format_context.nb_streams != 1 {
         panic!("Expected one audio input stream, but multiple streams found.");
     }
@@ -104,9 +92,7 @@ fn init_resampler(
      * not greater than the number of samples to be converted.
      * If the sample rates differ, this case has to be handled differently
      */
-    if decode_context.sample_rate != encode_context.sample_rate {
-        panic!();
-    }
+    assert!(decode_context.sample_rate == encode_context.sample_rate);
     resample_context.init().unwrap();
     resample_context
 }
@@ -228,7 +214,7 @@ fn load_encode_and_write(
 ) -> Result<()> {
     let frame_size = std::cmp::min(fifo.size(), encode_context.frame_size);
     let mut frame = init_output_frame(encode_context, frame_size);
-    if unsafe { fifo.read(frame.data_mut_ptr(), frame_size)? } < frame_size {
+    if unsafe { fifo.read(frame.data_mut().as_mut_ptr(), frame_size)? } < frame_size {
         panic!("samples doesn't all read");
     }
     let _ = encode_audio_frame(Some(frame), output_format_context, encode_context)?;
@@ -290,8 +276,9 @@ fn transcode_aac(input_file: &CStr, output_file: &CStr) {
 
 #[test]
 fn transcode_aac_test() {
+    std::fs::create_dir_all("tests/output/transcode_aac/").unwrap();
     transcode_aac(
-        cstr!("tests/utils/transcode_aac/sample1.aac"),
-        cstr!("tests/utils/transcode_aac/output.aac"),
+        cstr!("tests/assets/audios/sample1.aac"),
+        cstr!("tests/output/transcode_aac/output.aac"),
     );
 }

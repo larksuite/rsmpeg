@@ -115,6 +115,8 @@ pub enum RsmpegError {
 
     #[error("AVFrame buffer double allocating.")]
     AVFrameDoubleAllocatingError,
+    #[error("AVFrame buffer allocating with incorrect parameters.")]
+    AVFrameInvalidAllocatingError,
 
     #[error("Get picture size error.")]
     AVPictureGetSizeError,

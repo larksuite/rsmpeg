@@ -3,8 +3,8 @@ use std::ptr;
 wrap!(SwsContext: ffi::SwsContext);
 
 impl SwsContext {
-    /// TODO: no src_filter and dst_filter and param filter, implement them after wrapping SwsFilter.
-    /// Return None when input is invalid. Parameter `flags` can be `SWS_FAST_BILINEAR` etc.
+    /// Return None when input is invalid. Parameter `flags` can be
+    /// `rsmpeg::ffi::SWS_FAST_BILINEAR` etc.
     pub fn get_context(
         src_w: i32,
         src_h: i32,
@@ -14,6 +14,8 @@ impl SwsContext {
         dst_format: ffi::AVPixelFormat,
         flags: u32,
     ) -> Option<Self> {
+        // TODO: no src_filter and dst_filter and param filter, implement them
+        // after wrapping SwsFilter.
         let context = unsafe {
             ffi::sws_getContext(
                 src_w,
@@ -81,12 +83,12 @@ impl SwsContext {
     ) -> Result<()> {
         unsafe {
             self.scale(
-                src_frame.data_ptr() as _,
-                src_frame.linesize_ptr(),
+                src_frame.data.as_ptr() as _,
+                src_frame.linesize.as_ptr(),
                 src_slice_y,
                 src_slice_h,
-                dst_frame.data_ptr(),
-                dst_frame.linesize_ptr(),
+                dst_frame.data.as_ptr(),
+                dst_frame.linesize.as_ptr(),
             )
         }
     }

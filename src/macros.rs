@@ -10,7 +10,7 @@ macro_rules! wrap_pure {
             $(pub $attach: $attach_type,)*
         }
 
-        impl<'raw> $wrapped_type {
+        impl $wrapped_type {
             pub fn as_ptr(&self) -> *const $ffi_type {
                 self.something_should_not_be_touched_directly.as_ptr() as *const _
             }

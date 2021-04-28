@@ -111,17 +111,30 @@ impl AVFilterGraph {
         unsafe { Self::from_raw(filter_graph) }
     }
 
+    /// Add a graph described by a string to a graph.
+    ///
+    /// This function returns the inputs and outputs (if any) that are left
+    /// unlinked after parsing the graph and the caller then deals with them.
     pub fn parse_ptr(
-        &mut self,
+        &self,
         filter_spec: &CStr,
         mut inputs: AVFilterInOut,
         mut outputs: AVFilterInOut,
     ) -> Result<(Option<AVFilterInOut>, Option<AVFilterInOut>)> {
         let mut inputs_new = inputs.as_mut_ptr();
         let mut outputs_new = outputs.as_mut_ptr();
+
+        // FFmpeg `avfilter_graph_parse*`'s documentation states:
+        //
+        // This function makes no reference whatsoever to already existing parts
+        // of the graph and the inputs parameter will on return contain inputs
+        // of the newly parsed part of the graph.  Analogously the outputs
+        // parameter will contain outputs of the newly created filters.
+        //
+        // So the function is designed to take immutable reference to the FilterGraph
         unsafe {
             ffi::avfilter_graph_parse_ptr(
-                self.as_mut_ptr(),
+                self.as_ptr() as _,
                 filter_spec.as_ptr(),
                 &mut inputs_new,
                 &mut outputs_new,
@@ -130,10 +143,13 @@ impl AVFilterGraph {
         }
         .upgrade()?;
 
-        // If no error, inputs and outputs pointer is dangling, drop them manually.
+        // If no error, inputs and outputs pointer are dangling, manually erase
+        // them without dropping. Do this because we need to drop inputs and
+        // outputs on the error path.
         let _ = inputs.into_raw();
         let _ = outputs.into_raw();
 
+        // ATTENTION: TODO here we didn't bind the AVFilterInOut to the lifetime of the AVFilterGraph
         let new_inputs = inputs_new
             .upgrade()
             .map(|raw| unsafe { AVFilterInOut::from_raw(raw) });
@@ -143,24 +159,22 @@ impl AVFilterGraph {
         Ok((new_inputs, new_outputs))
     }
 
-    pub fn config(&mut self) -> Result<()> {
-        unsafe { ffi::avfilter_graph_config(self.as_mut_ptr(), ptr::null_mut()) }.upgrade()?;
+    /// Check validity and configure all the links and formats in the graph.
+    pub fn config(&self) -> Result<()> {
+        // ATTENTION: This takes immutable reference since it doesn't delete any filter.
+        unsafe { ffi::avfilter_graph_config(self.as_ptr() as *mut _, ptr::null_mut()) }
+            .upgrade()?;
         Ok(())
     }
 }
 
 impl<'graph> AVFilterGraph {
-    /// The API is designed like this is because
-    /// 1. AVFilterContext cannot outlive the AVFilterGraph.
-    /// 2. AVFilterContext cannot borrow the AVFilterGraph since the graph is
-    ///    usually mutably accessed for string parsing after creating the
-    ///    FilterContexts.
     pub fn create_filter_context(
-        &'graph mut self,
+        &'graph self,
         filter: &AVFilter,
         name: &CStr,
         args: Option<&CStr>,
-    ) -> Result<(&'graph mut AVFilterGraph, AVFilterContextMut<'graph>)> {
+    ) -> Result<AVFilterContextMut<'graph>> {
         let args_ptr = args.map(|s| s.as_ptr()).unwrap_or(ptr::null());
         let mut filter_context = ptr::null_mut();
         unsafe {
@@ -170,7 +184,10 @@ impl<'graph> AVFilterGraph {
                 name.as_ptr(),
                 args_ptr,
                 ptr::null_mut(),
-                self.as_mut_ptr(),
+                // ATTENTION: We restrict the API for not removing filter, then
+                // we can legally add filter and take mutable reference to it in
+                // a filter graph with immutable reference.
+                self.as_ptr() as *mut _,
             )
         }
         .upgrade()
@@ -178,7 +195,7 @@ impl<'graph> AVFilterGraph {
 
         let filter_context = NonNull::new(filter_context).unwrap();
 
-        Ok(unsafe { (self, AVFilterContextMut::from_raw(filter_context)) })
+        Ok(unsafe { AVFilterContextMut::from_raw(filter_context) })
     }
 }
 

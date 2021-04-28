@@ -7,10 +7,10 @@ use crate::{
 
 use std::{fmt, mem::size_of, ops::Drop, slice};
 
-const AV_NUM_DATA_POINTERS: usize = ffi::AV_NUM_DATA_POINTERS as usize;
-
 wrap!(AVFrame: ffi::AVFrame);
 settable!(AVFrame {
+    width: i32,
+    height: i32,
     pts: i64,
     pict_type: ffi::AVPictureType,
     nb_samples: i32,
@@ -24,7 +24,6 @@ impl fmt::Debug for AVFrame {
         f.debug_struct("AVFrame")
             .field("width", &self.width)
             .field("height", &self.height)
-            // settable
             .field("pts", &self.pts)
             .field("pict_type", &self.pict_type)
             .field("nb_samples", &self.nb_samples)
@@ -53,35 +52,27 @@ impl AVFrame {
     /// - width and height for video
     /// - nb_samples and channel_layout for audio
     ///
-    /// Return Error when the some of the frame settings are invalid, panic on
-    /// allocating buffer for an already initialized frame or allocation fails
-    /// because no memory.
+    /// Return Error when the some of the frame settings are invalid, allocating
+    /// buffer for an already initialized frame or allocation fails because of
+    /// no memory.
     pub fn alloc_buffer(&mut self) -> Result<()> {
         // If frame already has been allocated, calling av_frame_get_buffer will
         // leak memory. So we do a check here.
         if self.is_allocated() {
-            panic!("Frame is already allocated buffer")
+            return Err(RsmpegError::AVFrameDoubleAllocatingError);
         }
         unsafe { ffi::av_frame_get_buffer(self.as_mut_ptr(), 0) }
             .upgrade()
-            .map_err(|_| RsmpegError::AVFrameDoubleAllocatingError)?;
+            .map_err(|_| RsmpegError::AVFrameInvalidAllocatingError)?;
         Ok(())
     }
 
-    pub fn data_ptr(&self) -> *const *mut u8 {
-        self.data.as_ptr()
+    pub fn data_mut(&mut self) -> &mut [*mut u8; 8] {
+        unsafe { &mut self.deref_mut().data }
     }
 
-    pub fn linesize_ptr(&self) -> *const i32 {
-        self.linesize.as_ptr()
-    }
-
-    pub fn data_mut_ptr(&mut self) -> *mut *mut u8 {
-        self.data_ptr() as *mut _
-    }
-
-    pub fn linesize_mut_ptr(&mut self) -> *mut i32 {
-        self.linesize_ptr() as *mut _
+    pub fn linesize_mut(&mut self) -> &mut [libc::c_int; 8] {
+        unsafe { &mut self.deref_mut().linesize }
     }
 
     /// Setup the data pointers and linesizes based on the specified image
@@ -99,8 +90,8 @@ impl AVFrame {
     ) -> Result<()> {
         unsafe {
             av_image_fill_arrays(
-                self.data_mut_ptr(),
-                self.linesize_mut_ptr(),
+                self.data_mut().as_mut_ptr(),
+                self.linesize_mut().as_mut_ptr(),
                 src,
                 pix_fmt,
                 width,
@@ -153,6 +144,8 @@ impl Drop for AVFrame {
     }
 }
 
+/// It's a `AVFrame` binded with `AVImage`, the AVFrame copies the buffer
+/// pointer from the `AVImage`.
 pub struct AVFrameWithImageBuffer<'img> {
     inner: AVFrame,
 
@@ -225,11 +218,10 @@ mod test {
     #[test]
     fn test_get_buffer_without_setting() {
         let mut frame = AVFrame::new();
-        assert!(frame.alloc_buffer().is_err());
+        assert!(matches!(frame.alloc_buffer(), Err(RsmpegError::AVFrameInvalidAllocatingError)));
     }
 
     #[test]
-    #[should_panic(expected = "Frame is already allocated buffer")]
     fn test_get_buffer_double_alloc() {
         let encoder = AVCodec::find_encoder(ffi::AVCodecID_AV_CODEC_ID_AAC).unwrap();
         let mut frame = AVFrame::new();
@@ -237,6 +229,6 @@ mod test {
         frame.set_channel_layout(av_get_default_channel_layout(2));
         frame.set_format(encoder.sample_fmts().unwrap()[0]);
         frame.alloc_buffer().unwrap();
-        frame.alloc_buffer().unwrap();
+        assert!(matches!(frame.alloc_buffer(), Err(RsmpegError::AVFrameDoubleAllocatingError)));
     }
 }

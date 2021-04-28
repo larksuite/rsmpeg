@@ -25,38 +25,6 @@ fn cd(dir_name: &str) -> Result<()> {
     Ok(())
 }
 
-fn cp(a: &str, b: &str) -> Result<()> {
-    let mut from = pwd()?;
-    from.push(a);
-    let mut to = pwd()?;
-    to.push(b);
-
-    Command::new("cp")
-        .arg(from)
-        .arg(to)
-        .spawn()?
-        .wait()?;
-    Ok(())
-}
-
-fn git_clone(url: &str) -> Result<()> {
-    Command::new("git")
-        .arg("clone")
-        .arg(url)
-        .spawn()?
-        .wait()?;
-    Ok(())
-}
-
-fn git_checkout(branch: &str) -> Result<()> {
-    Command::new("git")
-        .arg("checkout")
-        .arg(branch)
-        .spawn()?
-        .wait()?;
-    Ok(())
-}
-
 fn main() -> Result<()> {
     mkdir("tmp")?;
     cd("tmp")?;
@@ -64,28 +32,37 @@ fn main() -> Result<()> {
     let tmp_path = pwd()?;
     let tmp_path = tmp_path.to_str().unwrap();
 
-    git_clone("https://github.com/ffmpeg/ffmpeg")?;
-    cd("ffmpeg")?;
-    git_checkout("origin/release/4.4")?;
-    cd("..")?;
+    Command::new("git")
+        .arg("clone")
+        .arg("--single-branch")
+        .arg("--branch")
+        .arg("release/4.4")
+        .arg("--depth")
+        .arg("1")
+        .arg("https://github.com/ffmpeg/ffmpeg")
+        .spawn()?
+        .wait()?;
 
     cd("ffmpeg")?;
-    {
-        Command::new("./configure")
-            .arg(format!("--prefix={}/ffmpeg_build", tmp_path))
-            .spawn()?
-            .wait()?;
 
-        Command::new("make")
-            .arg("-j8")
-            .spawn()?
-            .wait()?;
+    Command::new("./configure")
+        .arg(format!("--prefix={}/ffmpeg_build", tmp_path))
+        .arg("--enable-gpl")
+        .arg("--enable-nonfree")
+        .arg("--enable-libx264")
+        .spawn()?
+        .wait()?;
 
-        Command::new("make")
-            .arg("install")
-            .spawn()?
-            .wait()?;
-    }
+    Command::new("make")
+        .arg("-j8")
+        .spawn()?
+        .wait()?;
+
+    Command::new("make")
+        .arg("install")
+        .spawn()?
+        .wait()?;
+
     cd("..")?;
 
     Ok(())

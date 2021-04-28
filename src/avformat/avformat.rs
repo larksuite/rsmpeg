@@ -43,6 +43,9 @@ impl AVFormatContextInput {
         Ok(unsafe { Self::from_raw(context) })
     }
 
+    /// Dump FormatContext info in the "FFmpeg" way.
+    ///
+    /// The filename here is just for info printing, it's really doesn't matter.
     pub fn dump(&mut self, index: usize, filename: &CStr) -> Result<()> {
         unsafe {
             // This input context, so the last parameter is 0
@@ -63,12 +66,16 @@ impl AVFormatContextInput {
     /// Return the stream index and stream decoder if there is any "best" stream.
     /// "best" means the most likely what the user wants.
     pub fn find_best_stream(
-        &mut self,
+        &self,
         media_type: ffi::AVMediaType,
     ) -> Result<Option<(usize, AVCodec)>> {
         let mut dec = ptr::null_mut();
+        // ATTENTION: usage different from FFmpeg documentation.
+        //
+        // According to ffmpeg's source code, here we legally assume that
+        // `av_find_best_stream` doesn't change given `*mut AVFormatContext`.
         match unsafe {
-            ffi::av_find_best_stream(self.as_mut_ptr(), media_type, -1, -1, &mut dec, 0)
+            ffi::av_find_best_stream(self.as_ptr() as *mut _, media_type, -1, -1, &mut dec, 0)
         }
         .upgrade()
         {
@@ -137,8 +144,8 @@ impl AVFormatContextOutput {
         Ok(output_format_context)
     }
 
+    // Write output file header
     pub fn write_header(&mut self) -> Result<()> {
-        // init muxer, write output file header
         unsafe { ffi::avformat_write_header(self.as_mut_ptr(), ptr::null_mut()) }
             .upgrade()
             .map_err(RsmpegError::WriteHeaderError)?;
@@ -146,6 +153,7 @@ impl AVFormatContextOutput {
         Ok(())
     }
 
+    // Write output file trailer
     pub fn write_trailer(&mut self) -> Result<()> {
         unsafe { ffi::av_write_trailer(self.as_mut_ptr()) }
             .upgrade()
@@ -153,10 +161,12 @@ impl AVFormatContextOutput {
         Ok(())
     }
 
+    /// Dump FormatContext info in the "FFmpeg" way.
+    ///
+    /// The filename here is just for info printing, it's really doesn't matter.
     pub fn dump(&mut self, index: i32, filename: &CStr) -> Result<()> {
         unsafe {
-            // TODO: the filename here is just for
-            // This output context, so the last parameter is 1
+            // This is output context, so the last parameter is 1
             ffi::av_dump_format(self.as_mut_ptr(), index, filename.as_ptr(), 1);
         }
         Ok(())
@@ -209,7 +219,9 @@ impl Drop for AVFormatContextOutput {
         // Here we drop the io context, which won't be touched by
         // avformat_free_context, so let it dangling is safe.
         if unsafe { *self.oformat }.flags & ffi::AVFMT_NOFILE as i32 == 0 {
-            let _ = unsafe { AVIOContext::from_raw(NonNull::new(self.pb).unwrap()) };
+            if let Some(pb) = NonNull::new(self.pb) {
+                let _ = unsafe { AVIOContext::from_raw(pb) };
+            }
         }
 
         unsafe {

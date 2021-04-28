@@ -4,23 +4,13 @@ wrap!(AVPicture: ffi::AVPicture);
 
 impl AVPicture {
     #[deprecated = "AVPicture is deprecated"]
-    pub fn data_ptr(&mut self) -> *const *mut u8 {
-        &self.data[0] as *const _ as _
+    pub fn data_mut(&mut self) -> &mut [*mut u8; 8] {
+        unsafe { &mut self.deref_mut().data }
     }
 
     #[deprecated = "AVPicture is deprecated"]
-    pub fn linesize_ptr(&mut self) -> *const i32 {
-        &self.linesize[0]
-    }
-
-    #[deprecated = "AVPicture is deprecated"]
-    pub fn data_mut_ptr(&mut self) -> *mut *mut u8 {
-        &self.data[0] as *const _ as *mut _
-    }
-
-    #[deprecated = "AVPicture is deprecated"]
-    pub fn linesize_mut_ptr(&mut self) -> *mut i32 {
-        &self.linesize[0] as *const _ as *mut _
+    pub fn linesize_mut(&mut self) -> &mut [libc::c_int; 8] {
+        unsafe { &mut self.deref_mut().linesize }
     }
 
     #[deprecated = "AVPicture is deprecated"]
@@ -89,8 +79,8 @@ impl AVPicture {
     ) -> Result<()> {
         unsafe {
             ffi::av_image_fill_arrays(
-                self.data_mut_ptr(),
-                self.linesize_mut_ptr(),
+                self.data_mut().as_mut_ptr(),
+                self.linesize_mut().as_mut_ptr(),
                 src,
                 pix_fmt,
                 width,
