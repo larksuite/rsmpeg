@@ -35,7 +35,7 @@ use rsmpeg::{
     avformat::{AVFormatContextInput, AVFormatContextOutput},
     avutil::{
         av_get_channel_layout_nb_channels, av_get_default_channel_layout, av_get_sample_fmt_name,
-        av_inv_q, av_mul_q, AVFrame,
+        av_inv_q, av_mul_q, AVFrame, AVRational,
     },
     ffi,
 };
@@ -127,7 +127,7 @@ fn open_output_file<T: Into<Vec<u8>>>(
                 });
                 new_encode_context.set_time_base(av_inv_q(av_mul_q(
                     decode_context.framerate,
-                    ffi::AVRational {
+                    AVRational {
                         num: decode_context.ticks_per_frame,
                         den: 1,
                     },
@@ -140,7 +140,7 @@ fn open_output_file<T: Into<Vec<u8>>>(
                 ));
                 /* take first format from list of supported formats */
                 new_encode_context.set_sample_fmt(encoder.sample_fmts().unwrap()[0]);
-                new_encode_context.set_time_base(ffi::AVRational {
+                new_encode_context.set_time_base(AVRational {
                     num: 1,
                     den: decode_context.sample_rate,
                 });
@@ -391,19 +391,16 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
     let mut output_format_context =
         open_output_file(output_file, &mut input_format_context, &mut stream_contexts)?;
 
-    let mut filter_graphs = (0..stream_contexts.len()).fold(vec![], |mut filter_graphs, _| {
-        filter_graphs.push(AVFilterGraph::new());
-        filter_graphs
-    });
+    let mut filter_graphs: Vec<_> = (0..stream_contexts.len())
+        .map(|_| AVFilterGraph::new())
+        .collect();
     let mut filter_contexts = init_filters(&mut filter_graphs, &mut stream_contexts)?;
 
     loop {
         let mut packet = match input_format_context.read_packet() {
             Ok(Some(x)) => x,
-            Ok(None) => {
-                // No more frames
-                break;
-            }
+            // No more frames
+            Ok(None) => break,
             Err(e) => {
                 error!("Read frame error: {:?}", e);
                 break;
@@ -434,6 +431,7 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
                 .decode_packet(&packet)
                 .expect("Decoding failed.");
 
+            // If no frame, do nothing wait to another loop
             if let Some(mut frame) = decode_result {
                 frame.set_pts(frame.best_effort_timestamp);
                 filter_encode_write_frame(
@@ -444,8 +442,6 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
                     &mut output_format_context,
                     stream_index,
                 );
-            } else {
-                // do nothing wait to another loop
             }
         } else {
             packet.rescale_ts(

@@ -3,7 +3,7 @@ use once_cell::sync::Lazy as SyncLazy;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
-    avutil::{av_get_default_channel_layout, AVAudioFifo, AVFrame, AVSamples},
+    avutil::{av_get_default_channel_layout, AVAudioFifo, AVFrame, AVRational, AVSamples},
     error::*,
     ffi,
     swresample::SwrContext,
@@ -65,7 +65,7 @@ fn open_output_file(
         /* Create a new audio stream in the output file container. */
         let mut stream = output_format_context.new_stream(None);
         /* Set the sample rate for the container. */
-        stream.set_time_base(ffi::AVRational {
+        stream.set_time_base(AVRational {
             den: decode_context.sample_rate,
             num: 1,
         });

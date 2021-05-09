@@ -1,6 +1,6 @@
 use std::{fmt, ops::Drop, ptr::NonNull};
 
-use crate::{ffi, shared::*};
+use crate::{avutil::AVRational, ffi, shared::*};
 
 wrap!(AVPacket: ffi::AVPacket);
 settable!(AVPacket { stream_index: i32 });
@@ -13,7 +13,7 @@ impl AVPacket {
         unsafe { Self::from_raw(NonNull::new(packet).unwrap()) }
     }
 
-    pub fn rescale_ts(&mut self, from: ffi::AVRational, to: ffi::AVRational) {
+    pub fn rescale_ts(&mut self, from: AVRational, to: AVRational) {
         unsafe {
             ffi::av_packet_rescale_ts(self.as_mut_ptr(), from, to);
         }

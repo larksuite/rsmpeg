@@ -5,9 +5,8 @@ use glfw::{Context, OpenGlProfileHint, Window, WindowHint};
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avformat::AVFormatContextOutput,
-    avutil::AVFrame,
+    avutil::{AVFrame, AVRational},
     error::RsmpegError,
-    ffi::AVRational,
 };
 use std::{
     ffi::{CStr, CString},

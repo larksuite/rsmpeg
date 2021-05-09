@@ -8,7 +8,7 @@ use std::{
 
 use crate::{
     avcodec::{AVCodecParameters, AVCodecParametersRef, AVPacket},
-    avutil::{AVDictionary, AVFrame},
+    avutil::{AVDictionary, AVFrame, AVRational},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -74,12 +74,9 @@ impl<'codec> AVCodec {
         }
     }
 
-    pub fn supported_framerates(&'codec self) -> Option<&'codec [ffi::AVRational]> {
+    pub fn supported_framerates(&'codec self) -> Option<&'codec [AVRational]> {
         // terminates with AVRational{0, 0}
-        Self::build_array(
-            self.supported_framerates,
-            ffi::AVRational { den: 0, num: 0 },
-        )
+        Self::build_array(self.supported_framerates, AVRational { den: 0, num: 0 })
     }
 
     pub fn pix_fmts(&'codec self) -> Option<&'codec [ffi::AVPixelFormat]> {
@@ -107,13 +104,13 @@ impl Drop for AVCodec {
 
 wrap_ref!(AVCodecContext: ffi::AVCodecContext);
 settable!(AVCodecContext {
-    framerate: ffi::AVRational,
+    framerate: AVRational,
     channel_layout: u64,
     height: i32,
     width: i32,
-    sample_aspect_ratio: ffi::AVRational,
+    sample_aspect_ratio: AVRational,
     pix_fmt: i32,
-    time_base: ffi::AVRational,
+    time_base: AVRational,
     sample_rate: i32,
     channels: i32,
     sample_fmt: i32,

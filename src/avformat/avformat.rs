@@ -8,7 +8,7 @@ use std::{
 use crate::{
     avcodec::{AVCodec, AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVPacket},
     avformat::AVIOContext,
-    avutil::{AVDictionaryMut, AVDictionaryRef},
+    avutil::{AVDictionaryMut, AVDictionaryRef, AVRational},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -236,12 +236,12 @@ wrap_ref!(AVOutputFormat: ffi::AVOutputFormat);
 
 wrap_ref_mut!(AVStream: ffi::AVStream);
 settable!(AVStream {
-    time_base: ffi::AVRational,
+    time_base: AVRational,
 });
 
 impl AVStream {
     // Return None when index is not valid. Some(0/1) if no idea.
-    pub fn guess_framerate(&self) -> Option<ffi::AVRational> {
+    pub fn guess_framerate(&self) -> Option<AVRational> {
         Some(unsafe {
             // ATTENTION: Usage diff from documentation, but according to
             // FFmpeg's implementation, we can use nullptr in first parameter

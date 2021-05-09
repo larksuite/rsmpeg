@@ -218,7 +218,10 @@ mod test {
     #[test]
     fn test_get_buffer_without_setting() {
         let mut frame = AVFrame::new();
-        assert!(matches!(frame.alloc_buffer(), Err(RsmpegError::AVFrameInvalidAllocatingError)));
+        assert!(matches!(
+            frame.alloc_buffer(),
+            Err(RsmpegError::AVFrameInvalidAllocatingError)
+        ));
     }
 
     #[test]
@@ -229,6 +232,9 @@ mod test {
         frame.set_channel_layout(av_get_default_channel_layout(2));
         frame.set_format(encoder.sample_fmts().unwrap()[0]);
         frame.alloc_buffer().unwrap();
-        assert!(matches!(frame.alloc_buffer(), Err(RsmpegError::AVFrameDoubleAllocatingError)));
+        assert!(matches!(
+            frame.alloc_buffer(),
+            Err(RsmpegError::AVFrameDoubleAllocatingError)
+        ));
     }
 }

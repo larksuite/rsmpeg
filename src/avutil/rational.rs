@@ -1,5 +1,6 @@
 use crate::ffi;
-use ffi::AVRational;
+
+pub use ffi::AVRational;
 
 pub use ffi::av_cmp_q;
 pub use ffi::av_inv_q;
