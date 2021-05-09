@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use cstr::cstr;
-use rsmpeg::{avcodec::AVCodecContext, avformat::AVFormatContextInput, ffi};
+use rsmpeg::{avcodec::AVCodecContext, avformat::AVFormatContextInput, avutil::av_q2d, ffi};
 use std::ffi::CString;
 
 /// Get metadata key-value pair form a video file.
@@ -43,7 +43,7 @@ fn metadata(file: &str) -> Result<Vec<(String, String)>> {
 
         result.push((
             "frame_rate".into(),
-            ffi::av_q2d(video_stream.r_frame_rate).to_string(),
+            av_q2d(video_stream.r_frame_rate).to_string(),
         ));
 
         // Get `width` and `height` from `decode_context`
