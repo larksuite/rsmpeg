@@ -78,3 +78,7 @@ Input #0, image2, from './test.jpg':
   Duration: 00:00:00.04, start: 0.000000, bitrate: 1390 kb/s
   Stream #0:0: Video: mjpeg, none, 25 fps, 25 tbr, 25 tbn, 25 tbc
 ```
+
+### MSRV
+
+Minimum supported rust version is 1.52(Stable channel).
