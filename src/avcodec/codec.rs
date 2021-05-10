@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    avcodec::{AVCodecParameters, AVCodecParametersRef, AVPacket},
+    avcodec::{AVCodecID, AVCodecParameters, AVCodecParametersRef, AVPacket},
     avutil::{AVDictionary, AVFrame, AVPixelFormat, AVRational},
     error::{Result, RsmpegError},
     ffi,
@@ -17,28 +17,32 @@ use crate::{
 wrap_ref!(AVCodec: ffi::AVCodec);
 
 impl AVCodec {
-    pub fn find_decoder(id: ffi::AVCodecID) -> Option<Self> {
+    /// Find a static decoder instance with [`AVCodecID`]
+    pub fn find_decoder(id: AVCodecID) -> Option<AVCodecRef<'static>> {
         unsafe { ffi::avcodec_find_decoder(id) }
             .upgrade()
-            .map(|x| unsafe { Self::from_raw(x) })
+            .map(|x| unsafe { AVCodecRef::from_raw(x) })
     }
 
-    pub fn find_encoder(id: ffi::AVCodecID) -> Option<Self> {
+    /// Find a static encoder instance with [`AVCodecID`]
+    pub fn find_encoder(id: AVCodecID) -> Option<AVCodecRef<'static>> {
         unsafe { ffi::avcodec_find_encoder(id) }
             .upgrade()
-            .map(|x| unsafe { Self::from_raw(x) })
+            .map(|x| unsafe { AVCodecRef::from_raw(x) })
     }
 
-    pub fn find_decoder_by_name(name: &CStr) -> Option<Self> {
+    /// Find a static decoder instance with it short name.
+    pub fn find_decoder_by_name(name: &CStr) -> Option<AVCodecRef<'static>> {
         unsafe { ffi::avcodec_find_decoder_by_name(name.as_ptr()) }
             .upgrade()
-            .map(|x| unsafe { Self::from_raw(x) })
+            .map(|x| unsafe { AVCodecRef::from_raw(x) })
     }
 
-    pub fn find_encoder_by_name(name: &CStr) -> Option<Self> {
+    /// Find a static encoder instance with it short name.
+    pub fn find_encoder_by_name(name: &CStr) -> Option<AVCodecRef<'static>> {
         unsafe { ffi::avcodec_find_encoder_by_name(name.as_ptr()) }
             .upgrade()
-            .map(|x| unsafe { Self::from_raw(x) })
+            .map(|x| unsafe { AVCodecRef::from_raw(x) })
     }
 
     /// Get name of the codec.
@@ -53,6 +57,8 @@ impl AVCodec {
 }
 
 impl<'codec> AVCodec {
+    /// Convenient function for probing a pointer until met specific memory
+    /// pattern.
     fn probe_len<T>(mut ptr: *const T, tail: T) -> usize {
         for len in 0.. {
             if unsafe { libc::memcmp(ptr as _, &tail as *const _ as _, mem::size_of::<T>()) } == 0 {
@@ -65,6 +71,7 @@ impl<'codec> AVCodec {
         unreachable!()
     }
 
+    /// Convenient function for building a memory slice.
     fn build_array<'a, T>(ptr: *const T, tail: T) -> Option<&'a [T]> {
         if ptr.is_null() {
             None
@@ -74,21 +81,25 @@ impl<'codec> AVCodec {
         }
     }
 
+    /// Return supported framerates of this [`AVCodec`].
     pub fn supported_framerates(&'codec self) -> Option<&'codec [AVRational]> {
         // terminates with AVRational{0, 0}
         Self::build_array(self.supported_framerates, AVRational { den: 0, num: 0 })
     }
 
+    /// Return supported pix_fmts of this [`AVCodec`].
     pub fn pix_fmts(&'codec self) -> Option<&'codec [AVPixelFormat]> {
         // terminates with -1
         Self::build_array(self.pix_fmts, -1)
     }
 
+    /// Return supported samplerates of this [`AVCodec`].
     pub fn supported_samplerates(&'codec self) -> Option<&'codec [i32]> {
         // terminates with 0
         Self::build_array(self.supported_samplerates, 0)
     }
 
+    /// Return supported sample_fmts of this [`AVCodec`].
     pub fn sample_fmts(&'codec self) -> Option<&'codec [ffi::AVSampleFormat]> {
         // terminates with -1
         Self::build_array(self.sample_fmts, -1)
