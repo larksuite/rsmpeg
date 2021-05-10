@@ -1,3 +1,4 @@
+//! Everything related to `libavutil`.
 mod audio_fifo;
 mod channel_layout;
 mod dict;

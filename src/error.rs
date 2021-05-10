@@ -1,8 +1,9 @@
+//! Errors of the rsmpeg.
 use libc::c_int;
 use std::cmp::{Eq, PartialEq};
 use thiserror::Error;
 
-/// Error type for Rsmpeg
+/// All the error variants of rsmpeg.
 #[non_exhaustive]
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum RsmpegError {
@@ -10,13 +11,6 @@ pub enum RsmpegError {
     AVError(c_int),
     #[error("CustomError({0})")]
     CustomError(String),
-
-    // Removed since we doesn't do string convention anymore.
-    // #[error("CStringError({0})")]
-    // CStringNulError(NulError),
-
-    // May not used
-    // IoError(std::io::Error),
 
     // --------- Unstablized error type below ------
 

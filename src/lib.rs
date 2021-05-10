@@ -1,6 +1,8 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(clippy::module_inception)]
 #![allow(clippy::upper_case_acronyms)]
+
+/// Raw and unsafe FFmpeg functions, structs and contants,
 pub use rusty_ffmpeg::ffi;
 
 #[macro_use]
