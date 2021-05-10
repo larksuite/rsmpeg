@@ -1,4 +1,9 @@
-use crate::{avutil::AVFrame, error::*, ffi, shared::*};
+use crate::{
+    avutil::{AVFrame, AVPixelFormat},
+    error::*,
+    ffi,
+    shared::*,
+};
 use std::ptr;
 wrap!(SwsContext: ffi::SwsContext);
 
@@ -8,10 +13,10 @@ impl SwsContext {
     pub fn get_context(
         src_w: i32,
         src_h: i32,
-        src_format: ffi::AVPixelFormat,
+        src_format: AVPixelFormat,
         dst_w: i32,
         dst_h: i32,
-        dst_format: ffi::AVPixelFormat,
+        dst_format: AVPixelFormat,
         flags: u32,
     ) -> Option<Self> {
         // TODO: no src_filter and dst_filter and param filter, implement them

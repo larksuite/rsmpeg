@@ -1,4 +1,4 @@
-use crate::{error::*, ffi, shared::*};
+use crate::{avutil::AVPixelFormat, error::*, ffi, shared::*};
 use std::ptr::{self, NonNull};
 wrap!(AVPicture: ffi::AVPicture);
 
@@ -14,7 +14,7 @@ impl AVPicture {
     }
 
     #[deprecated = "AVPicture is deprecated"]
-    pub fn new(pix_fmt: ffi::AVPixelFormat, width: i32, height: i32) -> Option<Self> {
+    pub fn new(pix_fmt: AVPixelFormat, width: i32, height: i32) -> Option<Self> {
         let mut picture = ffi::AVPicture {
             data: [ptr::null_mut(); 8],
             linesize: [0; 8],
@@ -33,25 +33,25 @@ impl AVPicture {
     }
 
     #[deprecated = "Use av_image_get_buffer_size() instead."]
-    pub fn get_size(pix_fmt: ffi::AVPixelFormat, width: i32, height: i32) -> Result<i32> {
+    pub fn get_size(pix_fmt: AVPixelFormat, width: i32, height: i32) -> Result<i32> {
         unsafe { ffi::avpicture_get_size(pix_fmt, width, height) }
             .upgrade()
             .map_err(|_| RsmpegError::AVPictureGetSizeError)
     }
 
     #[deprecated = "Use av_image_copy() instead"]
-    pub fn copy(&self, dst: &mut AVPicture, pix_fmt: ffi::AVPixelFormat, width: i32, height: i32) {
+    pub fn copy(&self, dst: &mut AVPicture, pix_fmt: AVPixelFormat, width: i32, height: i32) {
         unsafe { ffi::av_picture_copy(dst.as_mut_ptr(), self.as_ptr(), pix_fmt, width, height) }
     }
 
-    /// Copy AVPicture's image data from an image into a buffer.
+    /// Copy [`AVPicture`]'s image data from an image into a buffer.
     ///
     /// # Safety
     /// The dest's size shouldn't smaller than dest_size.
     #[deprecated = "Use av_image_copy_to_buffer() instead"]
     pub unsafe fn layout(
         &self,
-        pix_fmt: ffi::AVPixelFormat,
+        pix_fmt: AVPixelFormat,
         width: i32,
         height: i32,
         dest: *mut u8,
@@ -73,7 +73,7 @@ impl AVPicture {
     pub unsafe fn fill(
         &mut self,
         src: *const u8,
-        pix_fmt: ffi::AVPixelFormat,
+        pix_fmt: AVPixelFormat,
         width: i32,
         height: i32,
     ) -> Result<()> {

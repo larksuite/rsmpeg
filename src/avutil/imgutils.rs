@@ -1,4 +1,4 @@
-use crate::{ffi, shared::*};
+use crate::{avutil::AVPixelFormat, ffi, shared::*};
 use std::{ptr, slice};
 
 const AV_NUM_DATA_POINTERS: usize = ffi::AV_NUM_DATA_POINTERS as usize;
@@ -15,7 +15,7 @@ pub struct AVImage {
 
 impl AVImage {
     /// Returns `None` when parameters are invalid, panic when no memory.
-    pub fn new(pix_fmt: ffi::AVPixelFormat, width: i32, height: i32, align: i32) -> Option<Self> {
+    pub fn new(pix_fmt: AVPixelFormat, width: i32, height: i32, align: i32) -> Option<Self> {
         let num_of_bytes = Self::get_buffer_size(pix_fmt, width, height, align)?;
 
         let mut data = [ptr::null_mut(); AV_NUM_DATA_POINTERS];
@@ -59,12 +59,7 @@ impl AVImage {
     /// Return the size in bytes of the amount of data required to store an image
     /// with the given parameters.
     /// Return None when invalid.
-    pub fn get_buffer_size(
-        fmt: ffi::AVPixelFormat,
-        width: i32,
-        height: i32,
-        align: i32,
-    ) -> Option<i32> {
+    pub fn get_buffer_size(fmt: AVPixelFormat, width: i32, height: i32, align: i32) -> Option<i32> {
         unsafe { ffi::av_image_get_buffer_size(fmt, width, height, align) }
             .upgrade()
             .ok()

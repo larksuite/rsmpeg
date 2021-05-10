@@ -1,5 +1,5 @@
 use crate::{
-    avutil::{av_image_fill_arrays, AVImage, AVMotionVector},
+    avutil::{av_image_fill_arrays, AVImage, AVMotionVector, AVPixelFormat},
     error::*,
     ffi,
     shared::*,
@@ -84,7 +84,7 @@ impl AVFrame {
     pub unsafe fn fill_arrays(
         &mut self,
         src: *const u8,
-        pix_fmt: ffi::AVPixelFormat,
+        pix_fmt: AVPixelFormat,
         width: i32,
         height: i32,
     ) -> Result<()> {

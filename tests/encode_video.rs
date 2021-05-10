@@ -66,8 +66,10 @@ fn encode_video(codec_name: &CStr, file_name: &str) -> Result<()> {
             let linesize_cb = linesize[1] as usize;
             let linesize_cr = linesize[2] as usize;
             let y_data = unsafe { std::slice::from_raw_parts_mut(data[0], HEIGHT * linesize_y) };
-            let cb_data = unsafe { std::slice::from_raw_parts_mut(data[1], HEIGHT / 2 * linesize_cb) };
-            let cr_data = unsafe { std::slice::from_raw_parts_mut(data[2], HEIGHT / 2 * linesize_cr) };
+            let cb_data =
+                unsafe { std::slice::from_raw_parts_mut(data[1], HEIGHT / 2 * linesize_cb) };
+            let cr_data =
+                unsafe { std::slice::from_raw_parts_mut(data[2], HEIGHT / 2 * linesize_cr) };
             // prepare a dummy image
             for y in 0..HEIGHT {
                 for x in 0..WIDTH {
