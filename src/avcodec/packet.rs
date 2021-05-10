@@ -6,13 +6,15 @@ wrap!(AVPacket: ffi::AVPacket);
 settable!(AVPacket { stream_index: i32 });
 
 impl AVPacket {
-    /// Allocate an AVPacket and set its fields to default values. The resulting
-    /// struct must be freed using `av_packet_free()`.
+    /// Create an [`AVPacket`] and set its fields to default values.
     pub fn new() -> Self {
         let packet = unsafe { ffi::av_packet_alloc() };
         unsafe { Self::from_raw(NonNull::new(packet).unwrap()) }
     }
 
+    /// Convert valid timing fields (timestamps / durations) in a packet from
+    /// one timebase to another. Timestamps with unknown values
+    /// (`AV_NOPTS_VALUE`) will be ignored.
     pub fn rescale_ts(&mut self, from: AVRational, to: AVRational) {
         unsafe {
             ffi::av_packet_rescale_ts(self.as_mut_ptr(), from, to);

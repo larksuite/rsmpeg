@@ -63,8 +63,8 @@ impl AVPicture {
         Ok(())
     }
 
-    /// Setup the AVPicture's data pointers and linesizes based on the specified
-    /// image parameters and the provided array.
+    /// Setup the [`AVPicture`]'s data pointers and linesizes based on the
+    /// specified image parameters and the provided array.
     ///
     /// # Safety
     /// The dest's size shouldn't smaller than dest_size.

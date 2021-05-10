@@ -11,6 +11,9 @@ impl AVCodecParameters {
         unsafe { Self::from_raw(ptr) }
     }
 
+    /// Fill current codecpar based on the values from the supplied
+    /// [`AVCodecContext`]. Any allocated fields in this codecpar are freed and
+    /// replaced with duplicates of the corresponding fields in codec.
     pub fn from_context(&mut self, context: &AVCodecContext) {
         // only fails when no memory, so wrap.
         unsafe { ffi::avcodec_parameters_from_context(self.as_mut_ptr(), context.as_ptr()) }
@@ -18,9 +21,14 @@ impl AVCodecParameters {
             .unwrap();
     }
 
+    /// Copy the contents from another [`AVCodecParameters`]. Any allocated fields in dst are freed
+    /// and replaced with newly allocated duplicates of the corresponding fields
+    /// in src.
     pub fn copy(&mut self, from: &Self) {
         // `avcodec_parameters_copy()` ensures that destination pointer is
         // dropped, so we can legally set `self.raw` here.
+        //
+        // Copy fails only on no memory, so unwrap.
         unsafe { ffi::avcodec_parameters_copy(self.as_mut_ptr(), from.as_ptr()) }
             .upgrade()
             .unwrap();
@@ -35,11 +43,8 @@ impl Default for AVCodecParameters {
 
 impl Clone for AVCodecParameters {
     fn clone(&self) -> Self {
-        // Copy fails only on no memory
         let mut parameters = AVCodecParameters::new();
-        unsafe { ffi::avcodec_parameters_copy(parameters.as_mut_ptr(), self.as_ptr()) }
-            .upgrade()
-            .unwrap();
+        parameters.copy(self);
         parameters
     }
 }

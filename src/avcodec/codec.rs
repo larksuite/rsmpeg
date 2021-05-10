@@ -133,22 +133,26 @@ settable!(AVCodecContext {
 });
 
 impl AVCodecContext {
+    /// Create a new [`AVCodecContext`] instance, allocate private data and
+    /// initialize defaults for the given [`AVCodec`].
     pub fn new(codec: &AVCodec) -> Self {
+        // ATTENTION here we restrict the usage of avcodec_alloc_context3() by only put in non-null pointers.
         let codec_context = unsafe { ffi::avcodec_alloc_context3(codec.as_ptr()) }
             .upgrade()
             .unwrap();
         unsafe { Self::from_raw(codec_context) }
     }
 
-    /// Initialize the AVCodecContext.
+    /// Initialize the [`AVCodecContext`].
     ///
-    /// dict: A dictionary filled with AVCodecContext and codec-private options.
-    /// Function returns a dictionary filled with options that were not found if
-    /// given dictionary. It's can usually be ignored.
+    /// dict: A [`AVDictionary`] filled with [`AVCodecContext`] and [`AVCodec`]
+    /// private options.  Function returns a [`AVDictionary`] filled with
+    /// options that were not found if given dictionary. It can usually be
+    /// ignored.
     pub fn open(&mut self, dict: Option<AVDictionary>) -> Result<Option<AVDictionary>> {
         if let Some(mut dict) = dict {
             let dict_ptr = {
-                // Doesn't use into_raw because we can drop the dict when error occurs.
+                // Doesn't use into_raw or we will drop the dict when error occurs.
                 let mut dict_ptr = dict.as_mut_ptr();
                 unsafe {
                     ffi::avcodec_open2(self.as_mut_ptr(), ptr::null_mut(), &mut dict_ptr as *mut _)
@@ -173,8 +177,9 @@ impl AVCodecContext {
     /// This is a wrapper around the deprecated api `avcodec_decode_video2()` and
     /// `avcodec_decode_audio4()`.
     ///
-    /// Return Some(frame) on getting frame, return None on not getting frame(or
-    /// say frame decoding haven't finished), Return Err on decoding error.
+    /// Return `Some(frame)` on getting a frame([`AVFrame`]), return `None` on
+    /// not getting frame(or say frame decoding haven't finished), Return
+    /// `Err(_)` on decoding error.
     #[deprecated = "This is a wrapper around the deprecated api `avcodec_decode_video2()` and `avcodec_decode_audio4()`."]
     pub fn decode_packet(&mut self, packet: &AVPacket) -> Result<Option<AVFrame>> {
         let mut frame = AVFrame::new();
@@ -205,6 +210,10 @@ impl AVCodecContext {
     }
 
     /// This is a wrapper around deprecated api: `avcodec_encode_video2` and `avcodec_encode_audio2`.
+    ///
+    /// Return `Some(Packet)` on getting a packet([`AVPacket`]), return `None`
+    /// on not getting packet(or say packet encoding haven't finished), Return
+    /// `Err(_)` on decoding error.
     #[deprecated = "This is a wrapper around deprecated api: `avcodec_encode_video2` and `avcodec_encode_audio2`."]
     pub fn encode_frame(&mut self, frame: Option<&AVFrame>) -> Result<Option<AVPacket>> {
         let frame_ptr = match frame {
@@ -238,6 +247,7 @@ impl AVCodecContext {
         Ok(if got_packet != 0 { Some(packet) } else { None })
     }
 
+    /// Trying to push a packet to current decoding_context([`AVCodecContext`]).
     pub fn send_packet(&mut self, packet: Option<&AVPacket>) -> Result<()> {
         let packet_ptr = match packet {
             Some(packet) => packet.as_ptr(),
@@ -251,6 +261,7 @@ impl AVCodecContext {
         }
     }
 
+    /// Trying to pull a frame from current decoding_context([`AVCodecContext`]).
     pub fn receive_frame(&mut self) -> Result<AVFrame> {
         let mut frame = AVFrame::new();
         match unsafe { ffi::avcodec_receive_frame(self.as_mut_ptr(), frame.as_mut_ptr()) }.upgrade()
@@ -262,6 +273,7 @@ impl AVCodecContext {
         }
     }
 
+    /// Trying to push a frame to current encoding_context([`AVCodecContext`]).
     pub fn send_frame(&mut self, frame: Option<&AVFrame>) -> Result<()> {
         let frame_ptr = match frame {
             Some(frame) => frame.as_ptr(),
@@ -275,6 +287,7 @@ impl AVCodecContext {
         }
     }
 
+    /// Trying to pull a packet from current encoding_context([`AVCodecContext`]).
     pub fn receive_packet(&mut self) -> Result<AVPacket> {
         let mut packet = AVPacket::new();
         match unsafe { ffi::avcodec_receive_packet(self.as_mut_ptr(), packet.as_mut_ptr()) }
@@ -287,6 +300,7 @@ impl AVCodecContext {
         }
     }
 
+    /// Fill the codec context based on the values from the supplied codec parameters.
     pub fn set_codecpar(&mut self, codecpar: AVCodecParametersRef) -> Result<()> {
         unsafe { ffi::avcodec_parameters_to_context(self.as_mut_ptr(), codecpar.as_ptr()) }
             .upgrade()
@@ -294,6 +308,7 @@ impl AVCodecContext {
         Ok(())
     }
 
+    /// Get a filled [`AVCodecParameters`] based on the values from current [`AVCodecContext`].
     pub fn extract_codecpar(&self) -> AVCodecParameters {
         let mut parameters = AVCodecParameters::new();
         // Only fails on no memory, so unwrap.
@@ -305,6 +320,7 @@ impl AVCodecContext {
 }
 
 impl<'ctx> AVCodecContext {
+    /// Get a reference to the [`AVCodec`] in current codec context.
     pub fn codec(&'ctx self) -> AVCodecRef<'ctx> {
         unsafe { AVCodecRef::from_raw(NonNull::new(self.codec as *mut _).unwrap()) }
     }

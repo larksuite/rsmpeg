@@ -1,7 +1,7 @@
 use std::ops::Drop;
 
 use crate::{
-    avcodec::{AVCodecContext, AVPacket},
+    avcodec::{AVCodecContext, AVCodecID, AVPacket},
     error::*,
     ffi,
     shared::*,
@@ -10,13 +10,15 @@ use crate::{
 wrap!(AVCodecParserContext: ffi::AVCodecParserContext);
 
 impl AVCodecParserContext {
-    pub fn find(codec_id: u32) -> Option<Self> {
+    /// Allocate a [`AVCodecParserContext`] with given [`AVCodecID`].
+    pub fn find(codec_id: AVCodecID) -> Option<Self> {
         unsafe { ffi::av_parser_init(codec_id as i32) }
             .upgrade()
-            .map(|parser_context| unsafe { Self::from_raw(parser_context) })
+            .map(|x| unsafe { Self::from_raw(x) })
     }
 
-    /// ATTENTION: This is a stateful function
+    /// Parse a packet.
+    ///
     /// Return `Err(_)` On failure, `bool` field of returned tuple means if
     /// packet is ready, `usize` field of returned tuple means the offset of the
     /// data being parsed.
