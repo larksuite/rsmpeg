@@ -244,8 +244,8 @@ fn init_filter<'graph, T: Into<Vec<u8>>>(
         };
 
     // Yes the outputs' name is `in` -_-b
-    let outputs = AVFilterInOut::new(cstr!("in"), &mut buffer_src_context);
-    let inputs = AVFilterInOut::new(cstr!("out"), &mut buffer_sink_context);
+    let outputs = AVFilterInOut::new(cstr!("in"), &mut buffer_src_context, 0);
+    let inputs = AVFilterInOut::new(cstr!("out"), &mut buffer_sink_context, 0);
     let (_inputs, _outputs) = filter_graph.parse_ptr(cstr!(filter_spec), inputs, outputs)?;
     filter_graph.config()?;
     Ok(FilterContext {
@@ -345,11 +345,11 @@ fn filter_encode_write_frame(
 ) {
     info!("Pushing decoded frame to filters");
     buffer_src_context
-        .buffersrc_add_frame_flags(frame_before, 0)
+        .buffersrc_add_frame(frame_before, None)
         .expect("Error while feeding the filtergraph");
     loop {
         info!("Pulling filtered frame from filters");
-        let mut frame_after = match buffer_sink_context.buffersink_get_frame() {
+        let mut frame_after = match buffer_sink_context.buffersink_get_frame(None) {
             Ok(frame) => frame,
             Err(RsmpegError::BufferSinkDrainError) | Err(RsmpegError::BufferSinkEofError) => break,
             Err(_) => panic!("Get frame from buffer sink failed."),

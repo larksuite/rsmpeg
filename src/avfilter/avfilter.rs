@@ -12,14 +12,15 @@ use crate::{
     shared::*,
 };
 
-wrap!(AVFilter: ffi::AVFilter);
+wrap_ref!(AVFilter: ffi::AVFilter);
 
 impl AVFilter {
-    pub fn get_by_name(filter_name: &CStr) -> Result<Self> {
+    /// Get a filter definition matching the given name.
+    pub fn get_by_name(filter_name: &CStr) -> Result<AVFilterRef<'static>> {
         let filter = unsafe { ffi::avfilter_get_by_name(filter_name.as_ptr()) }
             .upgrade()
             .ok_or(RsmpegError::FilterNotFound)?;
-        Ok(unsafe { Self::from_raw(filter) })
+        Ok(unsafe { AVFilterRef::from_raw(filter) })
     }
 }
 
@@ -32,6 +33,7 @@ impl Drop for AVFilter {
 wrap_mut!(AVFilterContext: ffi::AVFilterContext);
 
 impl AVFilterContext {
+    /// Set property of a [`AVFilterContext`].
     pub fn set_property<U>(&mut self, key: &CStr, value: &U) -> Result<()> {
         unsafe {
             ffi::av_opt_set_bin(
@@ -47,25 +49,35 @@ impl AVFilterContext {
         Ok(())
     }
 
-    pub fn buffersrc_add_frame_flags(
+    /// Add a frame to the buffer source.
+    pub fn buffersrc_add_frame(
         &mut self,
         mut frame: Option<AVFrame>,
-        flags: i32,
+        flags: Option<i32>,
     ) -> Result<()> {
         let frame_ptr = match frame.as_mut() {
             Some(frame) => frame.as_mut_ptr(),
             None => ptr::null_mut(),
         };
+        // `av_buffersrc_add_frame(...)` just calls
+        // `av_buffersrc_add_frame_flags(..., 0)`, so this is legal.
+        let flags = flags.unwrap_or(0);
+
         unsafe { ffi::av_buffersrc_add_frame_flags(self.as_mut_ptr(), frame_ptr, flags) }
             .upgrade()
             .map_err(|_| RsmpegError::BufferSrcAddFrameError)?;
         Ok(())
     }
 
-    pub fn buffersink_get_frame(&mut self) -> Result<AVFrame> {
+    pub fn buffersink_get_frame(&mut self, flags: Option<i32>) -> Result<AVFrame> {
         let mut frame = AVFrame::new();
-        match unsafe { ffi::av_buffersink_get_frame(self.as_mut_ptr(), frame.as_mut_ptr()) }
-            .upgrade()
+        // `av_buffersink_get_frame(...)` just calls
+        // `av_buffersink_get_frame_flags(..., 0)`, so this is legal.
+        let flags = flags.unwrap_or(0);
+        match unsafe {
+            ffi::av_buffersink_get_frame_flags(self.as_mut_ptr(), frame.as_mut_ptr(), flags)
+        }
+        .upgrade()
         {
             Ok(_) => Ok(frame),
             Err(AVERROR_EAGAIN) => Err(RsmpegError::BufferSinkDrainError),
@@ -78,15 +90,15 @@ impl AVFilterContext {
 wrap!(AVFilterInOut: ffi::AVFilterInOut);
 
 impl AVFilterInOut {
-    // This borrow may be too strict? May need redesign to be useable while ensuring safety.
-    pub fn new(name: &CStr, filter_context: &mut AVFilterContext) -> Self {
+    /// Allocate a single, unlinked [`AVFilterInOut`] entry.
+    pub fn new(name: &CStr, filter_context: &mut AVFilterContext, pad_idx: i32) -> Self {
         let name = unsafe { ffi::av_strdup(name.as_ptr()) }.upgrade().unwrap();
-        let inout_ptr = unsafe { ffi::avfilter_inout_alloc() }.upgrade().unwrap();
+        let mut inout_ptr = unsafe { ffi::avfilter_inout_alloc() }.upgrade().unwrap();
 
-        let inout_mut = unsafe { inout_ptr.as_ptr().as_mut().unwrap() };
+        let inout_mut = unsafe { inout_ptr.as_mut() };
         inout_mut.name = name.as_ptr();
         inout_mut.filter_ctx = filter_context.as_mut_ptr();
-        inout_mut.pad_idx = 0;
+        inout_mut.pad_idx = pad_idx;
         inout_mut.next = ptr::null_mut();
 
         unsafe { Self::from_raw(inout_ptr) }
@@ -94,6 +106,7 @@ impl AVFilterInOut {
 }
 
 impl Drop for AVFilterInOut {
+    /// This frees a linked [`AVFilterInOut`] chain.
     fn drop(&mut self) {
         let mut inout = self.as_mut_ptr();
         unsafe {
@@ -105,13 +118,14 @@ impl Drop for AVFilterInOut {
 wrap!(AVFilterGraph: ffi::AVFilterGraph);
 
 impl AVFilterGraph {
+    /// Allocate a filter graph.
     pub fn new() -> Self {
         let filter_graph = unsafe { ffi::avfilter_graph_alloc() }.upgrade().unwrap();
 
         unsafe { Self::from_raw(filter_graph) }
     }
 
-    /// Add a graph described by a string to a graph.
+    /// Add a graph described by a string to a [`AVFilterGraph`].
     ///
     /// This function returns the inputs and outputs (if any) that are left
     /// unlinked after parsing the graph and the caller then deals with them.
@@ -169,6 +183,9 @@ impl AVFilterGraph {
 }
 
 impl<'graph> AVFilterGraph {
+    /// Create and add a [`AVFilter`] instance into an existing
+    /// [`AVFilterGraph`]. The filter instance is created from the `filter` and
+    /// inited with the parameter `args`.
     pub fn create_filter_context(
         &'graph self,
         filter: &AVFilter,
