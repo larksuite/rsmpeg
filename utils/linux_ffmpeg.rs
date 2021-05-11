@@ -48,8 +48,17 @@ fn main() -> Result<()> {
     Command::new("./configure")
         .arg(format!("--prefix={}/ffmpeg_build", tmp_path))
         .arg("--enable-gpl")
-        .arg("--enable-nonfree")
+        // .arg("--enable-libass")
+        // .arg("--enable-libfdk-aac")
+        // .arg("--enable-libfreetype")
+        .arg("--enable-libmp3lame")
+        // .arg("--enable-libopus")
+        // .arg("--enable-libvorbis")
+        .arg("--enable-libvpx")
         .arg("--enable-libx264")
+        // .arg("--enable-libx265")
+        .arg("--disable-programs")
+        .arg("--enable-nonfree")
         .spawn()?
         .wait()?;
 

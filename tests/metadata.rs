@@ -60,7 +60,7 @@ fn metadata(file: &str) -> Result<Vec<(String, String)>> {
 }
 
 #[test]
-fn metadata_test() {
+fn metadata_test0() {
     assert_eq!(
         metadata("tests/assets/vids/bear.mp4").unwrap(),
         vec![
@@ -74,6 +74,22 @@ fn metadata_test() {
             ("frame_rate".into(), "29.97002997002997".into()),
             ("width".into(), "320".into()),
             ("height".into(), "180".into()),
+        ]
+    );
+}
+
+#[test]
+fn metadata_test1() {
+    assert_eq!(
+        metadata("tests/assets/vids/vp8.mp4").unwrap(),
+        vec![
+            ("image_path".into(), "tests/assets/vids/vp8.mp4".into()),
+            ("duration".into(), "17600000".into()),
+            ("bit_rate".into(), "242823".into()),
+            ("encoder".into(), "whammy".into()),
+            ("frame_rate".into(), "5".into()),
+            ("width".into(), "604".into()),
+            ("height".into(), "604".into()),
         ]
     );
 }

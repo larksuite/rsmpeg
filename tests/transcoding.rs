@@ -55,7 +55,7 @@ struct FilterContext<'graph> {
 
 macro_rules! cstr {
     ($s: literal) => {
-        &CString::new($s).unwrap()
+        cstr::cstr!($s)
     };
     ($s: expr) => {
         &CString::new($s)?
@@ -521,6 +521,16 @@ fn transcoding_test2() {
     transcoding(
         "tests/assets/vids/bear.mp4",
         "tests/output/transcoding/bear.mp4",
+    )
+    .unwrap();
+}
+
+#[test]
+fn transcoding_test3() {
+    std::fs::create_dir_all("tests/output/transcoding/").unwrap();
+    transcoding(
+        "tests/assets/vids/vp8.mp4",
+        "tests/output/transcoding/vp8.webm",
     )
     .unwrap();
 }
