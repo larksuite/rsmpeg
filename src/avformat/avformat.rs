@@ -6,7 +6,10 @@ use std::{
 };
 
 use crate::{
-    avcodec::{AVCodec, AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVPacket},
+    avcodec::{
+        AVCodec, AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVCodecRef,
+        AVPacket,
+    },
     avformat::AVIOContext,
     avutil::{AVDictionaryMut, AVDictionaryRef, AVRational},
     error::{Result, RsmpegError},
@@ -17,7 +20,7 @@ use crate::{
 wrap!(AVFormatContextInput: ffi::AVFormatContext);
 
 impl AVFormatContextInput {
-    /// GoodToHave: adding a boolean to trigger if call avformat_find_stream_info()
+    /// Create a [`AVFormatContextInput`] instance of a file.
     pub fn open(filename: &CStr) -> Result<Self> {
         let mut input_format_context = ptr::null_mut();
 
@@ -43,9 +46,9 @@ impl AVFormatContextInput {
         Ok(unsafe { Self::from_raw(context) })
     }
 
-    /// Dump FormatContext info in the "FFmpeg" way.
+    /// Dump [`ffi::AVFormatContext`]'s info in the "FFmpeg" way.
     ///
-    /// The filename here is just for info printing, it's really doesn't matter.
+    /// The filename here is just for info printing, it really doesn't matter.
     pub fn dump(&mut self, index: usize, filename: &CStr) -> Result<()> {
         unsafe {
             // This input context, so the last parameter is 0
@@ -54,6 +57,12 @@ impl AVFormatContextInput {
         Ok(())
     }
 
+    /// Return the next packet of a stream. This function returns what is stored
+    /// in the file, and does not validate that what is there are valid packets
+    /// for the decoder. It will split what is stored in the file into packets
+    /// and return one for each call. It will not omit invalid data between
+    /// valid packets so as to give the decoder the maximum information possible
+    /// for decoding.
     pub fn read_packet(&mut self) -> Result<Option<AVPacket>> {
         let mut packet = AVPacket::new();
         match unsafe { ffi::av_read_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }.upgrade() {
@@ -68,7 +77,8 @@ impl AVFormatContextInput {
     pub fn find_best_stream(
         &self,
         media_type: ffi::AVMediaType,
-    ) -> Result<Option<(usize, AVCodec)>> {
+    ) -> Result<Option<(usize, AVCodecRef<'static>)>> {
+        // After FFmpeg 4.4 this should be changed to *const AVCodec, here we preserve the backward compatibility.
         let mut dec = ptr::null_mut();
         // ATTENTION: usage different from FFmpeg documentation.
         //
@@ -80,7 +90,7 @@ impl AVFormatContextInput {
         .upgrade()
         {
             Ok(index) => Ok(Some((index as usize, unsafe {
-                AVCodec::from_raw(NonNull::new(dec).unwrap())
+                AVCodecRef::from_raw(NonNull::new(dec).unwrap())
             }))),
             Err(ffi::AVERROR_STREAM_NOT_FOUND) => Ok(None),
             Err(e) => Err(RsmpegError::AVError(e)),
@@ -89,6 +99,7 @@ impl AVFormatContextInput {
 }
 
 impl<'stream> AVFormatContextInput {
+    /// Get Iterator of all [`AVStream`]s in the [`ffi::AVFormatContext`].
     pub fn streams(&'stream self) -> AVStreamRefs<'stream> {
         AVStreamRefs {
             stream_head: NonNull::new(self.streams as *mut _).unwrap(),
@@ -97,12 +108,15 @@ impl<'stream> AVFormatContextInput {
         }
     }
 
+    /// Get Iterator of all [`AVInputFormat`]s in the [`ffi::AVFormatContext`].
     pub fn iformat(&'stream self) -> AVInputFormatRef<'stream> {
         unsafe { AVInputFormatRef::from_raw(NonNull::new(self.iformat).unwrap()) }
     }
 
+    /// Get metadata of the [`ffi::AVFormatContext`] in [`crate::avutil::AVDictionary`].
+    /// demuxing: set by libavformat in `avformat_open_input()`
+    /// muxing: may be set by the caller before `avformat_write_header()`
     pub fn metadata(&'stream self) -> AVDictionaryRef<'stream> {
-        // Is valid after avformat_open_input(), so safe.
         unsafe { AVDictionaryRef::from_raw(NonNull::new(self.metadata).unwrap()) }
     }
 }
@@ -117,6 +131,7 @@ impl Drop for AVFormatContextInput {
 wrap!(AVFormatContextOutput: ffi::AVFormatContext);
 
 impl AVFormatContextOutput {
+    /// Open a file and create a [`AVFormatContextOutput`] instance of that file.
     pub fn create(filename: &CStr) -> Result<Self> {
         let mut output_format_context = ptr::null_mut();
 
@@ -144,7 +159,8 @@ impl AVFormatContextOutput {
         Ok(output_format_context)
     }
 
-    // Write output file header
+    /// Allocate the stream private data and write the stream header to an
+    /// output media file.
     pub fn write_header(&mut self) -> Result<()> {
         unsafe { ffi::avformat_write_header(self.as_mut_ptr(), ptr::null_mut()) }
             .upgrade()
@@ -153,7 +169,8 @@ impl AVFormatContextOutput {
         Ok(())
     }
 
-    // Write output file trailer
+    /// Write the stream trailer to an output media file and free the file
+    /// private data.
     pub fn write_trailer(&mut self) -> Result<()> {
         unsafe { ffi::av_write_trailer(self.as_mut_ptr()) }
             .upgrade()
@@ -161,7 +178,7 @@ impl AVFormatContextOutput {
         Ok(())
     }
 
-    /// Dump FormatContext info in the "FFmpeg" way.
+    /// Dump [`ffi::AVFormatContext`] info in the "FFmpeg" way.
     ///
     /// The filename here is just for info printing, it's really doesn't matter.
     pub fn dump(&mut self, index: i32, filename: &CStr) -> Result<()> {
@@ -172,6 +189,13 @@ impl AVFormatContextOutput {
         Ok(())
     }
 
+    /// Write a packet to an output media file.
+    ///
+    /// This function passes the packet directly to the muxer, without any
+    /// buffering or reordering. The caller is responsible for correctly
+    /// interleaving the packets if the format requires it. Callers that want
+    /// libavformat to handle the interleaving should call
+    /// [`Self::interleaved_write_frame()`] instead of this function.
     pub fn write_frame(&mut self, packet: &mut AVPacket) -> Result<()> {
         unsafe { ffi::av_write_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }
             .upgrade()
@@ -179,6 +203,12 @@ impl AVFormatContextOutput {
         Ok(())
     }
 
+    /// Write a packet to an output media file ensuring correct interleaving.
+    ///
+    /// This function will buffer the packets internally as needed to make sure
+    /// the packets in the output file are properly interleaved in the order of
+    /// increasing dts. Callers doing their own interleaving should call
+    /// [`Self::write_frame()`] instead of this function.
     pub fn interleaved_write_frame(&mut self, packet: &mut AVPacket) -> Result<()> {
         unsafe { ffi::av_interleaved_write_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }
             .upgrade()
@@ -188,7 +218,7 @@ impl AVFormatContextOutput {
 }
 
 impl<'stream> AVFormatContextOutput {
-    /// Return Iterator of StreamRefs
+    /// Return Iterator of [`AVStreamRef`].
     pub fn streams(&'stream self) -> AVStreamRefs<'stream> {
         AVStreamRefs {
             stream_head: NonNull::new(self.streams as *mut _).unwrap(),
@@ -197,10 +227,12 @@ impl<'stream> AVFormatContextOutput {
         }
     }
 
+    /// Get Iterator of all [`AVOutputFormat`]s in the [`ffi::AVFormatContext`].
     pub fn oformat(&'stream self) -> AVOutputFormatRef<'stream> {
         unsafe { AVOutputFormatRef::from_raw(NonNull::new(self.oformat).unwrap()) }
     }
 
+    /// Add a new stream to a media file.
     pub fn new_stream(&'stream mut self, codec: Option<&AVCodec>) -> AVStreamMut<'stream> {
         let codec_ptr = match codec {
             Some(codec) => codec.as_ptr(),
@@ -240,7 +272,9 @@ settable!(AVStream {
 });
 
 impl AVStream {
-    // Return None when index is not valid. Some(0/1) if no idea.
+    /// Guess the frame rate, based on both the container and codec information.
+    ///
+    /// Return None when index is not valid. Some(0/1) if no idea.
     pub fn guess_framerate(&self) -> Option<AVRational> {
         Some(unsafe {
             // ATTENTION: Usage diff from documentation, but according to
@@ -254,14 +288,10 @@ impl AVStream {
     /// the retuned value is None when used with a demuxer.
     pub fn get_end_pts(&self) -> Option<i64> {
         let result = unsafe { ffi::av_stream_get_end_pts(self.as_ptr()) };
-        // TODO: consider using then() :-P?
-        if result < 0 {
-            None
-        } else {
-            Some(result as i64)
-        }
+        (result >= 0).then(|| result as i64)
     }
 
+    /// Set codecpar of current stream with given `parameters`.
     pub fn set_codecpar(&mut self, parameters: AVCodecParameters) {
         // ATTENTION: this workflow differs from c version.
         if let Some(codecpar) = self.codecpar.upgrade() {
@@ -274,18 +304,22 @@ impl AVStream {
 }
 
 impl<'stream> AVStream {
+    /// Get codec parameters of current stream.
     pub fn codecpar(&'stream self) -> AVCodecParametersRef<'stream> {
         unsafe { AVCodecParametersRef::from_raw(NonNull::new(self.codecpar).unwrap()) }
     }
 
+    /// Get metadata of current stream.
     pub fn metadata(&'stream self) -> AVDictionaryRef<'stream> {
         unsafe { AVDictionaryRef::from_raw(NonNull::new(self.metadata).unwrap()) }
     }
 
+    /// Get mutable reference of codec parameters in current stream.
     pub fn codecpar_mut(&'stream mut self) -> AVCodecParametersMut<'stream> {
         unsafe { AVCodecParametersMut::from_raw(NonNull::new(self.codecpar).unwrap()) }
     }
 
+    /// Get mutable reference of metadata in current stream.
     pub fn metadata_mut(&'stream mut self) -> AVDictionaryMut<'stream> {
         unsafe { AVDictionaryMut::from_raw(NonNull::new(self.metadata).unwrap()) }
     }
@@ -313,10 +347,9 @@ impl<'stream> std::iter::Iterator for AVStreamRefsIter<'stream> {
     }
 }
 
+// ATTENTION Consider add macro for this when similar pattern occurs again.
 /// A reference to raw AVStream `satellite` array, cannot be directly constructed. Using
 /// this for safety concerns.
-///
-/// ATTENTION Consider add macro for this when similar pattern occurs again.
 pub struct AVStreamRefs<'stream> {
     stream_head: NonNull<NonNull<ffi::AVStream>>,
     len: u32,
@@ -338,6 +371,7 @@ impl<'stream> std::iter::IntoIterator for AVStreamRefs<'stream> {
 }
 
 impl<'stream> AVStreamRefs<'stream> {
+    /// Get `streams[`index`]`.
     pub fn get(&self, index: usize) -> Option<AVStreamRef<'stream>> {
         // From u32 to usize, safe.
         if index < self.len as usize {
@@ -348,6 +382,7 @@ impl<'stream> AVStreamRefs<'stream> {
         }
     }
 
+    /// Get `streams.len()`.
     pub fn num(&self) -> usize {
         // From u32 to usize, safe.
         self.len as usize
