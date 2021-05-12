@@ -1,4 +1,7 @@
 //! Ported from http://dranger.com/ffmpeg/tutorial01.c
+//!
+//! Extracts the first five rgb frames from the video and save them as ppm
+//! files.
 
 use anyhow::{Context, Result};
 use cstr::cstr;
@@ -96,10 +99,11 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
             let frame = decode_context.decode_packet(&packet).unwrap();
             if let Some(frame) = frame {
                 sws_context.scale_frame(&frame, 0, decode_context.height, &mut frame_rgb)?;
-                if i < 5 {
-                    i += 1;
-                    pgm_save(&frame_rgb, &format!("{}/frame{}.ppm", out_dir, i))?;
+                if i >= 5 {
+                    break;
                 }
+                i += 1;
+                pgm_save(&frame_rgb, &format!("{}/frame{}.ppm", out_dir, i))?;
             }
         }
     }
@@ -107,10 +111,28 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
 }
 
 #[test]
-fn _main_test() {
+fn tutorial01_test() {
     _main(
         cstr!("tests/assets/vids/centaur.mpg"),
-        "tests/output/tutorial01",
+        "tests/output/tutorial01/centaur",
+    )
+    .unwrap();
+
+    _main(
+        cstr!("tests/assets/vids/bear.mp4"),
+        "tests/output/tutorial01/bear",
+    )
+    .unwrap();
+
+    _main(
+        cstr!("tests/assets/vids/mov_sample.mov"),
+        "tests/output/tutorial01/mov_sample",
+    )
+    .unwrap();
+
+    _main(
+        cstr!("tests/assets/vids/vp8.mp4"),
+        "tests/output/tutorial01/vp8",
     )
     .unwrap();
 }
