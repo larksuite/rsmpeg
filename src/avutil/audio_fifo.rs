@@ -10,6 +10,8 @@ impl AVAudioFifo {
         unsafe { Self::from_raw(fifo) }
     }
 
+    /// Get the current number of samples in the [`AVAudioFifo`] available for
+    /// reading.
     pub fn size(&self) -> i32 {
         unsafe {
             // function doesn't modify self, casting safe
@@ -17,6 +19,8 @@ impl AVAudioFifo {
         }
     }
 
+    /// Get the current number of samples in the [`AVAudioFifo`] available for
+    /// writing.
     pub fn space(&self) -> i32 {
         unsafe {
             // function doesn't modify self, casting safe
