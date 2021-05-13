@@ -1,5 +1,9 @@
 # Rsmpeg
 
+[![Doc](https://docs.rs/rsmpeg/badge.svg?style=flat-square)](https://docs.rs/rsmpeg)
+[![Crates.io](https://img.shields.io/crates/v/rsmpeg)](https://crates.io/crates/rsmpeg)
+[![CI](https://github.com/larksuite/rsmpeg/workflows/CI/badge.svg?branch=master&style=flat-square)](https://github.com/larksuite/rsmpeg/actions)
+
 `rsmpeg` is a thin&safe layer above the raw FFmpeg's Rust binding, it's main goal is safely exposing FFmpeg inner APIs in Rust as much as possible.
 
 Taking advantage of Rust's language design, you can build robust multi-media project even quicker than using FFmpeg's C API.
@@ -12,9 +16,9 @@ To use your first rsmpeg demo, you need to compile your FFmpeg:
 1. <https://github.com/ffmpeg/ffmpeg>.
 2. <https://trac.ffmpeg.org/wiki/CompilationGuide>
 
-If you found the compilation compilcated, there are some helpful compiling scripts for you(in `utils` folder).
+If you found the compilation compilcated, there are some helpful compiling scripts for you(under the `utils` folder).
 
-To build a FFmpeg with default parameters: (don't forget to install the build dependencies)
+To build a FFmpeg with some common parameters: (don't forget to install the build dependencies)
 
 ```bash
 # macOS
@@ -45,14 +49,14 @@ use std::ffi::{CStr, CString};
 use std::error::Error;
 use rsmpeg::avformat::AVFormatContextInput;
 
-fn dump_image_info(image_path: &CStr) -> Result<(), Box<dyn Error>> {
-    let mut input_format_context = AVFormatContextInput::open(image_path)?;
-    input_format_context.dump(0, image_path)?;
+fn dump_av_info(path: &CStr) -> Result<(), Box<dyn Error>> {
+    let mut input_format_context = AVFormatContextInput::open(path)?;
+    input_format_context.dump(0, path)?;
     Ok(())
 }
 
 fn main() {
-    dump_image_info(&CString::new("./test.jpg").unwrap()).unwrap();
+    dump_av_info(&CString::new("./test.jpg").unwrap()).unwrap();
 }
 ```
 
@@ -79,6 +83,16 @@ Input #0, image2, from './test.jpg':
   Stream #0:0: Video: mjpeg, none, 25 fps, 25 tbr, 25 tbn, 25 tbc
 ```
 
-### MSRV
+(A single image's duration under 25fps is 0.04s)
+
+You can also put any video or audio file here, this program will dump the media info for you.
+
+## Advanced usage
+
+1. FFmpeg linking: refer to [`rusty_ffmpeg`](https://github.com/CCExtractor/rusty_ffmpeg)'s documentation for how to use environment variables to statically or dynamically link FFmpeg.
+
+2. Advanced usage of rsmpeg: Have a look at the `tests` and `examples` folder.
+
+## MSRV
 
 Minimum supported rust version is 1.52(Stable channel).
