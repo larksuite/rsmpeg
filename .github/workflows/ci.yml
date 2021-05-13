@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rustfmt_check:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  rust_clippy_check_ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy
+
+      - run: |
+          bash utils/linux_ffmpeg.rs
+
+      - env:
+          FFMPEG_PKG_CONFIG_PATH: ${HOME}/tmp/ffmpeg_build/lib/pkgconfig
+        run: |
+          cargo clippy -- -D warnings
+
+  rust_clippy_check_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      # Using this since it's used by clang-sys's CI
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "10.0"
+          directory: ${{ github.workspace }}/clang
+
+      - run: |
+          git clone https://github.com/microsoft/vcpkg --depth 1
+          ./vcpkg/bootstrap-vcpkg.bat
+          ./vcpkg/vcpkg.exe install ffmpeg:x64-windows-static-md
+
+      - name: Clippy check 
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
+          LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
+        run: cargo clippy -- -D warnings
