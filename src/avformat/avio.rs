@@ -10,8 +10,8 @@ wrap!(AVIOContext: ffi::AVIOContext);
 
 impl AVIOContext {
     /// Create and initialize a [`AVIOContext`] for accessing the resource indicated
-    /// by url. 
-    
+    /// by url.
+
     /// When the resource indicated by url has been opened in read+write mode,
     /// the [`AVIOContext`] can be used only for writing.
     pub fn open(url: &CStr, flags: u32) -> Result<Self> {

@@ -9,6 +9,7 @@ use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avformat::AVFormatContextInput,
     avutil::{AVFrame, AVFrameWithImageBuffer, AVImage},
+    error::RsmpegError,
     ffi,
     swscale::SwsContext,
 };
@@ -44,7 +45,6 @@ fn pgm_save(frame: &AVFrame, filename: &str) -> Result<()> {
     Ok(())
 }
 
-#[allow(deprecated)]
 fn _main(file: &CStr, out_dir: &str) -> Result<()> {
     fs::create_dir_all(out_dir)?;
     let mut input_format_context = AVFormatContextInput::open(file)?;
@@ -95,44 +95,64 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
 
     let mut i = 0;
     while let Some(packet) = input_format_context.read_packet().unwrap() {
-        if packet.stream_index == video_stream_index as i32 {
-            let frame = decode_context.decode_packet(&packet).unwrap();
-            if let Some(frame) = frame {
-                sws_context.scale_frame(&frame, 0, decode_context.height, &mut frame_rgb)?;
-                if i >= 5 {
-                    break;
+        if packet.stream_index != video_stream_index as i32 {
+            continue;
+        }
+        decode_context.send_packet(Some(&packet))?;
+        loop {
+            let frame = match decode_context.receive_frame() {
+                Ok(frame) => frame,
+                Err(RsmpegError::DecoderDrainError) | Err(RsmpegError::DecoderFlushedError) => {
+                    break
                 }
-                i += 1;
-                pgm_save(&frame_rgb, &format!("{}/frame{}.ppm", out_dir, i))?;
+                Err(e) => return Err(e.into()),
+            };
+
+            sws_context.scale_frame(&frame, 0, decode_context.height, &mut frame_rgb)?;
+            if i >= 5 {
+                break;
             }
+            i += 1;
+            pgm_save(&frame_rgb, &format!("{}/frame{}.ppm", out_dir, i))?;
         }
     }
     Ok(())
 }
 
 #[test]
-fn tutorial01_test() {
+fn tutorial01_test0() {
     _main(
         cstr!("tests/assets/vids/centaur.mpg"),
         "tests/output/tutorial01/centaur",
     )
     .unwrap();
+}
 
+#[test]
+fn tutorial01_test1() {
     _main(
         cstr!("tests/assets/vids/bear.mp4"),
         "tests/output/tutorial01/bear",
     )
     .unwrap();
+}
 
+#[test]
+fn tutorial01_test2() {
     _main(
         cstr!("tests/assets/vids/mov_sample.mov"),
         "tests/output/tutorial01/mov_sample",
     )
     .unwrap();
+}
 
+/*
+#[test]
+fn tutorial01_test3() {
     _main(
         cstr!("tests/assets/vids/vp8.mp4"),
         "tests/output/tutorial01/vp8",
     )
     .unwrap();
 }
+*/
