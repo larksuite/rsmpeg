@@ -93,6 +93,8 @@ You can also put any video or audio file here, this program will dump the media 
 
 2. Advanced usage of rsmpeg: Check out the `tests` and `examples` folder.
 
-## MSRV
+## Dependency version
+
+Supported FFmpeg version is 4.0-4.4.
 
 Minimum Supported Rust Version is 1.52(Stable channel).

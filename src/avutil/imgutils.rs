@@ -48,11 +48,11 @@ impl AVImage {
         let linear = Vec::leak(linear).as_mut_ptr();
 
         Some(Self {
+            data,
+            linesizes,
             linear,
             linear_length,
             linear_capacity,
-            data,
-            linesizes,
         })
     }
 
