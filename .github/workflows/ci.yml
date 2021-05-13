@@ -40,13 +40,24 @@ jobs:
           override: true
           components: clippy
 
-      - run: |
-          bash utils/linux_ffmpeg.rs
-
-      - env:
-          FFMPEG_PKG_CONFIG_PATH: ${HOME}/tmp/ffmpeg_build/lib/pkgconfig
+      # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+      - name: Install FFmpegBuildTools
         run: |
-          cargo clippy -- -D warnings
+          sudo apt-get update -qq
+          sudo apt-get -y install autoconf automake build-essential cmake \
+            git-core libass-dev libfreetype6-dev libgnutls28-dev libsdl2-dev \
+            libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev \
+            libxcb-shm0-dev libxcb-xfixes0-dev pkg-config texinfo wget yasm \
+            zlib1g-dev
+          sudo apt-get -y install nasm libx264-dev libx265-dev libnuma-dev \
+            libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
+
+      - name: Build Linux FFmpeg
+        run: bash utils/linux_ffmpeg.rs
+
+      - run: |
+          export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
+          cargo clippy --verbose -- -D warnings
 
   rust_clippy_check_windows:
     runs-on: windows-latest
@@ -65,14 +76,229 @@ jobs:
           version: "10.0"
           directory: ${{ github.workspace }}/clang
 
-      - run: |
+      - name: Install vcpkg
+        run: |
           git clone https://github.com/microsoft/vcpkg --depth 1
           ./vcpkg/bootstrap-vcpkg.bat
           ./vcpkg/vcpkg.exe install ffmpeg:x64-windows-static-md
 
-      - name: Clippy check 
+      - name: Clippy check
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
           LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
           LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
         run: cargo clippy -- -D warnings
+
+  build_static_and_test_ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+      - name: Install FFmpegBuildTools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get -y install autoconf automake build-essential cmake \
+            git-core libass-dev libfreetype6-dev libgnutls28-dev libsdl2-dev \
+            libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev \
+            libxcb-shm0-dev libxcb-xfixes0-dev pkg-config texinfo wget yasm \
+            zlib1g-dev
+          sudo apt-get -y install nasm libx264-dev libx265-dev libnuma-dev \
+            libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
+
+      - name: Build Linux FFmpeg
+        run: bash utils/linux_ffmpeg.rs
+
+      - name: Test
+        run: |
+          export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
+          cargo test --verbose
+
+  build_with_vcpkg_ffmpeg_windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config:
+          - target: "x86_64-pc-windows-msvc"
+            vcpkg_triplet: "x64-windows-static"
+            rustflags: "-Ctarget-feature=+crt-static"
+          - target: "x86_64-pc-windows-msvc"
+            vcpkg_triplet: "x64-windows-static-md"
+          - target: "x86_64-pc-windows-msvc"
+            vcpkg_triplet: "x64-windows"
+            dynamic: true
+
+          - target: "i686-pc-windows-msvc"
+            vcpkg_triplet: "x86-windows-static"
+            rustflags: "-Ctarget-feature=+crt-static"
+          - target: "i686-pc-windows-msvc"
+            vcpkg_triplet: "x86-windows-static-md"
+          - target: "i686-pc-windows-msvc"
+            vcpkg_triplet: "x86-windows"
+            dynamic: true
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # Using this since it's used by clang-sys's CI
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "10.0"
+          directory: ${{ github.workspace }}/clang
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: ${{ matrix.config.target }}
+
+      - run: |
+          git clone https://github.com/microsoft/vcpkg --depth 1
+          ./vcpkg/bootstrap-vcpkg.bat
+          ./vcpkg/vcpkg.exe install ffmpeg:${{ matrix.config.vcpkg_triplet }}
+
+      - name: Set env
+        shell: bash
+        run: |
+          if [ '${{ matrix.config.dynamic }}' != '' ]; then
+            echo "VCPKGRS_DYNAMIC=1" >> $GITHUB_ENV
+          fi
+
+      - name: Binding build
+        shell: bash
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          RUSTFLAGS: ${{ matrix.config.rustflags }}
+          VCPKG_DEFAULT_TRIPLET: ${{ matrix.config.vcpkg_triplet }}
+          LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
+          LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
+        run: cargo build --target ${{ matrix.config.target }} --verbose
+
+  # Cross build on Ubuntu, then send it to Windows machine for CI.
+  build_dynamic_and_test_windows_pre:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+      - name: Install FFmpegBuildTools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get -y install autoconf automake build-essential cmake \
+            git-core libass-dev libfreetype6-dev libgnutls28-dev libsdl2-dev \
+            libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev \
+            libxcb-shm0-dev libxcb-xfixes0-dev pkg-config texinfo wget yasm \
+            zlib1g-dev
+          sudo apt-get -y install nasm libx264-dev libx265-dev libnuma-dev \
+            libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
+
+      - name: Install cross deps
+        run: sudo apt-get -y install mingw-w64
+
+      - name: Build FFmpeg
+        run: bash utils/windows_ffmpeg.rs
+
+      - name: Make shared
+        run: |
+          cd ./tmp/ffmpeg_build/lib
+          i686-w64-mingw32-gcc -shared -o libffmpeg.dll \
+            -Wl,--out-implib,libffmpeg.lib \
+            -Wl,--whole-archive *.a -Wl,--no-whole-archive \
+            -lgdi32 \
+            -lpsapi \
+            -lole32 \
+            -lstrmiids \
+            -luuid \
+            -loleaut32 \
+            -lshlwapi \
+            -luser32 \
+            -lws2_32 \
+            -lvfw32 \
+            -luser32 \
+            -lsecur32 \
+            -lbcrypt \
+            -lm \
+            -lpsapi \
+            -ladvapi32 \
+            -lshell32 \
+            -lole32 \
+            -lmfplat \
+            -static-libgcc \
+            -static-libstdc++
+
+      - name: Upload Cross Compiled FFmpeg for Windows
+        uses: actions/upload-artifact@v2
+        with:
+          name: cross_ffmpeg
+          path: tmp/ffmpeg_build/
+
+  build_dynamic_and_test_windows:
+    runs-on: windows-latest
+    needs: build_dynamic_and_test_windows_pre
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          target: i686-pc-windows-msvc
+          profile: minimal
+          toolchain: stable
+          override: true
+ 
+      - name: Download Cross Compiled FFmpeg for Windows
+        uses: actions/download-artifact@v2
+        with:
+          name: cross_ffmpeg
+          path: ${{ github.workspace }}/ffmpeg_prebuilt_cross
+
+      # Using this since it's used by clang-sys's CI
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "10.0"
+          directory: ${{ github.workspace }}/clang
+
+      - env:
+          FFMPEG_INCLUDE_DIR: ${{ github.workspace }}/ffmpeg_prebuilt_cross/include
+          FFMPEG_DLL_PATH: ${{ github.workspace }}/ffmpeg_prebuilt_cross/lib/libffmpeg.dll
+          LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
+          LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
+        run: |
+          copy ${{ github.workspace }}/ffmpeg_prebuilt_cross/lib/libffmpeg.dll .
+          cargo test --target i686-pc-windows-msvc --verbose -- --skip transcoding
+
+  # Check if correct documentation can be generated by docs.rs
+  docs_rs_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+      - name: Install FFmpegBuildTools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get -y install autoconf automake build-essential cmake \
+            git-core libass-dev libfreetype6-dev libgnutls28-dev libsdl2-dev \
+            libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev \
+            libxcb-shm0-dev libxcb-xfixes0-dev pkg-config texinfo wget yasm \
+            zlib1g-dev
+          sudo apt-get -y install nasm libx264-dev libx265-dev libnuma-dev \
+            libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
+
+      - name: Set env
+        run: echo "DOCS_RS=1" >> $GITHUB_ENV
+      - name: Document Generation
+        run: cargo doc --verbose
