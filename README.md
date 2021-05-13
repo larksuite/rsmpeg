@@ -4,9 +4,9 @@
 [![Crates.io](https://img.shields.io/crates/v/rsmpeg)](https://crates.io/crates/rsmpeg)
 [![CI](https://github.com/larksuite/rsmpeg/workflows/CI/badge.svg?branch=master&style=flat-square)](https://github.com/larksuite/rsmpeg/actions)
 
-`rsmpeg` is a thin&safe layer above the raw FFmpeg's Rust binding, it's main goal is safely exposing FFmpeg inner APIs in Rust as much as possible.
+`rsmpeg` is a thin&safe layer above the FFmpeg's Rust bindings, it's main goal is safely exposing FFmpeg inner APIs in Rust as much as possible.
 
-Taking advantage of Rust's language design, you can build robust multi-media project even quicker than using FFmpeg's C API.
+Taking advantage of Rust's language design, you can build robust multi-media projects even quicker than using FFmpeg's C API.
 
 ## Getting started
 
@@ -16,7 +16,7 @@ To use your first rsmpeg demo, you need to compile your FFmpeg:
 1. <https://github.com/ffmpeg/ffmpeg>.
 2. <https://trac.ffmpeg.org/wiki/CompilationGuide>
 
-If you found the compilation compilcated, there are some helpful compiling scripts for you(under the `utils` folder).
+If you find the compilation compilcated, there are some helpful compiling scripts for you (under the `utils` folder).
 
 To build a FFmpeg with some common parameters: (don't forget to install the build dependencies)
 
@@ -42,7 +42,7 @@ Start by adding `rsmpeg` to your `Cargo.toml` file:
 rsmpeg = "0.2.0"
 ```
 
-Write your simple image info dumper:
+Write your simple media file info dumper:
 
 ```rust
 use std::ffi::{CStr, CString};
@@ -60,14 +60,14 @@ fn main() {
 }
 ```
 
-Prepare an simple image in your current folder:
+Prepare a simple image in your current folder:
 
 ![test.jpg](./assets/mountain.jpg)
 
-Run with `FFMPEG_PKG_CONFIG_PATH` set to the pkgconfig file path in your artifact folder(`xxx/ffmpeg_build/lib/pkgconfig`).
+Run with `FFMPEG_PKG_CONFIG_PATH` set to the pkgconfig file path in your artifact folder (`xxx/ffmpeg_build/lib/pkgconfig`).
 
 ```bash
-# macOS
+# macOS & Linux
 export FFMPEG_PKG_CONFIG_PATH=xxx/ffmpeg_build/lib/pkgconfig
 # Windows
 set FFMPEG_PKG_CONFIG_PATH=xxx/ffmpeg_build/lib/pkgconfig
@@ -91,8 +91,8 @@ You can also put any video or audio file here, this program will dump the media 
 
 1. FFmpeg linking: refer to [`rusty_ffmpeg`](https://github.com/CCExtractor/rusty_ffmpeg)'s documentation for how to use environment variables to statically or dynamically link FFmpeg.
 
-2. Advanced usage of rsmpeg: Have a look at the `tests` and `examples` folder.
+2. Advanced usage of rsmpeg: Check out the `tests` and `examples` folder.
 
 ## MSRV
 
-Minimum supported rust version is 1.52(Stable channel).
+Minimum Supported Rust Version is 1.52(Stable channel).
