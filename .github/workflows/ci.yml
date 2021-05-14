@@ -91,6 +91,14 @@ jobs:
 
   build_static_and_test_ubuntu:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        valgrind: [ "valgrind", "no valgrind" ]
+        include:
+          - valgrind: "valgrind"
+            cargo-prefix: "valgrind"
+      fail-fast: false
+
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -114,10 +122,23 @@ jobs:
       - name: Build Linux FFmpeg
         run: bash utils/linux_ffmpeg.rs
 
+      - name: Build valgrind
+        run: |
+          if [ '${{ matrix.valgrind }}' == 'valgrind' ]; then
+            sudo apt-get -y install libc6-dbg
+            git clone git://sourceware.org/git/valgrind.git --depth 1
+            cd valgrind
+            ./autogen.sh
+            ./configure
+            make -j$(nproc)
+            sudo make install
+            cargo install cargo-valgrind
+          fi
+
       - name: Test
         run: |
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
-          cargo test --verbose
+          cargo ${{ matrix.cargo-prefix }} test --verbose
 
   build_with_vcpkg_ffmpeg_windows:
     runs-on: windows-latest
