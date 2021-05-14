@@ -2,6 +2,7 @@
 mod audio_fifo;
 mod channel_layout;
 mod dict;
+mod file;
 mod frame;
 mod imgutils;
 mod motion_vector;
@@ -12,6 +13,7 @@ mod samplefmt;
 pub use audio_fifo::*;
 pub use channel_layout::*;
 pub use dict::*;
+pub use file::*;
 pub use frame::*;
 pub use imgutils::*;
 pub use motion_vector::*;

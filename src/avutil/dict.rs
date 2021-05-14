@@ -190,12 +190,7 @@ impl AVDictionaryEntry {
 #[cfg(test)]
 mod test {
     use super::AVDictionary;
-
-    macro_rules! cstr {
-        ($s: literal) => {
-            &std::ffi::CString::new($s).unwrap()
-        };
-    }
+    use cstr::cstr;
 
     #[test]
     fn set() {
@@ -274,14 +269,17 @@ mod test {
         let dicta = AVDictionary::new(cstr!("a"), cstr!("b"), 0).set(cstr!("c"), cstr!("d"), 0);
 
         let dictc = dicta.clone();
-        assert_eq!(cstr!("a:b-c:d"), &dictc.get_string(b':', b'-').unwrap());
+        assert_eq!(
+            cstr!("a:b-c:d"),
+            dictc.get_string(b':', b'-').unwrap().as_c_str()
+        );
 
         let dictb = AVDictionary::new(cstr!("foo"), cstr!("bar"), 0)
             .set(cstr!("alice"), cstr!("bob"), 0)
             .copy(&dictc, 0);
         assert_eq!(
             cstr!("foo:bar-alice:bob-a:b-c:d"),
-            &dictb.get_string(b':', b'-').unwrap()
+            dictb.get_string(b':', b'-').unwrap().as_c_str(),
         );
 
         let dicta = dicta.set(cstr!("e"), cstr!("f"), 0);
@@ -318,12 +316,12 @@ mod test {
             .set(cstr!("bob"), cstr!("alice"), 0);
         assert_eq!(
             cstr!("a:b-c:d-foo:bar-bob:alice"),
-            &dict.get_string(b':', b'-').unwrap()
+            dict.get_string(b':', b'-').unwrap().as_c_str()
         );
         let dict = dict.set(cstr!("rust"), cstr!("c"), 0);
         assert_eq!(
             cstr!("a:b-c:d-foo:bar-bob:alice-rust:c"),
-            &dict.get_string(b':', b'-').unwrap()
+            dict.get_string(b':', b'-').unwrap().as_c_str()
         );
     }
 
@@ -338,7 +336,7 @@ mod test {
         .unwrap();
         assert_eq!(
             cstr!("a:b-c:d-foo:bar-bob:alice-rust:c"),
-            &dict.get_string(b':', b'-').unwrap()
+            dict.get_string(b':', b'-').unwrap().as_c_str()
         );
     }
 }
