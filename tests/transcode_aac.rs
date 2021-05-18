@@ -151,6 +151,7 @@ fn read_decode_convert_and_store(
             encode_context.channels,
             frame.nb_samples,
             encode_context.sample_fmt,
+            0,
         );
         unsafe {
             resample_context.convert(

@@ -34,8 +34,8 @@ use rsmpeg::{
     avfilter::{AVFilter, AVFilterContextMut, AVFilterGraph, AVFilterInOut},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
     avutil::{
-        av_get_channel_layout_nb_channels, av_get_default_channel_layout, av_get_sample_fmt_name,
-        av_inv_q, av_mul_q, AVFrame, AVRational,
+        av_get_channel_layout_nb_channels, av_get_default_channel_layout, av_inv_q, av_mul_q,
+        get_sample_fmt_name, AVFrame, AVRational,
     },
     ffi,
 };
@@ -224,7 +224,11 @@ fn init_filter<'graph, T: Into<Vec<u8>>>(
                 decode_context.time_base.num,
                 decode_context.time_base.den,
                 decode_context.sample_rate,
-                av_get_sample_fmt_name(decode_context.sample_fmt).to_string_lossy(),
+                // We can unwrap here, because we are sure that the given
+                // sample_fmt is valid.
+                get_sample_fmt_name(decode_context.sample_fmt)
+                    .unwrap()
+                    .to_string_lossy(),
                 decode_context.channel_layout,
             );
 
