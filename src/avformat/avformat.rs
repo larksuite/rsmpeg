@@ -20,7 +20,8 @@ use crate::{
 wrap!(AVFormatContextInput: ffi::AVFormatContext);
 
 impl AVFormatContextInput {
-    /// Create a [`AVFormatContextInput`] instance of a file.
+    /// Create a [`AVFormatContextInput`] instance of a file, and find info of
+    /// all streams.
     pub fn open(filename: &CStr) -> Result<Self> {
         let mut input_format_context = ptr::null_mut();
 
