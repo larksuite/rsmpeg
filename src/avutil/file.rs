@@ -6,6 +6,7 @@ use crate::error::{Result, RsmpegError};
 use crate::ffi;
 use crate::shared::RetUpgrade;
 
+/// A read-only file buffer, the file is mmaped when available.
 pub struct AVMmap {
     bufptr: NonNull<u8>,
     size: ffi::size_t,
@@ -19,6 +20,8 @@ impl Deref for AVMmap {
 }
 
 impl AVMmap {
+    /// Read the file with name filename, and put its content in a newly
+    /// allocated read-only buffer (will map it with mmap() when available).
     pub fn new(filename: &CStr) -> Result<Self> {
         let mut bufptr = null_mut();
         let mut size = 0;
