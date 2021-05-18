@@ -1,4 +1,7 @@
-/// Wrap ffi structs to custom type with some convenient functions
+//! A module consists of Wrapper macros. These macros wrap ffi structs to custom
+//! type with some convenient functions
+
+/// Wrapping with XXX -> XXX mapping.
 macro_rules! wrap_pure {
     (
         ($wrapped_type: ident): $ffi_type: ty
@@ -62,6 +65,7 @@ macro_rules! wrap_pure {
     };
 }
 
+/// Wrapping with XXXRef -> XXX.
 macro_rules! wrap_ref_pure {
     (($wrapped_type: ident, $wrapped_ref: ident): $ffi_type: ty) => {
         // This is needed for wrapping reference owned value from ffi
@@ -98,6 +102,7 @@ macro_rules! wrap_ref_pure {
     };
 }
 
+/// Wrapping with XXXMut -> XXX.
 macro_rules! wrap_mut_pure {
     (($wrapped_type: ident, $wrapped_mut: ident): $ffi_type: ty) => {
         // This is needed for wrapping mutable reference owned value from ffi
@@ -140,6 +145,7 @@ macro_rules! wrap_mut_pure {
     };
 }
 
+/// Wrapping with XXXRef, XXXMut, XXX -> XXX.
 macro_rules! wrap_ref_mut {
     (
         $name: ident: $ffi_type: ty
@@ -153,6 +159,7 @@ macro_rules! wrap_ref_mut {
     };
 }
 
+/// Wrapping with XXXRef, XXX -> XXX.
 macro_rules! wrap_ref {
     (
         $name: ident: $ffi_type: ty
@@ -165,6 +172,7 @@ macro_rules! wrap_ref {
     };
 }
 
+/// Wrapping with XXXMut, XXX -> XXX.
 macro_rules! wrap_mut {
     (
         $name: ident: $ffi_type: ty
@@ -177,6 +185,7 @@ macro_rules! wrap_mut {
     };
 }
 
+/// Wrapping with XXX, XXX -> XXX.
 macro_rules! wrap {
     (
         $name: ident: $ffi_type: ty
@@ -188,6 +197,7 @@ macro_rules! wrap {
     };
 }
 
+/// Autogen single set function.
 macro_rules! set_fn {
     ($impl_type:ident {
         $(
@@ -204,6 +214,7 @@ macro_rules! set_fn {
     }
 }
 
+/// Autogen multiple set functions.
 macro_rules! settable {
     ($impl_type:ident {
         $(
