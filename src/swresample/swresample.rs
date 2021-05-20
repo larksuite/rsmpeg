@@ -90,15 +90,17 @@ impl SwrContext {
     ///
     /// Only safe when the `in_buffer` is valid.
     pub unsafe fn convert(
-        &mut self,
+        &self,
         samples_buffer: &mut AVSamples,
         in_buffer: *const *const u8,
         in_count: i32,
     ) -> Result<()> {
-        // Find a better design later
+        // ATTENTION: We can confidently use immuable reference here because we
+        // ensure the safety on SwrContext's the api level (Cannot take inner
+        // reference of the SwrContext, and also no Send & Sync implementations).
         unsafe {
             ffi::swr_convert(
-                self.as_mut_ptr(),
+                self.as_ptr() as _,
                 samples_buffer.as_mut_ptr(),
                 samples_buffer.nb_samples,
                 in_buffer as *mut _,
