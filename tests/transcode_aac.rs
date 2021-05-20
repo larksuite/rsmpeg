@@ -116,7 +116,7 @@ fn decode_audio_frame(
 
     let frame = match decode_context.receive_frame() {
         Ok(frame) => frame,
-        Err(RsmpegError::DecoderDrainError | RsmpegError::DecoderFlushedError) => {
+        Err(RsmpegError::DecoderDrainError) | Err(RsmpegError::DecoderFlushedError) => {
             return Ok((false, None))
         }
         Err(e) => return Err(e),
