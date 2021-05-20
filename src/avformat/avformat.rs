@@ -64,6 +64,8 @@ impl AVFormatContextInput {
     /// and return one for each call. It will not omit invalid data between
     /// valid packets so as to give the decoder the maximum information possible
     /// for decoding.
+    ///
+    /// Return `Err(_)` on error, Return `Ok(None)` on EOF.
     pub fn read_packet(&mut self) -> Result<Option<AVPacket>> {
         let mut packet = AVPacket::new();
         match unsafe { ffi::av_read_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }.upgrade() {
