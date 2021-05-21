@@ -7,7 +7,7 @@ impl SwrContext {
     /// Check whether an swr context has been initialized or not.
     pub fn is_initialized(&self) -> bool {
         // should always be true
-        unsafe { ffi::swr_is_initialized(self.as_ptr() as _) == 0 }
+        unsafe { ffi::swr_is_initialized(self.as_ptr() as _) != 0 }
     }
 
     /// Allocate SwrContext if needed and set/reset common parameters.
@@ -84,7 +84,7 @@ impl SwrContext {
     /// `in`        input buffers, only the first one need to be set in case of packed audio
     /// `in_count`  number of input samples available in one channel
     ///
-    /// return number of samples output per channel, negative value on error
+    /// return number of samples output per channel
     ///
     /// # Safety
     ///
@@ -94,7 +94,7 @@ impl SwrContext {
         samples_buffer: &mut AVSamples,
         in_buffer: *const *const u8,
         in_count: i32,
-    ) -> Result<()> {
+    ) -> Result<i32> {
         // ATTENTION: We can confidently use immuable reference here because we
         // ensure the safety on SwrContext's the api level (Cannot take inner
         // reference of the SwrContext, and also no Send & Sync implementations).
@@ -108,8 +108,7 @@ impl SwrContext {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::SwrConvertError)?;
-        Ok(())
+        .map_err(|_| RsmpegError::SwrConvertError)
     }
 }
 
