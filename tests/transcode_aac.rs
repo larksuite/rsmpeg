@@ -86,7 +86,8 @@ fn init_resampler(
         av_get_default_channel_layout(decode_context.channels),
         decode_context.sample_fmt,
         decode_context.sample_rate,
-    );
+    )
+    .unwrap();
     /*
      * Perform a sanity check so that the number of converted samples is
      * not greater than the number of samples to be converted.
@@ -115,8 +116,9 @@ fn decode_audio_frame(
 
     let frame = match decode_context.receive_frame() {
         Ok(frame) => frame,
-        Err(RsmpegError::DecoderDrainError) => return Ok((false, None)),
-        Err(RsmpegError::DecoderFlushedError) => return Ok((true, None)),
+        Err(RsmpegError::DecoderDrainError) | Err(RsmpegError::DecoderFlushedError) => {
+            return Ok((false, None))
+        }
         Err(e) => return Err(e),
     };
     return Ok((false, Some(frame)));
@@ -156,7 +158,6 @@ fn read_decode_convert_and_store(
         unsafe {
             resample_context.convert(
                 &mut samples_buffer,
-                frame.nb_samples,
                 frame.extended_data as *const _,
                 frame.nb_samples,
             )?;
