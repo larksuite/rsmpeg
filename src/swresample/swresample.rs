@@ -101,7 +101,7 @@ impl SwrContext {
         unsafe {
             ffi::swr_convert(
                 self.as_ptr() as _,
-                samples_buffer.as_mut_ptr(),
+                samples_buffer.deref_mut().as_mut_ptr(),
                 samples_buffer.nb_samples,
                 in_buffer as *mut _,
                 in_count,
