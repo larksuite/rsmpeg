@@ -130,7 +130,7 @@ fn add_samples_to_fifo(
     num_samples: i32,
 ) -> Result<()> {
     fifo.realloc(fifo.size() + num_samples);
-    if unsafe { fifo.write(samples_buffer.as_ptr(), num_samples) }? < num_samples {
+    if unsafe { fifo.write((&**samples_buffer).as_ptr(), num_samples) }? < num_samples {
         panic!("samples doesn't all written.");
     }
     Ok(())

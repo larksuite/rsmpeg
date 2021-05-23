@@ -100,12 +100,21 @@ pub fn get_bytes_per_sample(sample_fmt: AVSampleFormat) -> Option<i32> {
     NonZeroI32::new(unsafe { ffi::av_get_bytes_per_sample(sample_fmt) }).map(NonZeroI32::get)
 }
 
+/// Check if the sample format is planar.
+///
+/// Returns 1 if the sample format is planar, 0 if it is interleaved
+pub fn is_planar(sample_fmt: AVSampleFormat) -> bool {
+    unsafe { ffi::av_sample_fmt_is_planar(sample_fmt) == 1 }
+}
+
+// The `nb_samples` of `AVSamples` is the capacity rather than length.
 wrap! {
-    AVSamples: *mut u8,
+    AVSamples: Vec<*mut u8>,
     linesize: i32 = 0,
-    nb_samples: i32 = 0,
     nb_channels: i32 = 0,
+    nb_samples: i32 = 0,
     sample_fmt: AVSampleFormat = ffi::AVSampleFormat_AV_SAMPLE_FMT_NONE,
+    align: i32 = 0,
 }
 
 impl AVSamples {
@@ -149,14 +158,17 @@ impl AVSamples {
     /// align               buffer size alignment (0 = default, 1 = no alignment)
     /// ```
     pub fn new(nb_channels: i32, nb_samples: i32, sample_fmt: AVSampleFormat, align: i32) -> Self {
-        let mut audio_data = ptr::null_mut();
+        // Implementation inspired by `av_samples_alloc_array_and_samples`.
+        let nb_planes = if is_planar(sample_fmt) { nb_channels } else { 1 };
+        let mut audio_data = vec![ptr::null_mut(); nb_planes as usize];
+
         let mut linesize = 0;
 
         // From the documentation, this function only error on no memory, so
         // unwrap.
         unsafe {
-            ffi::av_samples_alloc_array_and_samples(
-                &mut audio_data,
+            ffi::av_samples_alloc(
+                audio_data.as_mut_ptr(),
                 &mut linesize,
                 nb_channels,
                 nb_samples,
@@ -167,11 +179,15 @@ impl AVSamples {
         .upgrade()
         .unwrap();
 
+        // Leaks a Vec.
+        let audio_data = Box::leak(Box::new(audio_data));
+
         let mut samples = unsafe { AVSamples::from_raw(NonNull::new(audio_data).unwrap()) };
         samples.linesize = linesize;
         samples.nb_channels = nb_channels;
         samples.nb_samples = nb_samples;
         samples.sample_fmt = sample_fmt;
+        samples.align = align;
         samples
     }
 
@@ -181,7 +197,7 @@ impl AVSamples {
     pub fn set_silence(&mut self, offset: i32, nb_samples: i32) {
         let x = unsafe {
             ffi::av_samples_set_silence(
-                self.as_mut_ptr(),
+                self.deref_mut().as_mut_ptr(),
                 offset,
                 nb_samples,
                 self.nb_channels,
@@ -201,9 +217,14 @@ impl Drop for AVSamples {
         //
         // The allocated samples buffer can be freed by using av_freep(&audio_data[0])
         // Allocated data will be initialized to silence.
-        // So we first free the audio_data[0].
-        // then free the audio_data array(since it's allocated by `av_samples_alloc_array_and_samples`).
-        unsafe { ffi::av_free(*self.as_mut_ptr() as _) }
-        unsafe { ffi::av_free(self.as_mut_ptr() as _) }
+        //
+        // Which means all the elements in this array shares the same buffer
+        // (check the implementation of av_samples_fill_arrays).  So we first
+        // free the audio_data[0].  then free the audio_data array(since it's
+        // allocated by `av_samples_alloc_array_and_samples`).
+        unsafe { ffi::av_free(self[0].cast()) }
+
+        // Recover the leaked vec, and drop it.
+        let _x = unsafe { Box::from_raw(self.as_mut_ptr()) };
     }
 }
