@@ -159,7 +159,11 @@ impl AVSamples {
     /// ```
     pub fn new(nb_channels: i32, nb_samples: i32, sample_fmt: AVSampleFormat, align: i32) -> Self {
         // Implementation inspired by `av_samples_alloc_array_and_samples`.
-        let nb_planes = if is_planar(sample_fmt) { nb_channels } else { 1 };
+        let nb_planes = if is_planar(sample_fmt) {
+            nb_channels
+        } else {
+            1
+        };
         let mut audio_data = vec![ptr::null_mut(); nb_planes as usize];
 
         let mut linesize = 0;
