@@ -16,8 +16,7 @@ fn metadata(file: &str) -> Result<Vec<(String, String)>> {
     result.push(("bit_rate".into(), input_format_context.bit_rate.to_string()));
 
     // Get additional info from `input_format_context.metadata()`
-    {
-        let metadata = input_format_context.metadata();
+    if let Some(metadata) = input_format_context.metadata() {
         let mut prev_entry = None;
 
         // Trick to get all entries.
