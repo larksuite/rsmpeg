@@ -11,7 +11,7 @@ pub use ffi::av_q2d;
 /// Convert a double precision floating point number to a rational.
 /// In case of infinity, the returned value is expressed as {1, 0} or {-1, 0} depending on the sign.
 ///
-/// `d` - double to convert 
+/// `d` - double to convert
 /// `max` - Maximum allowed numerator and denominator
 pub fn av_d2q(d: f64, max: libc::c_int) -> AVRational {
     unsafe { ffi::av_d2q(d, max) }
