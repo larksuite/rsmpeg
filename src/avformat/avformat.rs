@@ -11,7 +11,7 @@ use crate::{
         AVPacket,
     },
     avformat::AVIOContext,
-    avutil::{AVDictionaryMut, AVDictionaryRef, AVRational},
+    avutil::{AVDictionary, AVDictionaryMut, AVDictionaryRef, AVRational},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -300,12 +300,28 @@ impl AVStream {
 
     /// Set codecpar of current stream with given `parameters`.
     pub fn set_codecpar(&mut self, parameters: AVCodecParameters) {
+        // Since the codecpar in AVStram is always NonNull, this function accepts
+        // a Parameters rather than Option<Parameters>
+
         // ATTENTION: this workflow differs from c version.
         if let Some(codecpar) = self.codecpar.upgrade() {
             let _ = unsafe { AVCodecParameters::from_raw(codecpar) };
         }
         unsafe {
             self.deref_mut().codecpar = parameters.into_raw().as_ptr();
+        }
+    }
+
+    /// Set metadata of current [`AVStream`].
+    pub fn set_metadata(&mut self, dict: Option<AVDictionary>) {
+        // Drop the old_dict
+        let _ = NonNull::new(self.metadata).map(|x| unsafe { AVDictionary::from_raw(x) });
+
+        // Move in the new dict.
+        unsafe {
+            self.deref_mut().metadata = dict
+                .map(|x| x.into_raw().as_ptr())
+                .unwrap_or(ptr::null_mut());
         }
     }
 }
