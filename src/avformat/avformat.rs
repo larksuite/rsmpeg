@@ -11,7 +11,7 @@ use crate::{
         AVPacket,
     },
     avformat::AVIOContext,
-    avutil::{AVDictionaryMut, AVDictionaryRef, AVRational},
+    avutil::{AVDictionary, AVDictionaryMut, AVDictionaryRef, AVRational},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -122,6 +122,9 @@ impl<'stream> AVFormatContextInput {
     /// demuxing: set by libavformat in `avformat_open_input()`
     /// muxing: may be set by the caller before `avformat_write_header()`
     pub fn metadata(&'stream self) -> Option<AVDictionaryRef<'stream>> {
+        // From implementation:
+        // `avformat_find_stream_info()->()read_frame_internal()`, we know
+        // `metadata` can be null.
         NonNull::new(self.metadata).map(|x| unsafe { AVDictionaryRef::from_raw(x) })
     }
 }
@@ -297,17 +300,6 @@ impl AVStream {
         let result = unsafe { ffi::av_stream_get_end_pts(self.as_ptr()) };
         (result >= 0).then(|| result as i64)
     }
-
-    /// Set codecpar of current stream with given `parameters`.
-    pub fn set_codecpar(&mut self, parameters: AVCodecParameters) {
-        // ATTENTION: this workflow differs from c version.
-        if let Some(codecpar) = self.codecpar.upgrade() {
-            let _ = unsafe { AVCodecParameters::from_raw(codecpar) };
-        }
-        unsafe {
-            self.deref_mut().codecpar = parameters.into_raw().as_ptr();
-        }
-    }
 }
 
 impl<'stream> AVStream {
@@ -317,19 +309,46 @@ impl<'stream> AVStream {
         unsafe { AVCodecParametersRef::from_raw(NonNull::new(self.codecpar).unwrap()) }
     }
 
-    /// Get metadata of current stream.
-    pub fn metadata(&'stream self) -> Option<AVDictionaryRef<'stream>> {
-        NonNull::new(self.metadata).map(|x| unsafe { AVDictionaryRef::from_raw(x) })
-    }
-
     /// Get mutable reference of codec parameters in current stream.
     pub fn codecpar_mut(&'stream mut self) -> AVCodecParametersMut<'stream> {
         unsafe { AVCodecParametersMut::from_raw(NonNull::new(self.codecpar).unwrap()) }
     }
 
+    /// Set codecpar of current stream with given `parameters`.
+    pub fn set_codecpar(&mut self, parameters: AVCodecParameters) {
+        // Since the codecpar in AVStram is always NonNull, this function accepts
+        // a Parameters rather than Option<Parameters>
+
+        // ATTENTION: this workflow differs from c version.
+        if let Some(codecpar) = self.codecpar.upgrade() {
+            let _ = unsafe { AVCodecParameters::from_raw(codecpar) };
+        }
+        unsafe {
+            self.deref_mut().codecpar = parameters.into_raw().as_ptr();
+        }
+    }
+
+    /// Get metadata of current stream.
+    pub fn metadata(&'stream self) -> Option<AVDictionaryRef<'stream>> {
+        NonNull::new(self.metadata).map(|x| unsafe { AVDictionaryRef::from_raw(x) })
+    }
+
     /// Get mutable reference of metadata in current stream.
     pub fn metadata_mut(&'stream mut self) -> Option<AVDictionaryMut<'stream>> {
         NonNull::new(self.metadata).map(|x| unsafe { AVDictionaryMut::from_raw(x) })
+    }
+
+    /// Set metadata of current [`AVStream`].
+    pub fn set_metadata(&mut self, dict: Option<AVDictionary>) {
+        // Drop the old_dict
+        let _ = NonNull::new(self.metadata).map(|x| unsafe { AVDictionary::from_raw(x) });
+
+        // Move in the new dict.
+        unsafe {
+            self.deref_mut().metadata = dict
+                .map(|x| x.into_raw().as_ptr())
+                .unwrap_or(ptr::null_mut());
+        }
     }
 }
 
