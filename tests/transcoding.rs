@@ -1,33 +1,5 @@
-// log.rs
-use once_cell::sync::Lazy as SyncLazy;
-pub static LOG_INIT: SyncLazy<()> = SyncLazy::new(|| {
-    env_logger::init();
-    log::info!("env_logger initialized");
-});
-
-// error.rs
-pub use rsmpeg::error::RsmpegError;
-use std::cmp::{Eq, PartialEq};
-#[derive(Debug, Eq, PartialEq)]
-pub enum LibMediaError {
-    RsmpegError(rsmpeg::error::RsmpegError),
-    CStringError(std::ffi::NulError),
-}
-
-impl From<rsmpeg::error::RsmpegError> for LibMediaError {
-    fn from(e: rsmpeg::error::RsmpegError) -> Self {
-        LibMediaError::RsmpegError(e)
-    }
-}
-
-impl From<std::ffi::NulError> for LibMediaError {
-    fn from(e: std::ffi::NulError) -> Self {
-        LibMediaError::CStringError(e)
-    }
-}
-
-// transcoding.rs
-use log::{debug, error, info};
+use anyhow::{anyhow, bail, Context, Result};
+use cstr::cstr;
 use rsmpeg::{
     self,
     avcodec::{AVCodec, AVCodecContext},
@@ -37,11 +9,10 @@ use rsmpeg::{
         av_get_channel_layout_nb_channels, av_get_default_channel_layout, av_inv_q, av_mul_q,
         get_sample_fmt_name, AVFrame, AVRational,
     },
+    error::RsmpegError,
     ffi,
 };
-use std::ffi::CString;
-
-pub type Result<T> = std::result::Result<T, LibMediaError>;
+use std::ffi::{CStr, CString};
 
 struct StreamContext {
     decode_context: AVCodecContext,
@@ -53,24 +24,15 @@ struct FilterContext<'graph> {
     buffer_sink_context: AVFilterContextMut<'graph>,
 }
 
-macro_rules! cstr {
-    ($s: literal) => {
-        cstr::cstr!($s)
-    };
-    ($s: expr) => {
-        &CString::new($s)?
-    };
-}
-
-fn open_input_file<T: Into<Vec<u8>>>(
-    filename: T,
-) -> Result<(AVFormatContextInput, Vec<StreamContext>)> {
-    let filename = cstr!(filename);
+fn open_input_file(filename: &CStr) -> Result<(AVFormatContextInput, Vec<StreamContext>)> {
     let mut stream_contexts = vec![];
     let mut input_format_context = AVFormatContextInput::open(filename)?;
 
     for input_stream in input_format_context.streams().into_iter() {
-        let decoder = AVCodec::find_decoder(input_stream.codecpar().codec_id).unwrap();
+        let codec_id = input_stream.codecpar().codec_id;
+        let decoder = AVCodec::find_decoder(codec_id)
+            .with_context(|| anyhow!("decoder ({}) not found.", codec_id))?;
+
         let mut decode_context = AVCodecContext::new(&decoder);
         decode_context.set_codecpar(input_stream.codecpar())?;
 
@@ -82,6 +44,7 @@ fn open_input_file<T: Into<Vec<u8>>>(
         } else if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
             decode_context.open(None)?;
         }
+
         stream_contexts.push(StreamContext {
             decode_context,
             encode_context: None,
@@ -91,13 +54,12 @@ fn open_input_file<T: Into<Vec<u8>>>(
     Ok((input_format_context, stream_contexts))
 }
 
-fn open_output_file<T: Into<Vec<u8>>>(
-    filename: T,
+fn open_output_file(
+    filename: &CStr,
     input_format_context: &mut AVFormatContextInput,
     stream_contexts: &mut [StreamContext],
 ) -> Result<AVFormatContextOutput> {
-    let filename = cstr!(filename);
-    let mut output_format_context = AVFormatContextOutput::create(filename.as_ref())?;
+    let mut output_format_context = AVFormatContextOutput::create(filename)?;
 
     for (
         i,
@@ -110,10 +72,8 @@ fn open_output_file<T: Into<Vec<u8>>>(
         if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO
             || decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO
         {
-            let encoder = AVCodec::find_encoder(decode_context.codec_id).expect(&format!(
-                "Necessary encoder: {} not found.",
-                decode_context.codec_id
-            ));
+            let encoder = AVCodec::find_encoder(decode_context.codec_id)
+                .with_context(|| anyhow!("encoder({}) not found.", decode_context.codec_id))?;
             let mut new_encode_context = AVCodecContext::new(&encoder);
 
             if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
@@ -138,7 +98,6 @@ fn open_output_file<T: Into<Vec<u8>>>(
                 new_encode_context.set_channels(av_get_channel_layout_nb_channels(
                     decode_context.channel_layout,
                 ));
-                /* take first format from list of supported formats */
                 new_encode_context.set_sample_fmt(encoder.sample_fmts().unwrap()[0]);
                 new_encode_context.set_time_base(AVRational {
                     num: 1,
@@ -153,38 +112,31 @@ fn open_output_file<T: Into<Vec<u8>>>(
             new_encode_context.open(None)?;
 
             let mut out_stream = output_format_context.new_stream(None);
-
             out_stream.set_codecpar(new_encode_context.extract_codecpar());
-
             out_stream.set_time_base(new_encode_context.time_base);
 
             *encode_context = Some(new_encode_context)
         } else if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_UNKNOWN {
-            panic!(
-                "Elementary stream #{} is of unknown type, cannot proceed",
-                i
-            )
+            bail!("Stream #{} is of unknown type.", i);
         } else {
             let in_stream = input_format_context.streams().get(i).unwrap();
             let mut out_stream = output_format_context.new_stream(None);
             out_stream.set_codecpar(in_stream.codecpar().clone());
-
             out_stream.set_time_base(in_stream.time_base);
         }
     }
 
-    output_format_context.dump(0, filename.as_ref())?;
-
+    output_format_context.dump(0, filename)?;
     output_format_context.write_header()?;
 
     Ok(output_format_context)
 }
 
-fn init_filter<'graph, T: Into<Vec<u8>>>(
+fn init_filter<'graph>(
     filter_graph: &'graph mut AVFilterGraph,
     decode_context: &mut AVCodecContext,
     encode_context: &mut AVCodecContext,
-    filter_spec: T,
+    filter_spec: &CStr,
 ) -> Result<FilterContext<'graph>> {
     let (mut buffer_src_context, mut buffer_sink_context) =
         if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
@@ -202,13 +154,15 @@ fn init_filter<'graph, T: Into<Vec<u8>>>(
                 decode_context.sample_aspect_ratio.den,
             );
 
+            let args = &CString::new(args).unwrap();
+
             let buffer_src_context =
-                filter_graph.create_filter_context(&buffer_src, cstr!("in"), Some(cstr!(args)))?;
+                filter_graph.create_filter_context(&buffer_src, cstr!("in"), Some(args))?;
 
             let mut buffer_sink_context =
                 filter_graph.create_filter_context(&buffer_sink, cstr!("out"), None)?;
-
             buffer_sink_context.set_property(cstr!("pix_fmts"), &encode_context.pix_fmt)?;
+
             (buffer_src_context, buffer_sink_context)
         } else if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
             let buffer_src = AVFilter::get_by_name(cstr!("abuffer")).unwrap();
@@ -231,27 +185,30 @@ fn init_filter<'graph, T: Into<Vec<u8>>>(
                     .to_string_lossy(),
                 decode_context.channel_layout,
             );
+            let args = &CString::new(args).unwrap();
 
             let buffer_src_context =
-                filter_graph.create_filter_context(&buffer_src, cstr!("in"), Some(cstr!(args)))?;
+                filter_graph.create_filter_context(&buffer_src, cstr!("in"), Some(args))?;
 
             let mut buffer_sink_context =
                 filter_graph.create_filter_context(&buffer_sink, cstr!("out"), None)?;
-
             buffer_sink_context.set_property(cstr!("sample_fmts"), &encode_context.sample_fmt)?;
             buffer_sink_context
                 .set_property(cstr!("channel_layouts"), &encode_context.channel_layout)?;
             buffer_sink_context.set_property(cstr!("sample_rates"), &encode_context.sample_rate)?;
+
             (buffer_src_context, buffer_sink_context)
         } else {
-            panic!("Only video and audio needs filter initialization")
+            bail!("Only video and audio needs filter initialization")
         };
 
     // Yes the outputs' name is `in` -_-b
     let outputs = AVFilterInOut::new(cstr!("in"), &mut buffer_src_context, 0);
     let inputs = AVFilterInOut::new(cstr!("out"), &mut buffer_sink_context, 0);
-    let (_inputs, _outputs) = filter_graph.parse_ptr(cstr!(filter_spec), inputs, outputs)?;
+    let (_inputs, _outputs) = filter_graph.parse_ptr(filter_spec, inputs, outputs)?;
+
     filter_graph.config()?;
+
     Ok(FilterContext {
         buffer_src_context,
         buffer_sink_context,
@@ -263,6 +220,7 @@ fn init_filters<'graph>(
     stream_contexts: &mut [StreamContext],
 ) -> Result<Vec<Option<FilterContext<'graph>>>> {
     let mut filter_contexts = vec![];
+
     let filter_graphs_iter = filter_graphs.iter_mut();
     let stream_contexts_iter = stream_contexts.iter_mut();
     for (
@@ -280,9 +238,9 @@ fn init_filters<'graph>(
         {
             // dummy filter
             let filter_spec = if media_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
-                "null"
+                cstr!("null")
             } else {
-                "anull"
+                cstr!("anull")
             };
 
             // We can ensure the encode_context is Some(_) here.
@@ -302,19 +260,23 @@ fn init_filters<'graph>(
     Ok(filter_contexts)
 }
 
-/// Returns if we get the packet
-#[allow(deprecated)]
 fn encode_write_frame(
     frame_after: Option<&AVFrame>,
     encode_context: &mut AVCodecContext,
     output_format_context: &mut AVFormatContextOutput,
     stream_index: usize,
-) -> bool {
-    info!("Encoding frame");
-    let packet = encode_context
-        .encode_frame(frame_after)
-        .expect("Encode frame failed.");
-    if let Some(mut packet) = packet {
+) -> Result<()> {
+    encode_context
+        .send_frame(frame_after)
+        .context("Encode frame failed.")?;
+
+    loop {
+        let mut packet = match encode_context.receive_packet() {
+            Ok(packet) => packet,
+            Err(RsmpegError::EncoderDrainError) | Err(RsmpegError::EncoderFlushedError) => break,
+            Err(e) => bail!(e),
+        };
+
         packet.set_stream_index(stream_index as i32);
         packet.rescale_ts(
             encode_context.time_base,
@@ -324,19 +286,16 @@ fn encode_write_frame(
                 .unwrap()
                 .time_base,
         );
+
         match output_format_context.interleaved_write_frame(&mut packet) {
             Ok(()) => Ok(()),
-            Err(RsmpegError::InterleavedWriteFrameError(-22)) => {
-                log::warn!("Ignore a non mono-increasing time_stamp frame.");
-                Ok(())
-            }
+            Err(RsmpegError::InterleavedWriteFrameError(-22)) => Ok(()),
             Err(e) => Err(e),
         }
-        .expect("Interleaved write frame failed.");
-        true
-    } else {
-        false
+        .context("Interleaved write frame failed.")?;
     }
+
+    Ok(())
 }
 
 fn filter_encode_write_frame(
@@ -346,51 +305,41 @@ fn filter_encode_write_frame(
     encode_context: &mut AVCodecContext,
     output_format_context: &mut AVFormatContextOutput,
     stream_index: usize,
-) {
-    info!("Pushing decoded frame to filters");
+) -> Result<()> {
     buffer_src_context
         .buffersrc_add_frame(frame_before, None)
-        .expect("Error while feeding the filtergraph");
+        .context("Error while feeding the filtergraph")?;
     loop {
-        info!("Pulling filtered frame from filters");
         let mut frame_after = match buffer_sink_context.buffersink_get_frame(None) {
             Ok(frame) => frame,
             Err(RsmpegError::BufferSinkDrainError) | Err(RsmpegError::BufferSinkEofError) => break,
-            Err(_) => panic!("Get frame from buffer sink failed."),
+            Err(_) => bail!("Get frame from buffer sink failed."),
         };
         frame_after.set_pict_type(ffi::AVPictureType_AV_PICTURE_TYPE_NONE);
-        // It doesn't matter if we don't get any packet, we can push more frame later.
-        let _ = encode_write_frame(
+
+        encode_write_frame(
             Some(&frame_after),
             encode_context,
             output_format_context,
             stream_index,
-        );
+        )?;
     }
+    Ok(())
 }
 
 fn flush_encoder(
     encode_context: &mut AVCodecContext,
     output_format_context: &mut AVFormatContextOutput,
     stream_index: usize,
-) {
-    if encode_context.codec().capabilities & ffi::AV_CODEC_CAP_DELAY as i32 != 0 {
-        loop {
-            info!("Flushing stream #{} encoder", stream_index);
-            let got_packet =
-                encode_write_frame(None, encode_context, output_format_context, stream_index);
-            // When the encoder is drained
-            if !got_packet {
-                break;
-            }
-        }
+) -> Result<()> {
+    if encode_context.codec().capabilities & ffi::AV_CODEC_CAP_DELAY as i32 == 0 {
+        return Ok(());
     }
+    encode_write_frame(None, encode_context, output_format_context, stream_index)?;
+    Ok(())
 }
 
-#[allow(deprecated)]
-pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
-    let _ = *LOG_INIT;
-
+pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
     let (mut input_format_context, mut stream_contexts) = open_input_file(input_file)?;
     let mut output_format_context =
         open_output_file(output_file, &mut input_format_context, &mut stream_contexts)?;
@@ -405,20 +354,15 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
             Ok(Some(x)) => x,
             // No more frames
             Ok(None) => break,
-            Err(e) => {
-                error!("Read frame error: {:?}", e);
-                break;
-            }
+            Err(e) => bail!("Read frame error: {:?}", e),
         };
 
         let stream_index = packet.stream_index as usize;
         let input_stream = input_format_context.streams().get(stream_index).unwrap();
         let media_type = input_stream.codecpar().codec_type;
-        debug!("Demuxer gave frame of stream_index {}", stream_index);
         if media_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO
             || media_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO
         {
-            debug!("Going to reencode&filter the frame.");
             let FilterContext {
                 buffer_src_context,
                 buffer_sink_context,
@@ -431,12 +375,17 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
 
             packet.rescale_ts(input_stream.time_base, encode_context.time_base);
 
-            let decode_result = decode_context
-                .decode_packet(&packet)
-                .expect("Decoding failed.");
+            decode_context.send_packet(Some(&packet)).unwrap();
 
-            // If no frame, do nothing wait to another loop
-            if let Some(mut frame) = decode_result {
+            loop {
+                let mut frame = match decode_context.receive_frame() {
+                    Ok(frame) => frame,
+                    Err(RsmpegError::DecoderDrainError) | Err(RsmpegError::DecoderFlushedError) => {
+                        break
+                    }
+                    Err(e) => bail!(e),
+                };
+
                 frame.set_pts(frame.best_effort_timestamp);
                 filter_encode_write_frame(
                     Some(frame),
@@ -445,7 +394,7 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
                     encode_context,
                     &mut output_format_context,
                     stream_index,
-                );
+                )?;
             }
         } else {
             packet.rescale_ts(
@@ -458,7 +407,7 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
             );
             output_format_context
                 .interleaved_write_frame(&mut packet)
-                .expect("Interleaved write frame failed.");
+                .context("Interleaved write frame failed.")?;
         }
     }
 
@@ -491,8 +440,8 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
                 encode_context,
                 &mut output_format_context,
                 stream_index,
-            );
-            flush_encoder(encode_context, &mut output_format_context, stream_index);
+            )?;
+            flush_encoder(encode_context, &mut output_format_context, stream_index)?;
         }
     }
     output_format_context.write_trailer()?;
@@ -503,8 +452,8 @@ pub fn transcoding(input_file: &str, output_file: &str) -> Result<()> {
 fn transcoding_test0() {
     std::fs::create_dir_all("tests/output/transcoding/").unwrap();
     transcoding(
-        "tests/assets/vids/mov_sample.mov",
-        "tests/output/transcoding/mov_sample.mov",
+        cstr!("tests/assets/vids/mov_sample.mov"),
+        cstr!("tests/output/transcoding/mov_sample.mov"),
     )
     .unwrap();
 }
@@ -513,8 +462,8 @@ fn transcoding_test0() {
 fn transcoding_test1() {
     std::fs::create_dir_all("tests/output/transcoding/").unwrap();
     transcoding(
-        "tests/assets/vids/centaur.mpg",
-        "tests/output/transcoding/centaur.mpg",
+        cstr!("tests/assets/vids/centaur.mpg"),
+        cstr!("tests/output/transcoding/centaur.mpg"),
     )
     .unwrap();
 }
@@ -523,8 +472,8 @@ fn transcoding_test1() {
 fn transcoding_test2() {
     std::fs::create_dir_all("tests/output/transcoding/").unwrap();
     transcoding(
-        "tests/assets/vids/bear.mp4",
-        "tests/output/transcoding/bear.mp4",
+        cstr!("tests/assets/vids/bear.mp4"),
+        cstr!("tests/output/transcoding/bear.mp4"),
     )
     .unwrap();
 }
@@ -533,27 +482,8 @@ fn transcoding_test2() {
 fn transcoding_test3() {
     std::fs::create_dir_all("tests/output/transcoding/").unwrap();
     transcoding(
-        "tests/assets/vids/vp8.mp4",
-        "tests/output/transcoding/vp8.webm",
+        cstr!("tests/assets/vids/vp8.mp4"),
+        cstr!("tests/output/transcoding/vp8.webm"),
     )
     .unwrap();
-}
-
-#[test]
-fn transcoding_unpresent_file() {
-    assert_eq!(
-        transcoding(
-            "asd;fklasdlfkadsfads/bear.mp4",
-            "tests/output/transcoding/bear.mov"
-        ),
-        Err(LibMediaError::RsmpegError(RsmpegError::OpenInputError))
-    );
-}
-
-#[test]
-fn transcoding_to_unpresent_folder() {
-    assert_eq!(
-        transcoding("tests/assets/vids/bear.mp4", "afsd;fkadfkadfdsa/bear.mov"),
-        Err(LibMediaError::RsmpegError(RsmpegError::AVIOOpenError))
-    );
 }

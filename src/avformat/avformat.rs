@@ -81,8 +81,11 @@ impl AVFormatContextInput {
         &self,
         media_type: ffi::AVMediaType,
     ) -> Result<Option<(usize, AVCodecRef<'static>)>> {
-        // After FFmpeg 4.4 this should be changed to *const AVCodec, here we preserve the backward compatibility.
-        let mut dec = ptr::null_mut();
+        // After FFmpeg 4.4 this should be changed to *const AVCodec, here we
+        // preserve the backward compatibility.
+        let dec = ptr::null_mut();
+        let mut dec = dec as _;
+
         // ATTENTION: usage different from FFmpeg documentation.
         //
         // According to ffmpeg's source code, here we legally assume that
@@ -93,7 +96,7 @@ impl AVFormatContextInput {
         .upgrade()
         {
             Ok(index) => Ok(Some((index as usize, unsafe {
-                AVCodecRef::from_raw(NonNull::new(dec).unwrap())
+                AVCodecRef::from_raw(NonNull::new(dec as *mut _).unwrap())
             }))),
             Err(ffi::AVERROR_STREAM_NOT_FOUND) => Ok(None),
             Err(e) => Err(RsmpegError::AVError(e)),
@@ -115,7 +118,7 @@ impl<'stream> AVFormatContextInput {
     pub fn iformat(&'stream self) -> AVInputFormatRef<'stream> {
         // From the implementation of FFmpeg's `avformat_open_input`, we can be
         // sure that iformat won't be null when demuxing.
-        unsafe { AVInputFormatRef::from_raw(NonNull::new(self.iformat).unwrap()) }
+        unsafe { AVInputFormatRef::from_raw(NonNull::new(self.iformat as *mut _).unwrap()) }
     }
 
     /// Get metadata of the [`ffi::AVFormatContext`] in [`crate::avutil::AVDictionary`].
@@ -239,7 +242,7 @@ impl<'stream> AVFormatContextOutput {
     pub fn oformat(&'stream self) -> AVOutputFormatRef<'stream> {
         // From the implementation of FFmpeg's `avformat_alloc_output_context2`,
         // we can be sure that `oformat` won't be null when muxing.
-        unsafe { AVOutputFormatRef::from_raw(NonNull::new(self.oformat).unwrap()) }
+        unsafe { AVOutputFormatRef::from_raw(NonNull::new(self.oformat as *mut _).unwrap()) }
     }
 
     /// Add a new stream to a media file.
