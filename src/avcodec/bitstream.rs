@@ -1,3 +1,5 @@
+// FIXME: I hae a feeling this (UnsafeDerefMut) shouldn't be needed, but settable! wants it
+use crate::shared::UnsafeDerefMut;
 use std::{ffi::CStr, ptr};
 
 // See https://blogs.gentoo.org/lu_zero/2016/03/21/bitstream-filtering/
@@ -19,6 +21,11 @@ impl AVBitStreamFilter {
 }
 
 wrap!(AVBSFContext: ffi::AVBSFContext);
+settable!(AVBSFContext {
+    // FIXME: should be par_in: *mut AVCodecParameters but settable macro doesn't like the *mut
+    // par_in: ffi::AVCodecParameters,
+    time_base_in: ffi::AVRational
+});
 
 impl AVBSFContext {
     /// Create a new [`AVBSFContext`] instance, allocate private data and
@@ -33,6 +40,7 @@ impl AVBSFContext {
     }
     pub fn init(&mut self) {
         unsafe {
+            // TODO: Error checking
             ffi::av_bsf_init(self.as_mut_ptr());
         }
     }
