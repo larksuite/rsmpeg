@@ -4,9 +4,9 @@ use std::{ffi::CStr, ptr};
 
 use crate::{avcodec::AVPacket, ffi, shared::PointerUpgrade};
 
-wrap_ref!(AVBitStreamFilterRef: ffi::AVBitStreamFilter);
+wrap_ref!(AVBitStreamFilter: ffi::AVBitStreamFilter);
 
-impl AVBitStreamFilterRef {
+impl AVBitStreamFilter {
     /// Find a bitstream filter instance with it's short name.
     pub fn find_by_name(name: &CStr) -> Option<AVBitStreamFilterRef> {
         unsafe { ffi::av_bsf_get_by_name(name.as_ptr()) }
@@ -74,12 +74,12 @@ impl Drop for AVBSFContext {
 #[test]
 fn test_filter_by_name() {
     let name = std::ffi::CString::new("null").unwrap();
-    let filter_ref = AVBitStreamFilterRef::find_by_name(&name).unwrap();
-    
+    let filter_ref = AVBitStreamFilter::find_by_name(&name).unwrap();
+
     let ctx = AVBSFContext::new(&filter_ref);
     let filter = unsafe { *ctx.filter };
     let filter_name = unsafe { CStr::from_ptr(filter.name) };
-    
+
     assert_eq!(name.as_c_str(), filter_name);
 }
 
