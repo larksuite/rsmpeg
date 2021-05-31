@@ -45,10 +45,13 @@ impl AVBSFContext {
     /// You need to initialize the context before you can send/receive_packets but after you set input parameters via [`AVBSFContext::set_par_in`].
     ///
     /// See [`ffi::av_bsf_init`] for more info.
-    pub fn init(&mut self) {
+    pub fn init(&mut self) -> Result<()> {
         unsafe {
             // TODO: Error checking
-            ffi::av_bsf_init(self.as_mut_ptr());
+            match ffi::av_bsf_init(self.as_mut_ptr()).upgrade() {
+                Ok(_) => Ok(()),
+                Err(x) => Err(RsmpegError::BitstreamInitializationError(x)),
+            }
         }
     }
     /// Provide input data for the bitstream filter to process. To signal the end of the stream, send an NULL packet to the filter.
@@ -60,6 +63,7 @@ impl AVBSFContext {
             Some(mut packet) => &mut packet,
             None => std::ptr::null_mut(),
         };
+
         match unsafe { ffi::av_bsf_send_packet(self.as_mut_ptr(), packet_ptr) }.upgrade() {
             Ok(_) => Ok(()),
             Err(AVERROR_EAGAIN) => Err(RsmpegError::BitstreamSendPacketAgainError),
@@ -88,9 +92,9 @@ impl AVBSFContext {
     ///
     /// See [`ffi::avcodec_parameters_copy`] for more info.
     pub fn set_par_in(&mut self, source_params: &ffi::AVCodecParameters) -> Result<()> {
-        match unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params) } {
-            0 => Ok(()),
-            e => Err(RsmpegError::AVError(e)),
+        match unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params) }.upgrade() {
+            Ok(_) => Ok(()),
+            Err(e) => Err(RsmpegError::AVError(e)),
         }
     }
     // FIXME: Returns bsf_list filter for some reason...

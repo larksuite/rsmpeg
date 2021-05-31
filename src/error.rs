@@ -77,6 +77,7 @@ pub enum RsmpegError {
     #[error("Receive packet from a bitstream filter context failed: ({0})")]
     BitstreamReceivePacketError(i32),
     #[error("Failed to initialize bitstream filter context: ({0})")]
+    BitstreamInitializationError(i32),
 
     #[error("Read frame to an input format context failed: ({0})")]
     ReadFrameError(i32),
