@@ -4,12 +4,18 @@ use std::{ffi::CStr, ptr};
 
 // See https://blogs.gentoo.org/lu_zero/2016/03/21/bitstream-filtering/
 
-use crate::{avcodec::AVPacket, ffi, shared::PointerUpgrade};
+use crate::{
+    error::{Result, RsmpegError},
+    ffi,
+    shared::PointerUpgrade,
+};
 
 wrap_ref!(AVBitStreamFilter: ffi::AVBitStreamFilter);
 
 impl AVBitStreamFilter {
     /// Find a bitstream filter instance with it's short name.
+    ///
+    /// See [`ffi::av_bsf_get_by_name`] for more info.
     pub fn find_by_name(name: &CStr) -> Option<AVBitStreamFilterRef> {
         unsafe { ffi::av_bsf_get_by_name(name.as_ptr()) }
             .upgrade()
@@ -22,14 +28,14 @@ impl AVBitStreamFilter {
 
 wrap!(AVBSFContext: ffi::AVBSFContext);
 settable!(AVBSFContext {
-    // FIXME: should be par_in: *mut AVCodecParameters but settable macro doesn't like the *mut
-    // par_in: ffi::AVCodecParameters,
     time_base_in: ffi::AVRational
 });
 
 impl AVBSFContext {
     /// Create a new [`AVBSFContext`] instance, allocate private data and
     /// initialize defaults for the given [`AVBitStreamFilterRef`].
+    ///
+    /// See [`ffi::av_bsf_alloc`] for more info.
     pub fn new(filter: &ffi::AVBitStreamFilter) -> Self {
         let mut bsfc_raw = ptr::null_mut();
 
@@ -38,27 +44,48 @@ impl AVBSFContext {
             AVBSFContext::from_raw(bsfc_raw.upgrade().unwrap())
         }
     }
+    /// You need to initialize the context before you can send/receive_packets but after you set input parameters via [`AVBSFContext::set_par_in`].
+    ///
+    /// See [`ffi::av_bsf_init`] for more info.
     pub fn init(&mut self) {
         unsafe {
             // TODO: Error checking
             ffi::av_bsf_init(self.as_mut_ptr());
         }
     }
-    pub fn send_packet(&mut self, packet: &mut AVPacket) {
-        unsafe {
-            // TODO: Error checking
-            ffi::av_bsf_send_packet(self.as_mut_ptr(), packet.as_mut_ptr());
+    // OPTIMIZE: We should probably just be able to .upgrade() the returned c_int
+    /// Provide input data for the bitstream filter to process. To signal the end of the stream, send an NULL packet to the filter.
+    ///
+    /// See [`ffi::av_bsf_send_packet`] for more info.
+    pub fn send_packet(&mut self, packet: &mut ffi::AVPacket) -> Result<()> {
+        // TODO: Ensure init is called first
+        match unsafe { ffi::av_bsf_send_packet(self.as_mut_ptr(), packet) } {
+            0 => Ok(()),
+            e => Err(RsmpegError::AVError(e)),
         }
     }
-    pub fn receive_packet(&mut self, packet: &mut AVPacket) {
-        unsafe {
-            // TODO: Error checking
-            ffi::av_bsf_receive_packet(self.as_mut_ptr(), packet.as_mut_ptr());
+    /// Get processed data from the bitstream filter.
+    ///
+    /// See [`ffi::av_bsf_receive_packet`] for more info.
+    pub fn receive_packet(&mut self, packet: &mut ffi::AVPacket) -> Result<()> {
+        match unsafe { ffi::av_bsf_receive_packet(self.as_mut_ptr(), packet) } {
+            0 => Ok(()),
+            e => Err(RsmpegError::AVError(e)),
         }
     }
+    /// See [`ffi::av_bsf_flush`] for more info.
     pub fn flush(&mut self) {
         unsafe {
             ffi::av_bsf_flush(self.as_mut_ptr());
+        }
+    }
+    /// Copies `source_params` into [`ffi::AVBSFContext`]'s `par_in` field. So we only need a reference to `source_params`.
+    ///
+    /// See [`ffi::avcodec_parameters_copy`] for more info.
+    pub fn set_par_in(&mut self, source_params: &ffi::AVCodecParameters) -> Result<()> {
+        match unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params) } {
+            0 => Ok(()),
+            e => Err(RsmpegError::AVError(e)),
         }
     }
     // FIXME: Returns bsf_list filter for some reason...
@@ -71,6 +98,10 @@ impl AVBSFContext {
             AVBSFContext::from_raw(bsfc_raw.upgrade().unwrap())
         }
     }
+    // fn is_init(&self) -> bool {
+    // TODO: This will be used in receive/send_packet
+    // See https://github.com/FFmpeg/FFmpeg/blob/bc70684e74a185d7b80c8b80bdedda659cb581b8/libavcodec/bsf.c#L145
+    // }
 }
 
 impl Drop for AVBSFContext {
