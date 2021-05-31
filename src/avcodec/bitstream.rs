@@ -57,9 +57,13 @@ impl AVBSFContext {
     /// Provide input data for the bitstream filter to process. To signal the end of the stream, send an NULL packet to the filter.
     ///
     /// See [`ffi::av_bsf_send_packet`] for more info.
-    pub fn send_packet(&mut self, packet: &mut ffi::AVPacket) -> Result<()> {
+    pub fn send_packet(&mut self, packet: Option<ffi::AVPacket>) -> Result<()> {
         // TODO: Ensure init is called first
-        match unsafe { ffi::av_bsf_send_packet(self.as_mut_ptr(), packet) } {
+        let packet_ptr = match packet {
+            Some(mut packet) => &mut packet,
+            None => std::ptr::null_mut()
+        };
+        match unsafe { ffi::av_bsf_send_packet(self.as_mut_ptr(), packet_ptr) } {
             0 => Ok(()),
             e => Err(RsmpegError::AVError(e)),
         }
