@@ -93,6 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        rust: [ "nightly", "1.52.0" ]
         valgrind: [ "valgrind", "no valgrind" ]
         include:
           - valgrind: "valgrind"
@@ -104,7 +105,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           override: true
 
       # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
@@ -262,6 +263,10 @@ jobs:
           path: tmp/ffmpeg_build/
 
   build_dynamic_and_test_windows:
+    strategy:
+      matrix:
+        rust: [ "nightly", "1.52.0" ]
+      fail-fast: false
     runs-on: windows-latest
     needs: build_dynamic_and_test_windows_pre
     steps:
@@ -271,7 +276,7 @@ jobs:
         with:
           target: i686-pc-windows-msvc
           profile: minimal
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           override: true
  
       - name: Download Cross Compiled FFmpeg for Windows
