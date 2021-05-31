@@ -75,7 +75,7 @@ impl AVBSFContext {
             Ok(_) => Ok(packet),
             Err(AVERROR_EAGAIN) => Err(RsmpegError::BitstreamSendPacketAgainError),
             Err(ffi::AVERROR_EOF) => Err(RsmpegError::BitstreamFlushedError),
-            Err(x) => Err(RsmpegError::BitstreamSendPacketError(x)),
+            Err(x) => Err(RsmpegError::BitstreamReceivePacketError(x)),
         }
     }
     /// See [`ffi::av_bsf_flush`] for more info.
