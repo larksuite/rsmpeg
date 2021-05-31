@@ -46,7 +46,7 @@ pub enum RsmpegError {
     DecodePacketError,
     #[error("Send packet to a codec context failed: ({0})")]
     SendPacketError(i32),
-    #[error("Decoder doesn't accept input currently, try receive several frames and send again.")]
+    #[error("Decoder isn't accepting input, try to receive several frames and send again.")]
     SendPacketAgainError,
     #[error("Receive frame from a codec context failed: ({0})")]
     ReceiveFrameError(i32),
@@ -58,7 +58,7 @@ pub enum RsmpegError {
     // Encoder errors
     #[error("Send frame to a codec context failed: ({0})")]
     SendFrameError(i32),
-    #[error("Encoder doesn't accept input currently, try receive several packets and send again.")]
+    #[error("Encoder isn't accepting input, try to receive several packets and send again.")]
     SendFrameAgainError,
     #[error("Receive packet from a codec context failed: ({0})")]
     ReceivePacketError(i32),
@@ -66,6 +66,14 @@ pub enum RsmpegError {
     EncoderDrainError,
     #[error("Encoder is already flushed.")]
     EncoderFlushedError,
+
+    // Bitstream errors
+    #[error("Bitstream filter isn't accepting input, try to receive several frames and send again.")]
+    BitstreamSendPacketAgainError,
+    #[error("Bitstream filter is already flushed")]
+    BitstreamFlushedError,
+    #[error("Send packet to a bitstream filter context failed: ({0})")]
+    BitstreamSendPacketError(i32),
 
     #[error("Read frame to an input format context failed: ({0})")]
     ReadFrameError(i32),

@@ -1,5 +1,3 @@
-// FIXME: I hae a feeling this (UnsafeDerefMut) shouldn't be needed, but settable! wants it
-use crate::shared::UnsafeDerefMut;
 use std::{ffi::CStr, ptr};
 
 // See https://blogs.gentoo.org/lu_zero/2016/03/21/bitstream-filtering/
@@ -7,7 +5,7 @@ use std::{ffi::CStr, ptr};
 use crate::{
     error::{Result, RsmpegError},
     ffi,
-    shared::PointerUpgrade,
+    shared::*,
 };
 
 wrap_ref!(AVBitStreamFilter: ffi::AVBitStreamFilter);
@@ -53,7 +51,6 @@ impl AVBSFContext {
             ffi::av_bsf_init(self.as_mut_ptr());
         }
     }
-    // OPTIMIZE: We should probably just be able to .upgrade() the returned c_int
     /// Provide input data for the bitstream filter to process. To signal the end of the stream, send an NULL packet to the filter.
     ///
     /// See [`ffi::av_bsf_send_packet`] for more info.
@@ -61,20 +58,24 @@ impl AVBSFContext {
         // TODO: Ensure init is called first
         let packet_ptr = match packet {
             Some(mut packet) => &mut packet,
-            None => std::ptr::null_mut()
+            None => std::ptr::null_mut(),
         };
-        match unsafe { ffi::av_bsf_send_packet(self.as_mut_ptr(), packet_ptr) } {
-            0 => Ok(()),
-            e => Err(RsmpegError::AVError(e)),
+        match unsafe { ffi::av_bsf_send_packet(self.as_mut_ptr(), packet_ptr) }.upgrade() {
+            Ok(_) => Ok(()),
+            Err(AVERROR_EAGAIN) => Err(RsmpegError::BitstreamSendPacketAgainError),
+            Err(ffi::AVERROR_EOF) => Err(RsmpegError::BitstreamFlushedError),
+            Err(x) => Err(RsmpegError::BitstreamSendPacketError(x)),
         }
     }
     /// Get processed data from the bitstream filter.
     ///
     /// See [`ffi::av_bsf_receive_packet`] for more info.
-    pub fn receive_packet(&mut self, packet: &mut ffi::AVPacket) -> Result<()> {
-        match unsafe { ffi::av_bsf_receive_packet(self.as_mut_ptr(), packet) } {
-            0 => Ok(()),
-            e => Err(RsmpegError::AVError(e)),
+    pub fn receive_packet(&mut self, mut packet: ffi::AVPacket) -> Result<ffi::AVPacket> {
+        match unsafe { ffi::av_bsf_receive_packet(self.as_mut_ptr(), &mut packet) }.upgrade() {
+            Ok(_) => Ok(packet),
+            Err(AVERROR_EAGAIN) => Err(RsmpegError::BitstreamSendPacketAgainError),
+            Err(ffi::AVERROR_EOF) => Err(RsmpegError::BitstreamFlushedError),
+            Err(x) => Err(RsmpegError::BitstreamSendPacketError(x)),
         }
     }
     /// See [`ffi::av_bsf_flush`] for more info.
