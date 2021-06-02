@@ -4,6 +4,7 @@ use std::{ffi::CStr, ptr};
 
 use crate::{
     error::{Result, RsmpegError},
+    avcodec::AVCodecParameters,
     ffi,
     shared::*,
 };
@@ -91,8 +92,8 @@ impl AVBSFContext {
     /// Copies `source_params` into [`ffi::AVBSFContext`]'s `par_in` field. So we only need a reference to `source_params`.
     ///
     /// See [`ffi::avcodec_parameters_copy`] for more info.
-    pub fn set_par_in(&mut self, source_params: &ffi::AVCodecParameters) -> Result<()> {
-        match unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params) }.upgrade() {
+    pub fn set_par_in(&mut self, source_params: &AVCodecParameters) -> Result<()> {
+        match unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params.as_ptr()) }.upgrade() {
             Ok(_) => Ok(()),
             Err(e) => Err(RsmpegError::AVError(e)),
         }
