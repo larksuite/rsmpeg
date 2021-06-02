@@ -129,10 +129,6 @@ impl AVBSFContextUninit {
             Self::from_raw(bsfc_raw.upgrade().unwrap())
         }
     }
-    // fn is_init(&self) -> bool {
-    // TODO: This will be used in receive/send_packet
-    // See https://github.com/FFmpeg/FFmpeg/blob/bc70684e74a185d7b80c8b80bdedda659cb581b8/libavcodec/bsf.c#L145
-    // }
 }
 
 impl Drop for AVBSFContextUninit {
