@@ -3,8 +3,8 @@ use std::{ffi::CStr, ptr};
 // See https://blogs.gentoo.org/lu_zero/2016/03/21/bitstream-filtering/
 
 use crate::{
-    error::{Result, RsmpegError},
     avcodec::AVCodecParameters,
+    error::{Result, RsmpegError},
     ffi,
     shared::*,
 };
@@ -25,36 +25,16 @@ impl AVBitStreamFilter {
     // const AVBitStreamFilter *av_bsf_next(void **opaque);
 }
 
-wrap!(AVBSFContext: ffi::AVBSFContext);
-settable!(AVBSFContext {
+wrap!(AVBSFContextUninit: ffi::AVBSFContext);
+settable!(AVBSFContextUninit {
     time_base_in: ffi::AVRational
 });
 
-impl AVBSFContext {
-    /// Create a new [`AVBSFContext`] instance, allocate private data and
-    /// initialize defaults for the given [`AVBitStreamFilterRef`].
-    ///
-    /// See [`ffi::av_bsf_alloc`] for more info.
-    pub fn new(filter: &ffi::AVBitStreamFilter) -> Self {
-        let mut bsfc_raw = ptr::null_mut();
+/// AVBSFContextUninit exists because you must first init an AVBSFContext before you can send/receive packets.
+/// Use [`AVBSFContextUninit::init`] to get an AVBSFContext.
+pub struct AVBSFContext(AVBSFContextUninit);
 
-        unsafe {
-            ffi::av_bsf_alloc(filter, &mut bsfc_raw);
-            AVBSFContext::from_raw(bsfc_raw.upgrade().unwrap())
-        }
-    }
-    /// You need to initialize the context before you can send/receive_packets but after you set input parameters via [`AVBSFContext::set_par_in`].
-    ///
-    /// See [`ffi::av_bsf_init`] for more info.
-    pub fn init(&mut self) -> Result<()> {
-        unsafe {
-            // TODO: Error checking
-            match ffi::av_bsf_init(self.as_mut_ptr()).upgrade() {
-                Ok(_) => Ok(()),
-                Err(x) => Err(RsmpegError::BitstreamInitializationError(x)),
-            }
-        }
-    }
+impl AVBSFContext {
     /// Provide input data for the bitstream filter to process. To signal the end of the stream, send an NULL packet to the filter.
     ///
     /// See [`ffi::av_bsf_send_packet`] for more info.
@@ -83,6 +63,46 @@ impl AVBSFContext {
             Err(x) => Err(RsmpegError::BitstreamReceivePacketError(x)),
         }
     }
+}
+
+impl std::ops::Deref for AVBSFContext {
+    type Target = AVBSFContextUninit;
+    fn deref(&self) -> &AVBSFContextUninit {
+        &self.0
+    }
+}
+impl std::ops::DerefMut for AVBSFContext {
+    fn deref_mut(&mut self) -> &mut AVBSFContextUninit {
+        &mut self.0
+    }
+}
+
+impl AVBSFContextUninit {
+    /// Create a new [`AVBSFContext`] instance, allocate private data and
+    /// initialize defaults for the given [`AVBitStreamFilterRef`].
+    ///
+    /// See [`ffi::av_bsf_alloc`] for more info.
+    pub fn new(filter: &ffi::AVBitStreamFilter) -> Self {
+        let mut bsfc_raw = ptr::null_mut();
+
+        unsafe {
+            ffi::av_bsf_alloc(filter, &mut bsfc_raw);
+            Self::from_raw(bsfc_raw.upgrade().unwrap())
+        }
+    }
+    /// You need to initialize the context before you can send/receive_packets but after you set input parameters via [`AVBSFContextUninit::set_par_in`].
+    ///
+    /// See [`ffi::av_bsf_init`] for more info.
+    pub fn init(mut self) -> Result<AVBSFContext> {
+        unsafe {
+            // TODO: Error checking
+            match ffi::av_bsf_init(self.as_mut_ptr()).upgrade() {
+                Ok(_) => Ok(AVBSFContext(self)),
+                Err(x) => Err(RsmpegError::BitstreamInitializationError(x)),
+            }
+        }
+    }
+
     /// See [`ffi::av_bsf_flush`] for more info.
     pub fn flush(&mut self) {
         unsafe {
@@ -93,7 +113,8 @@ impl AVBSFContext {
     ///
     /// See [`ffi::avcodec_parameters_copy`] for more info.
     pub fn set_par_in(&mut self, source_params: &AVCodecParameters) -> Result<()> {
-        match unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params.as_ptr()) }.upgrade() {
+        match unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params.as_ptr()) }.upgrade()
+        {
             Ok(_) => Ok(()),
             Err(e) => Err(RsmpegError::AVError(e)),
         }
@@ -105,7 +126,7 @@ impl AVBSFContext {
 
         unsafe {
             ffi::av_bsf_get_null_filter(&mut bsfc_raw);
-            AVBSFContext::from_raw(bsfc_raw.upgrade().unwrap())
+            Self::from_raw(bsfc_raw.upgrade().unwrap())
         }
     }
     // fn is_init(&self) -> bool {
@@ -114,7 +135,7 @@ impl AVBSFContext {
     // }
 }
 
-impl Drop for AVBSFContext {
+impl Drop for AVBSFContextUninit {
     fn drop(&mut self) {
         unsafe { ffi::av_bsf_free(&mut self.as_mut_ptr()) }
     }
@@ -122,14 +143,14 @@ impl Drop for AVBSFContext {
 
 #[cfg(test)]
 mod test {
-    use super::{AVBitStreamFilter, AVBSFContext, CStr};
+    use super::{AVBSFContextUninit, AVBitStreamFilter, CStr};
 
     #[test]
     fn test_filter_by_name() {
         let name = std::ffi::CString::new("null").unwrap();
         let filter_ref = AVBitStreamFilter::find_by_name(&name).unwrap();
 
-        let ctx = AVBSFContext::new(&filter_ref);
+        let ctx = AVBSFContextUninit::new(&filter_ref);
         let filter = unsafe { *ctx.filter };
         let filter_name = unsafe { CStr::from_ptr(filter.name) };
 
@@ -139,7 +160,7 @@ mod test {
     #[test]
     #[ignore = "get_null returns bsf_list, idk if it's supposed to"]
     fn test_null_filter() {
-        let ctx = AVBSFContext::get_null();
+        let ctx = AVBSFContextUninit::get_null();
         let filter = unsafe { *ctx.filter };
         let filter_name = unsafe { CStr::from_ptr(filter.name) };
 
