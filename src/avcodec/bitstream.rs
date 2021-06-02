@@ -119,25 +119,30 @@ impl Drop for AVBSFContext {
     }
 }
 
-#[test]
-fn test_filter_by_name() {
-    let name = std::ffi::CString::new("null").unwrap();
-    let filter_ref = AVBitStreamFilter::find_by_name(&name).unwrap();
+#[cfg(test)]
+mod test {
+    use super::{AVBitStreamFilter, AVBSFContext, CStr};
 
-    let ctx = AVBSFContext::new(&filter_ref);
-    let filter = unsafe { *ctx.filter };
-    let filter_name = unsafe { CStr::from_ptr(filter.name) };
+    #[test]
+    fn test_filter_by_name() {
+        let name = std::ffi::CString::new("null").unwrap();
+        let filter_ref = AVBitStreamFilter::find_by_name(&name).unwrap();
 
-    assert_eq!(name.as_c_str(), filter_name);
-}
+        let ctx = AVBSFContext::new(&filter_ref);
+        let filter = unsafe { *ctx.filter };
+        let filter_name = unsafe { CStr::from_ptr(filter.name) };
 
-#[test]
-#[ignore = "get_null returns bsf_list, idk if it's supposed to"]
-fn test_null_filter() {
-    let ctx = AVBSFContext::get_null();
-    let filter = unsafe { *ctx.filter };
-    let filter_name = unsafe { CStr::from_ptr(filter.name) };
+        assert_eq!(name.as_c_str(), filter_name);
+    }
 
-    let name = std::ffi::CString::new("null").unwrap();
-    assert_eq!(name.as_c_str(), filter_name);
+    #[test]
+    #[ignore = "get_null returns bsf_list, idk if it's supposed to"]
+    fn test_null_filter() {
+        let ctx = AVBSFContext::get_null();
+        let filter = unsafe { *ctx.filter };
+        let filter_name = unsafe { CStr::from_ptr(filter.name) };
+
+        let name = std::ffi::CString::new("null").unwrap();
+        assert_eq!(name.as_c_str(), filter_name);
+    }
 }
