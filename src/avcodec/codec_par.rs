@@ -4,6 +4,7 @@ use std::{clone::Clone, default::Default, ops::Drop};
 wrap_ref_mut!(AVCodecParameters: ffi::AVCodecParameters);
 
 impl AVCodecParameters {
+    /// The constructor.
     pub fn new() -> Self {
         let ptr = unsafe { ffi::avcodec_parameters_alloc() }
             .upgrade()
