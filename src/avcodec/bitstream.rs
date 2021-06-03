@@ -54,7 +54,8 @@ impl AVBSFContext {
     /// Get processed data from the bitstream filter.
     ///
     /// See [`ffi::av_bsf_receive_packet`] for more info.
-    pub fn receive_packet(&mut self, mut packet: AVPacket) -> Result<AVPacket> {
+    pub fn receive_packet(&mut self) -> Result<AVPacket> {
+        let mut packet = AVPacket::new();
         match unsafe { ffi::av_bsf_receive_packet(self.as_mut_ptr(), packet.as_mut_ptr()) }.upgrade() {
             Ok(_) => Ok(packet),
             Err(AVERROR_EAGAIN) => Err(RsmpegError::BitstreamSendPacketAgainError),
