@@ -111,11 +111,8 @@ impl AVBSFContextUninit {
     ///
     /// See [`ffi::avcodec_parameters_copy`] for more info.
     pub fn set_par_in(&mut self, source_params: &AVCodecParameters) -> Result<()> {
-        match unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params.as_ptr()) }.upgrade()
-        {
-            Ok(_) => Ok(()),
-            Err(e) => Err(RsmpegError::AVError(e)),
-        }
+        unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params.as_ptr()) }.upgrade().unwrap();
+        Ok(())
     }
     // FIXME: Returns bsf_list filter for some reason...
     #[doc(hidden)]
