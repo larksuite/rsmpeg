@@ -3,7 +3,7 @@ use std::{ffi::CStr, ptr};
 // See https://blogs.gentoo.org/lu_zero/2016/03/21/bitstream-filtering/
 
 use crate::{
-    avcodec::AVCodecParameters,
+    avcodec::{AVCodecParameters, AVPacket},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -38,10 +38,9 @@ impl AVBSFContext {
     /// Provide input data for the bitstream filter to process. To signal the end of the stream, send an NULL packet to the filter.
     ///
     /// See [`ffi::av_bsf_send_packet`] for more info.
-    pub fn send_packet(&mut self, packet: Option<ffi::AVPacket>) -> Result<()> {
-        // TODO: Ensure init is called first
+    pub fn send_packet(&mut self, packet: Option<AVPacket>) -> Result<()> {
         let packet_ptr = match packet {
-            Some(mut packet) => &mut packet,
+            Some(mut packet) => packet.as_mut_ptr(),
             None => std::ptr::null_mut(),
         };
 
@@ -55,8 +54,8 @@ impl AVBSFContext {
     /// Get processed data from the bitstream filter.
     ///
     /// See [`ffi::av_bsf_receive_packet`] for more info.
-    pub fn receive_packet(&mut self, mut packet: ffi::AVPacket) -> Result<ffi::AVPacket> {
-        match unsafe { ffi::av_bsf_receive_packet(self.as_mut_ptr(), &mut packet) }.upgrade() {
+    pub fn receive_packet(&mut self, mut packet: AVPacket) -> Result<AVPacket> {
+        match unsafe { ffi::av_bsf_receive_packet(self.as_mut_ptr(), packet.as_mut_ptr()) }.upgrade() {
             Ok(_) => Ok(packet),
             Err(AVERROR_EAGAIN) => Err(RsmpegError::BitstreamSendPacketAgainError),
             Err(ffi::AVERROR_EOF) => Err(RsmpegError::BitstreamFlushedError),
@@ -82,11 +81,11 @@ impl AVBSFContextUninit {
     /// initialize defaults for the given [`AVBitStreamFilterRef`].
     ///
     /// See [`ffi::av_bsf_alloc`] for more info.
-    pub fn new(filter: &ffi::AVBitStreamFilter) -> Self {
+    pub fn new(filter: &AVBitStreamFilter) -> Self {
         let mut bsfc_raw = ptr::null_mut();
 
         unsafe {
-            ffi::av_bsf_alloc(filter, &mut bsfc_raw);
+            ffi::av_bsf_alloc(filter.as_ptr(), &mut bsfc_raw);
             Self::from_raw(bsfc_raw.upgrade().unwrap())
         }
     }
@@ -95,7 +94,6 @@ impl AVBSFContextUninit {
     /// See [`ffi::av_bsf_init`] for more info.
     pub fn init(mut self) -> Result<AVBSFContext> {
         unsafe {
-            // TODO: Error checking
             match ffi::av_bsf_init(self.as_mut_ptr()).upgrade() {
                 Ok(_) => Ok(AVBSFContext(self)),
                 Err(x) => Err(RsmpegError::BitstreamInitializationError(x)),
