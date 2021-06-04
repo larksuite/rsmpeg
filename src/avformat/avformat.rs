@@ -7,8 +7,7 @@ use std::{
 
 use crate::{
     avcodec::{
-        AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVCodecRef,
-        AVPacket,
+        AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVCodecRef, AVPacket,
     },
     avformat::AVIOContext,
     avutil::{AVDictionary, AVDictionaryMut, AVDictionaryRef, AVRational},

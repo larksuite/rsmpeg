@@ -47,7 +47,7 @@ pub enum RsmpegError {
     #[error("Send packet to a codec context failed: ({0})")]
     SendPacketError(i32),
     #[error("Decoder isn't accepting input, try to receive several frames and send again.")]
-    SendPacketAgainError,
+    DecoderFullError,
     #[error("Receive frame from a codec context failed: ({0})")]
     ReceiveFrameError(i32),
     #[error("Decoder have no frame currently, Try send new input.")]
