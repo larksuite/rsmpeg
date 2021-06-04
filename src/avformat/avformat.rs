@@ -49,7 +49,7 @@ impl AVFormatContextInput {
 
     /// Dump [`ffi::AVFormatContext`]'s info in the "FFmpeg" way.
     ///
-    /// The filename here is just for info printing, it really doesn't matter.
+    /// The index and filename here is just for info printing, it really doesn't matter.
     pub fn dump(&mut self, index: usize, filename: &CStr) -> Result<()> {
         unsafe {
             // This input context, so the last parameter is 0
@@ -245,7 +245,8 @@ impl<'stream> AVFormatContextOutput {
         unsafe { AVOutputFormatRef::from_raw(NonNull::new(self.oformat as *mut _).unwrap()) }
     }
 
-    /// Add a new stream to a media file.
+    /// Add a new stream to a media file, should be called by the user before
+    /// [`Self::write_header()`];
     pub fn new_stream(&'stream mut self, codec: Option<&AVCodec>) -> AVStreamMut<'stream> {
         let codec_ptr = match codec {
             Some(codec) => codec.as_ptr(),
