@@ -111,7 +111,7 @@ fn open_output_file(
 
             new_encode_context.open(None)?;
 
-            let mut out_stream = output_format_context.new_stream(None);
+            let mut out_stream = output_format_context.new_stream();
             out_stream.set_codecpar(new_encode_context.extract_codecpar());
             out_stream.set_time_base(new_encode_context.time_base);
 
@@ -120,7 +120,7 @@ fn open_output_file(
             bail!("Stream #{} is of unknown type.", i);
         } else {
             let in_stream = input_format_context.streams().get(i).unwrap();
-            let mut out_stream = output_format_context.new_stream(None);
+            let mut out_stream = output_format_context.new_stream();
             out_stream.set_codecpar(in_stream.codecpar().clone());
             out_stream.set_time_base(in_stream.time_base);
         }

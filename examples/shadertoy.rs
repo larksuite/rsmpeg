@@ -239,7 +239,7 @@ fn shadertoy(
     let mut output_format_context = {
         let mut output_format_context = AVFormatContextOutput::create(output_video_path)?;
         {
-            let mut stream = output_format_context.new_stream(None);
+            let mut stream = output_format_context.new_stream();
             stream.set_codecpar(encode_context.extract_codecpar());
             stream.set_time_base(encode_context.time_base);
         }
