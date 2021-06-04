@@ -56,7 +56,9 @@ impl AVBSFContext {
     /// See [`ffi::av_bsf_receive_packet`] for more info.
     pub fn receive_packet(&mut self) -> Result<AVPacket> {
         let mut packet = AVPacket::new();
-        match unsafe { ffi::av_bsf_receive_packet(self.as_mut_ptr(), packet.as_mut_ptr()) }.upgrade() {
+        match unsafe { ffi::av_bsf_receive_packet(self.as_mut_ptr(), packet.as_mut_ptr()) }
+            .upgrade()
+        {
             Ok(_) => Ok(packet),
             Err(AVERROR_EAGAIN) => Err(RsmpegError::BitstreamSendPacketAgainError),
             Err(ffi::AVERROR_EOF) => Err(RsmpegError::BitstreamFlushedError),
@@ -112,7 +114,9 @@ impl AVBSFContextUninit {
     ///
     /// See [`ffi::avcodec_parameters_copy`] for more info.
     pub fn set_par_in(&mut self, source_params: &AVCodecParameters) -> Result<()> {
-        unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params.as_ptr()) }.upgrade().unwrap();
+        unsafe { ffi::avcodec_parameters_copy(self.par_in, source_params.as_ptr()) }
+            .upgrade()
+            .unwrap();
         Ok(())
     }
     // FIXME: Returns bsf_list filter for some reason...
