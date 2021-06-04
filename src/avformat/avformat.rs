@@ -7,8 +7,7 @@ use std::{
 
 use crate::{
     avcodec::{
-        AVCodec, AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVCodecRef,
-        AVPacket,
+        AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVCodecRef, AVPacket,
     },
     avformat::AVIOContext,
     avutil::{AVDictionary, AVDictionaryMut, AVDictionaryRef, AVRational},
@@ -247,12 +246,10 @@ impl<'stream> AVFormatContextOutput {
 
     /// Add a new stream to a media file, should be called by the user before
     /// [`Self::write_header()`];
-    pub fn new_stream(&'stream mut self, codec: Option<&AVCodec>) -> AVStreamMut<'stream> {
-        let codec_ptr = match codec {
-            Some(codec) => codec.as_ptr(),
-            None => ptr::null(),
-        };
-        let new_stream = unsafe { ffi::avformat_new_stream(self.as_mut_ptr(), codec_ptr) }
+    pub fn new_stream(&'stream mut self) -> AVStreamMut<'stream> {
+        // According to the FFmpeg documention and inner implementation, the
+        // second parameter of avformat_new_stream is unused. So ignore it.
+        let new_stream = unsafe { ffi::avformat_new_stream(self.as_mut_ptr(), ptr::null()) }
             .upgrade()
             .unwrap();
 

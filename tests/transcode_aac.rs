@@ -63,7 +63,7 @@ fn open_output_file(
 
     {
         /* Create a new audio stream in the output file container. */
-        let mut stream = output_format_context.new_stream(None);
+        let mut stream = output_format_context.new_stream();
         /* Set the sample rate for the container. */
         stream.set_time_base(AVRational {
             den: decode_context.sample_rate,
