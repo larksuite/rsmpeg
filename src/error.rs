@@ -68,7 +68,9 @@ pub enum RsmpegError {
     EncoderFlushedError,
 
     // Bitstream errors
-    #[error("Bitstream filter isn't accepting input, try to receive several frames and send again.")]
+    #[error(
+        "Bitstream filter isn't accepting input, try to receive several frames and send again."
+    )]
     BitstreamSendPacketAgainError,
     #[error("Bitstream filter is already flushed")]
     BitstreamFlushedError,
