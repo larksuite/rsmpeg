@@ -47,7 +47,12 @@ impl AVAudioFifo {
             .unwrap();
     }
 
-    /// Return actually write size if success.
+    /// Write data to an AVAudioFifo. If successful, the number of samples
+    /// actually written will always be nb_samples.
+    ///
+    /// The AVAudioFifo will be reallocated automatically if the available space
+    /// is less than nb_samples.
+    ///
     /// # Safety
     /// Function is safe when the `data` points to valid samples.
     pub unsafe fn write(&mut self, data: *const *mut u8, nb_samples: i32) -> Result<i32> {
@@ -57,6 +62,7 @@ impl AVAudioFifo {
     }
 
     /// Return actually read size if success.
+    ///
     /// # Safety
     /// Function is safe when the `data` points to valid array such as AVFrame::data.
     pub unsafe fn read(&mut self, data: *mut *mut u8, nb_samples: i32) -> Result<i32> {

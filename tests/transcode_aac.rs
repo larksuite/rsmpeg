@@ -130,7 +130,7 @@ fn add_samples_to_fifo(
     num_samples: i32,
 ) -> Result<()> {
     fifo.realloc(fifo.size() + num_samples);
-    if unsafe { fifo.write((&**samples_buffer).as_ptr(), num_samples) }? < num_samples {
+    if unsafe { fifo.write(samples_buffer.audio_data.as_ptr(), num_samples) }? < num_samples {
         panic!("samples doesn't all written.");
     }
     Ok(())
@@ -154,7 +154,8 @@ fn read_decode_convert_and_store(
             frame.nb_samples,
             encode_context.sample_fmt,
             0,
-        );
+        )
+        .unwrap();
         unsafe {
             resample_context.convert(
                 &mut samples_buffer,
