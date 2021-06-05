@@ -91,7 +91,7 @@ impl SwrContext {
     /// Only safe when the `in_buffer` is valid.
     pub unsafe fn convert(
         &self,
-        samples_buffer: &mut AVSamples,
+        out_buffer: &mut AVSamples,
         in_buffer: *const *const u8,
         in_count: i32,
     ) -> Result<i32> {
@@ -101,8 +101,8 @@ impl SwrContext {
         unsafe {
             ffi::swr_convert(
                 self.as_ptr() as _,
-                samples_buffer.deref_mut().as_mut_ptr(),
-                samples_buffer.nb_samples,
+                out_buffer.audio_data.as_mut_ptr(),
+                out_buffer.nb_samples,
                 in_buffer as *mut _,
                 in_count,
             )
