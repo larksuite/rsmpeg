@@ -149,7 +149,7 @@ impl Drop for AVFrame {
 pub struct AVFrameWithImageBuffer<'img> {
     inner: AVFrame,
 
-    image: &'img mut AVImage,
+    _image: &'img mut AVImage,
 }
 
 impl<'img> std::ops::Deref for AVFrameWithImageBuffer<'img> {
@@ -178,12 +178,8 @@ impl<'img> AVFrameWithImageBuffer<'img> {
         }
         Self {
             inner: frame,
-            image,
+            _image: image,
         }
-    }
-
-    pub fn as_slice(&self) -> &[u8] {
-        self.image.as_slice()
     }
 }
 

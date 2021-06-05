@@ -1,16 +1,12 @@
 use crate::{avutil::AVPixelFormat, ffi, shared::*};
-use std::{ptr, slice};
+use std::ptr::{self, NonNull};
 
 const AV_NUM_DATA_POINTERS: usize = ffi::AV_NUM_DATA_POINTERS as usize;
 
-/// `AVImage` is a image buffer holder. It's a self referential structure.
-pub struct AVImage {
-    data: [*mut u8; AV_NUM_DATA_POINTERS],
-    linesizes: [i32; AV_NUM_DATA_POINTERS],
-    // Here we "pin" a vector.
-    linear: *mut u8,
-    linear_length: usize,
-    linear_capacity: usize,
+wrap! {
+    AVImage: Vec<u8>,
+    data: [*mut u8; AV_NUM_DATA_POINTERS] = [ptr::null_mut(); AV_NUM_DATA_POINTERS],
+    linesizes: [i32; AV_NUM_DATA_POINTERS] = [0; AV_NUM_DATA_POINTERS],
 }
 
 impl AVImage {
@@ -41,19 +37,14 @@ impl AVImage {
             Err(_) => return None,
         }
 
-        let linear_length = linear.len();
-        let linear_capacity = linear.capacity();
         // Here we leak a vector to "pin" it.
-        // Enlarge range, the `as` is safe,
-        let linear = Vec::leak(linear).as_mut_ptr();
+        let linear = Box::leak(Box::new(linear));
 
-        Some(Self {
-            data,
-            linesizes,
-            linear,
-            linear_length,
-            linear_capacity,
-        })
+        let mut image = unsafe { AVImage::from_raw(NonNull::new(linear).unwrap()) };
+        image.data = data;
+        image.linesizes = linesizes;
+
+        Some(image)
     }
 
     /// Return the size in bytes of the amount of data required to store an image
@@ -72,17 +63,12 @@ impl AVImage {
     pub fn linesizes(&self) -> &[i32; AV_NUM_DATA_POINTERS] {
         &self.linesizes
     }
-
-    pub fn as_slice(&self) -> &[u8] {
-        unsafe { slice::from_raw_parts(self.linear, self.linear_length) }
-    }
 }
 
 impl Drop for AVImage {
     fn drop(&mut self) {
         // Unpin the vector and drop it.
-        let _ =
-            unsafe { Vec::from_raw_parts(self.linear, self.linear_length, self.linear_capacity) };
+        let _linear = unsafe { Box::from_raw(self.as_mut_ptr()) };
     }
 }
 
