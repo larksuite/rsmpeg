@@ -104,6 +104,11 @@ impl<'codec> AVCodec {
         // terminates with -1
         Self::build_array(self.sample_fmts, -1)
     }
+
+    pub fn channel_layouts(&'codec self) -> Option<&'codec [u64]> {
+        // terminates with -1
+        Self::build_array(self.channel_layouts, 0)
+    }
 }
 
 impl Drop for AVCodec {
@@ -228,6 +233,14 @@ impl AVCodecContext {
     }
 
     /// Fill the codec context based on the values from the supplied codec parameters.
+    ///
+    /// ATTENTION: There is no codecpar field in `AVCodecContext`, this function
+    /// just fill the codec context based on the values from the supplied codec
+    /// parameters. Any allocated fields in current `AVCodecContext` that have a
+    /// corresponding field in `codecpar` are freed and replaced with duplicates
+    /// of the corresponding field in `codecpar`. Fields in current
+    /// `AVCodecContext` that do not have a counterpart in given `codecpar` are
+    /// not touched.
     pub fn set_codecpar(&mut self, codecpar: AVCodecParametersRef) -> Result<()> {
         unsafe { ffi::avcodec_parameters_to_context(self.as_mut_ptr(), codecpar.as_ptr()) }
             .upgrade()
