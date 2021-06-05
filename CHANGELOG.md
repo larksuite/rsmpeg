@@ -1,3 +1,15 @@
+## 0.5.0
+
+- Better docs and tests.
+
+- Add `AVBitStreamFilter` wrapper.
+
+- Add `AVBSFContext` wrapper.
+
+- Remove unused parameter of `AVFormatContextOutput::new_stream()`.
+
+- Rename `RsmpegError::SendPacketAgainError` to `RsmpegError::DecoderFullError`.
+
 ## 0.4.0
 
 - Better docs and tests.

@@ -182,7 +182,6 @@ impl AVCodecContext {
         };
         match unsafe { ffi::avcodec_send_packet(self.as_mut_ptr(), packet_ptr) }.upgrade() {
             Ok(_) => Ok(()),
-            // TODO change this name to DecoderFullError
             Err(AVERROR_EAGAIN) => Err(RsmpegError::DecoderFullError),
             Err(ffi::AVERROR_EOF) => Err(RsmpegError::DecoderFlushedError),
             Err(x) => Err(RsmpegError::SendPacketError(x)),
