@@ -241,7 +241,7 @@ impl AVCodecContext {
     /// of the corresponding field in `codecpar`. Fields in current
     /// `AVCodecContext` that do not have a counterpart in given `codecpar` are
     /// not touched.
-    pub fn set_codecpar(&mut self, codecpar: AVCodecParametersRef) -> Result<()> {
+    pub fn apply_codecpar(&mut self, codecpar: AVCodecParametersRef) -> Result<()> {
         unsafe { ffi::avcodec_parameters_to_context(self.as_mut_ptr(), codecpar.as_ptr()) }
             .upgrade()
             .map_err(|_| RsmpegError::CodecSetParameterError)?;
