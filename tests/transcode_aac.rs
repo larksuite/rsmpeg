@@ -27,7 +27,7 @@ fn open_input_file(input_file: &CStr) -> (AVFormatContextInput, AVCodecContext) 
 
     let mut decode_context = AVCodecContext::new(&decode_codec);
     decode_context
-        .set_codecpar(input_format_context.streams().get(0).unwrap().codecpar())
+        .apply_codecpar(input_format_context.streams().get(0).unwrap().codecpar())
         .unwrap();
     decode_context.open(None).unwrap();
     (input_format_context, decode_context)

@@ -34,7 +34,7 @@ fn open_input_file(filename: &CStr) -> Result<(AVFormatContextInput, Vec<StreamC
             .with_context(|| anyhow!("decoder ({}) not found.", codec_id))?;
 
         let mut decode_context = AVCodecContext::new(&decoder);
-        decode_context.set_codecpar(input_stream.codecpar())?;
+        decode_context.apply_codecpar(input_stream.codecpar())?;
 
         if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
             if let Some(framerate) = input_stream.guess_framerate() {
