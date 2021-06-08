@@ -90,7 +90,7 @@ fn thumbnail(
         )
         .context("Invalid swscontext parameter.")?;
 
-        let mut image_buffer = AVImage::new(
+        let image_buffer = AVImage::new(
             encode_context.pix_fmt,
             encode_context.width,
             encode_context.height,
@@ -98,12 +98,7 @@ fn thumbnail(
         )
         .context("Image buffer parameter invalid.")?;
 
-        let mut scaled_cover_frame = AVFrameWithImageBuffer::new(
-            &mut image_buffer,
-            encode_context.width,
-            encode_context.height,
-            encode_context.pix_fmt,
-        );
+        let mut scaled_cover_frame = AVFrameWithImage::new(image_buffer);
 
         sws_context.scale_frame(
             &cover_frame,

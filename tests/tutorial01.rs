@@ -8,7 +8,7 @@ use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avformat::AVFormatContextInput,
-    avutil::{AVFrame, AVFrameWithImageBuffer, AVImage},
+    avutil::{AVFrame, AVFrameWithImage, AVImage},
     error::RsmpegError,
     ffi,
     swscale::SwsContext,
@@ -67,7 +67,7 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
         decode_context
     };
 
-    let mut image_buffer = AVImage::new(
+    let image_buffer = AVImage::new(
         ffi::AVPixelFormat_AV_PIX_FMT_RGB24,
         decode_context.width,
         decode_context.height,
@@ -75,12 +75,7 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
     )
     .context("Failed to create image buffer.")?;
 
-    let mut frame_rgb = AVFrameWithImageBuffer::new(
-        &mut image_buffer,
-        decode_context.width,
-        decode_context.height,
-        ffi::AVPixelFormat_AV_PIX_FMT_RGB24,
-    );
+    let mut frame_rgb = AVFrameWithImage::new(image_buffer);
 
     let mut sws_context = SwsContext::get_context(
         decode_context.width,

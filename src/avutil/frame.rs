@@ -144,42 +144,53 @@ impl Drop for AVFrame {
     }
 }
 
-/// It's a `AVFrame` binded with `AVImage`, the AVFrame copies the buffer
-/// pointer from the `AVImage`.
-pub struct AVFrameWithImageBuffer<'img> {
-    inner: AVFrame,
-
-    _image: &'img mut AVImage,
+/// It's a `AVFrame` binded with `AVImage`, the `AVFrame` references the buffer
+/// of the `AVImage`.
+pub struct AVFrameWithImage {
+    frame: AVFrame,
+    image: AVImage,
 }
 
-impl<'img> std::ops::Deref for AVFrameWithImageBuffer<'img> {
+impl std::ops::Deref for AVFrameWithImage {
     type Target = AVFrame;
     fn deref(&self) -> &Self::Target {
-        &self.inner
+        &self.frame
     }
 }
 
-impl<'img> std::ops::DerefMut for AVFrameWithImageBuffer<'img> {
+impl std::ops::DerefMut for AVFrameWithImage {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+        &mut self.frame
     }
 }
 
-impl<'img> AVFrameWithImageBuffer<'img> {
-    pub fn new(image: &'img mut AVImage, width: i32, height: i32, format: i32) -> Self {
+impl AVFrameWithImage {
+    /// Create a [`AVFrame`] instance and wrap it with the given [`AVImage`]
+    /// into a [`AVFrameWithImage`]. The created frame instance uses the buffer
+    /// of given [`AVImage`], and is initialized with the parameter of the given
+    /// [`AVImage`]. You can get the inner frame instance by derefenceing. You
+    /// can get the inner image instance by [`Self::image()`].
+    pub fn new(image: AVImage) -> Self {
         let mut frame = AVFrame::new();
         unsafe {
             // Borrow the image buffer.
             frame.deref_mut().data.clone_from(image.data());
             frame.deref_mut().linesize.clone_from(image.linesizes());
-            frame.deref_mut().width = width;
-            frame.deref_mut().height = height;
-            frame.deref_mut().format = format;
+            frame.deref_mut().width = image.width;
+            frame.deref_mut().height = image.height;
+            frame.deref_mut().format = image.pix_fmt;
         }
-        Self {
-            inner: frame,
-            _image: image,
-        }
+        Self { frame, image }
+    }
+
+    /// Get reference to inner [`AVImage`] instance.
+    pub fn image(&self) -> &AVImage {
+        &self.image
+    }
+
+    /// Convert `self` into an [`AVImage`] instance.
+    pub fn into_image(self) -> AVImage {
+        self.image
     }
 }
 
@@ -232,5 +243,12 @@ mod test {
             frame.alloc_buffer(),
             Err(RsmpegError::AVFrameDoubleAllocatingError)
         ));
+    }
+
+    #[test]
+    fn test_frame_with_image_buffer() {
+        let image = AVImage::new(ffi::AVPixelFormat_AV_PIX_FMT_RGB24, 256, 256, 0).unwrap();
+        let frame = AVFrameWithImage::new(image);
+        let _: &Vec<u8> = &frame.image;
     }
 }
