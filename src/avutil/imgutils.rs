@@ -7,6 +7,9 @@ wrap! {
     AVImage: Vec<u8>,
     data: [*mut u8; AV_NUM_DATA_POINTERS] = [ptr::null_mut(); AV_NUM_DATA_POINTERS],
     linesizes: [i32; AV_NUM_DATA_POINTERS] = [0; AV_NUM_DATA_POINTERS],
+    width: i32 = 0,
+    height: i32 = 0,
+    pix_fmt: AVPixelFormat = ffi::AVPixelFormat_AV_PIX_FMT_NONE,
 }
 
 impl AVImage {
@@ -43,7 +46,9 @@ impl AVImage {
         let mut image = unsafe { AVImage::from_raw(NonNull::new(linear).unwrap()) };
         image.data = data;
         image.linesizes = linesizes;
-
+        image.width = width;
+        image.height = height;
+        image.pix_fmt = pix_fmt;
         Some(image)
     }
 
