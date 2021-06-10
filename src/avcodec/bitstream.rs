@@ -100,7 +100,7 @@ impl AVBSFContext {
     /// Retrieve a filtered packet.
     ///
     /// After sending each packet, the filter must be completely drained by
-    /// calling [`receive_packet()`] repeatedly until it returns
+    /// calling [`Self::receive_packet()`] repeatedly until it returns
     /// [`RsmpegError::BitstreamDrainError`] or
     /// [`RsmpegError::BitstreamFlushedError`].
     ///
