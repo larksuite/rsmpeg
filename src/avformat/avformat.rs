@@ -36,14 +36,15 @@ impl AVFormatContextInput {
         .upgrade()
         .map_err(|_| RsmpegError::OpenInputError)?;
 
-        unsafe { ffi::avformat_find_stream_info(input_format_context, ptr::null_mut()) }
+        // Here we can be sure that context is non null, constructing here for
+        // dropping when `avformat_find_stream_info` fails.
+        let mut context = unsafe { Self::from_raw(NonNull::new(input_format_context).unwrap()) };
+
+        unsafe { ffi::avformat_find_stream_info(context.as_mut_ptr(), ptr::null_mut()) }
             .upgrade()
             .map_err(|_| RsmpegError::FindStreamInfoError)?;
 
-        // Here we can be sure that context is non null
-        let context = NonNull::new(input_format_context).unwrap();
-
-        Ok(unsafe { Self::from_raw(context) })
+        Ok(context)
     }
 
     /// Dump [`ffi::AVFormatContext`]'s info in the "FFmpeg" way.
