@@ -33,7 +33,10 @@ struct TranscodingContext<'graph> {
     buffer_sink_context: AVFilterContextMut<'graph>,
 }
 
-/// Get `input_format_context`, and `context`.
+/// Get `decode_contexts`, `input_format_context`, the length of
+/// `decode_context` equals to the stream num of the input file. And each decode
+/// context corresponds to each stream, if the stream is neither audio nor
+/// audio, decode context at this index is set to `None`.
 fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFormatContextInput)> {
     let mut stream_contexts = vec![];
     let mut input_format_context = AVFormatContextInput::open(filename)?;
@@ -74,6 +77,9 @@ fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFo
     Ok((stream_contexts, input_format_context))
 }
 
+/// Accepts a output filename, attach `encode_context` to the corresponding
+/// `decode_context` and wrap them into a `stream_context`. `stream_context` is
+/// None when the given `decode_context` in the same index is None.
 fn open_output_file(
     filename: &CStr,
     decode_contexts: Vec<Option<AVCodecContext>>,
@@ -147,6 +153,8 @@ fn open_output_file(
     Ok((stream_contexts, output_format_context))
 }
 
+/// Init a filter between a `decode_context` and a `encode_context`
+/// corresponds to the given `filter_spec`.
 fn init_filter<'graph>(
     filter_graph: &'graph mut AVFilterGraph,
     decode_context: &mut AVCodecContext,
@@ -230,6 +238,9 @@ fn init_filter<'graph>(
     })
 }
 
+/// Create transcoding context corresponding to the given `stream_contexts`, the
+/// added filter contexts is mutable reference to objects stored in
+/// `filter_graphs`.
 fn init_filters<'graph>(
     filter_graphs: &'graph mut [AVFilterGraph],
     stream_contexts: Vec<Option<StreamContext>>,
@@ -277,7 +288,7 @@ fn init_filters<'graph>(
     Ok(filter_contexts)
 }
 
-// encode -> write_frame
+/// encode -> write_frame
 fn encode_write_frame(
     frame_after: Option<&AVFrame>,
     encode_context: &mut AVCodecContext,
@@ -316,7 +327,7 @@ fn encode_write_frame(
     Ok(())
 }
 
-// filter -> encode -> write_frame
+/// filter -> encode -> write_frame
 fn filter_encode_write_frame(
     frame_before: Option<AVFrame>,
     buffer_src_context: &mut AVFilterContextMut,
@@ -346,6 +357,7 @@ fn filter_encode_write_frame(
     Ok(())
 }
 
+/// Send an empty packet to the `encode_context` for packet flushing.
 fn flush_encoder(
     encode_context: &mut AVCodecContext,
     output_format_context: &mut AVFormatContextOutput,
@@ -363,6 +375,7 @@ fn flush_encoder(
     Ok(())
 }
 
+/// Transcoding audio and video stream in a multi media file.
 pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
     let (decode_contexts, mut input_format_context) = open_input_file(input_file)?;
     let (stream_contexts, mut output_format_context) =
