@@ -12,6 +12,8 @@ pub struct AVMmap {
     size: ffi::size_t,
 }
 
+unsafe impl Send for AVMmap {}
+
 impl Deref for AVMmap {
     type Target = [u8];
     fn deref(&self) -> &Self::Target {
