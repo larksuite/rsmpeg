@@ -364,43 +364,50 @@ pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
         };
 
         let in_stream_index = packet.stream_index as usize;
-        let input_stream = input_format_context.streams().get(in_stream_index).unwrap();
-        if let Some(StreamContext {
-            decode_context,
-            encode_context,
-            out_stream_index,
-        }) = stream_contexts[in_stream_index].as_mut()
-        {
-            let FilterContext {
-                buffer_src_context,
-                buffer_sink_context,
-            } = filter_contexts[in_stream_index].as_mut().unwrap();
 
-            packet.rescale_ts(input_stream.time_base, encode_context.time_base);
-
-            decode_context.send_packet(Some(&packet)).unwrap();
-
-            loop {
-                let mut frame = match decode_context.receive_frame() {
-                    Ok(frame) => frame,
-                    Err(RsmpegError::DecoderDrainError) | Err(RsmpegError::DecoderFlushedError) => {
-                        break
-                    }
-                    Err(e) => bail!(e),
-                };
-
-                frame.set_pts(frame.best_effort_timestamp);
-                filter_encode_write_frame(
-                    Some(frame),
+        match (
+            stream_contexts[in_stream_index].as_mut(),
+            filter_contexts[in_stream_index].as_mut(),
+        ) {
+            (
+                Some(StreamContext {
+                    decode_context,
+                    encode_context,
+                    out_stream_index,
+                }),
+                Some(FilterContext {
                     buffer_src_context,
                     buffer_sink_context,
-                    encode_context,
-                    &mut output_format_context,
-                    *out_stream_index,
-                )?;
+                }),
+            ) => {
+                let input_stream = input_format_context.streams().get(in_stream_index).unwrap();
+                packet.rescale_ts(input_stream.time_base, encode_context.time_base);
+
+                decode_context.send_packet(Some(&packet)).unwrap();
+
+                loop {
+                    let mut frame = match decode_context.receive_frame() {
+                        Ok(frame) => frame,
+                        Err(RsmpegError::DecoderDrainError)
+                        | Err(RsmpegError::DecoderFlushedError) => break,
+                        Err(e) => bail!(e),
+                    };
+
+                    frame.set_pts(frame.best_effort_timestamp);
+                    filter_encode_write_frame(
+                        Some(frame),
+                        buffer_src_context,
+                        buffer_sink_context,
+                        encode_context,
+                        &mut output_format_context,
+                        *out_stream_index,
+                    )?;
+                }
             }
-        } else {
+            (Some(_), None) => panic!("Unsynced stream cnotext and filter context"),
+            (None, Some(_)) => panic!("unsynced stream context and filter context"),
             // Discard non-av video packets.
+            (None, None) => (),
         }
     }
 
