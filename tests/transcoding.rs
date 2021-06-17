@@ -25,8 +25,16 @@ struct FilterContext<'graph> {
     buffer_sink_context: AVFilterContextMut<'graph>,
 }
 
+struct TranscodingContext<'graph> {
+    decode_context: AVCodecContext,
+    encode_context: AVCodecContext,
+    out_stream_index: usize,
+    buffer_src_context: AVFilterContextMut<'graph>,
+    buffer_sink_context: AVFilterContextMut<'graph>,
+}
+
 /// Get `input_format_context`, and `context`.
-fn open_input_file(filename: &CStr) -> Result<(AVFormatContextInput, Vec<Option<AVCodecContext>>)> {
+fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFormatContextInput)> {
     let mut stream_contexts = vec![];
     let mut input_format_context = AVFormatContextInput::open(filename)?;
 
@@ -63,7 +71,7 @@ fn open_input_file(filename: &CStr) -> Result<(AVFormatContextInput, Vec<Option<
         stream_contexts.push(decode_context);
     }
     input_format_context.dump(0, filename)?;
-    Ok((input_format_context, stream_contexts))
+    Ok((stream_contexts, input_format_context))
 }
 
 fn open_output_file(
@@ -224,17 +232,16 @@ fn init_filter<'graph>(
 
 fn init_filters<'graph>(
     filter_graphs: &'graph mut [AVFilterGraph],
-    stream_contexts: &mut [Option<StreamContext>],
-) -> Result<Vec<Option<FilterContext<'graph>>>> {
+    stream_contexts: Vec<Option<StreamContext>>,
+) -> Result<Vec<Option<TranscodingContext<'graph>>>> {
     let mut filter_contexts = vec![];
 
-    let filter_graphs_iter = filter_graphs.iter_mut();
-    let stream_contexts_iter = stream_contexts.iter_mut();
-    for (filter_graph, stream_context) in filter_graphs_iter.zip(stream_contexts_iter) {
+    for (filter_graph, stream_context) in filter_graphs.iter_mut().zip(stream_contexts.into_iter())
+    {
         let filter_context = if let Some(StreamContext {
-            decode_context,
-            encode_context,
-            out_stream_index: _,
+            mut decode_context,
+            mut encode_context,
+            out_stream_index,
         }) = stream_context
         {
             // dummy filter
@@ -244,12 +251,23 @@ fn init_filters<'graph>(
                 cstr!("anull")
             };
 
-            Some(init_filter(
+            let FilterContext {
+                buffer_src_context,
+                buffer_sink_context,
+            } = init_filter(
                 filter_graph,
-                decode_context,
-                encode_context,
+                &mut decode_context,
+                &mut encode_context,
                 filter_spec,
-            )?)
+            )?;
+
+            Some(TranscodingContext {
+                encode_context,
+                decode_context,
+                out_stream_index,
+                buffer_src_context,
+                buffer_sink_context,
+            })
         } else {
             None
         };
@@ -346,14 +364,13 @@ fn flush_encoder(
 }
 
 pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
-    let (mut input_format_context, decode_contexts) = open_input_file(input_file)?;
-    let (mut stream_contexts, mut output_format_context) =
+    let (decode_contexts, mut input_format_context) = open_input_file(input_file)?;
+    let (stream_contexts, mut output_format_context) =
         open_output_file(output_file, decode_contexts)?;
-
     let mut filter_graphs: Vec<_> = (0..stream_contexts.len())
         .map(|_| AVFilterGraph::new())
         .collect();
-    let mut filter_contexts = init_filters(&mut filter_graphs, &mut stream_contexts)?;
+    let mut transcoding_contexts = init_filters(&mut filter_graphs, stream_contexts)?;
 
     loop {
         let mut packet = match input_format_context.read_packet() {
@@ -365,21 +382,14 @@ pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
 
         let in_stream_index = packet.stream_index as usize;
 
-        match (
-            stream_contexts[in_stream_index].as_mut(),
-            filter_contexts[in_stream_index].as_mut(),
-        ) {
-            (
-                Some(StreamContext {
-                    decode_context,
-                    encode_context,
-                    out_stream_index,
-                }),
-                Some(FilterContext {
-                    buffer_src_context,
-                    buffer_sink_context,
-                }),
-            ) => {
+        match transcoding_contexts[in_stream_index].as_mut() {
+            Some(TranscodingContext {
+                decode_context,
+                encode_context,
+                out_stream_index,
+                buffer_src_context,
+                buffer_sink_context,
+            }) => {
                 let input_stream = input_format_context.streams().get(in_stream_index).unwrap();
                 packet.rescale_ts(input_stream.time_base, encode_context.time_base);
 
@@ -404,30 +414,22 @@ pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
                     )?;
                 }
             }
-            (Some(_), None) => panic!("Unsynced stream cnotext and filter context"),
-            (None, Some(_)) => panic!("unsynced stream context and filter context"),
             // Discard non-av video packets.
-            (None, None) => (),
+            None => (),
         }
     }
 
     // Flush the filter graph by pushing EOF packet to buffer_src_context.
     // Flush the encoder by pushing EOF frame to encode_context.
-    for (stream_context, filter_context) in
-        stream_contexts.iter_mut().zip(filter_contexts.iter_mut())
-    {
-        match (stream_context.as_mut(), filter_context.as_mut()) {
-            (
-                Some(StreamContext {
-                    decode_context: _,
-                    encode_context,
-                    out_stream_index,
-                }),
-                Some(FilterContext {
-                    buffer_src_context,
-                    buffer_sink_context,
-                }),
-            ) => {
+    for transcoding_context in transcoding_contexts.iter_mut() {
+        match transcoding_context {
+            Some(TranscodingContext {
+                decode_context: _,
+                encode_context,
+                out_stream_index,
+                buffer_src_context,
+                buffer_sink_context,
+            }) => {
                 filter_encode_write_frame(
                     None,
                     buffer_src_context,
@@ -442,9 +444,7 @@ pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
                     *out_stream_index,
                 )?;
             }
-            (Some(_), None) => panic!("Unsynced stream cnotext and filter context"),
-            (None, Some(_)) => panic!("unsynced stream context and filter context"),
-            (None, None) => (),
+            None => (),
         }
     }
     output_format_context.write_trailer()?;
