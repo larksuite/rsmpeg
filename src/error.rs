@@ -105,8 +105,8 @@ pub enum RsmpegError {
     #[error("AVDictionary failed to get string.")]
     DictionaryGetStringError,
 
-    #[error("AVIO Open failure.")]
-    AVIOOpenError,
+    #[error("AVIO Open failure. ({0})")]
+    AVIOOpenError(i32),
 
     #[error("SwrContext init failed.")]
     SwrContextInitError,

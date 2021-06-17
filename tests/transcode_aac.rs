@@ -38,7 +38,7 @@ fn open_output_file(
     decode_context: &mut AVCodecContext,
 ) -> (AVFormatContextOutput, AVCodecContext) {
     /* Create a new format context for the output container format. */
-    let mut output_format_context = AVFormatContextOutput::create(output_file).unwrap();
+    let mut output_format_context = AVFormatContextOutput::create(output_file, None).unwrap();
 
     /* Find the encoder to be used by its name. */
     let encode_codec = AVCodec::find_encoder(ffi::AVCodecID_AV_CODEC_ID_AAC).unwrap();

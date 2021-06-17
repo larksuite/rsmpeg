@@ -9,14 +9,23 @@ use crate::{
     avcodec::{
         AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVCodecRef, AVPacket,
     },
-    avformat::AVIOContext,
+    avformat::{AVIOContext, AVIOContextCustom, AVIOContextURL},
     avutil::{AVDictionary, AVDictionaryMut, AVDictionaryRef, AVRational},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
 };
 
-wrap!(AVFormatContextInput: ffi::AVFormatContext);
+/// Container of all kinds of AVIOContexts.
+pub enum AVIOContextContainer {
+    Url(AVIOContextURL),
+    Custom(AVIOContextCustom),
+}
+
+wrap! {
+    AVFormatContextInput: ffi::AVFormatContext,
+    io_context: Option<AVIOContextContainer> = None,
+}
 
 impl AVFormatContextInput {
     /// Create a [`AVFormatContextInput`] instance of a file, and find info of
@@ -45,6 +54,52 @@ impl AVFormatContextInput {
             .map_err(|_| RsmpegError::FindStreamInfoError)?;
 
         Ok(context)
+    }
+
+    /// Create a [`AVFormatContextInput`] instance from an [`AVIOContext`], and find info of
+    /// all streams.
+    pub fn from_io_context(mut io_context: AVIOContextContainer) -> Result<Self> {
+        let input_format_context = {
+            // Only fails on no memory, so unwrap().
+            // `avformat_open_input`'s documentation:
+            //
+            // Note that a user-supplied AVFormatContext will be freed on failure.
+            //
+            // So here we don't construct the `AVFormatContext`, or the
+            // `input_format_context` will be double free.
+            let input_format_context = unsafe { ffi::avformat_alloc_context() }.upgrade().unwrap();
+            unsafe {
+                (*input_format_context.as_ptr()).pb = match &mut io_context {
+                    AVIOContextContainer::Url(ctx) => ctx.as_mut_ptr(),
+                    AVIOContextContainer::Custom(ctx) => ctx.as_mut_ptr(),
+                };
+            }
+            input_format_context
+        };
+
+        unsafe {
+            ffi::avformat_open_input(
+                &mut input_format_context.as_ptr(),
+                ptr::null_mut(),
+                ptr::null_mut(),
+                ptr::null_mut(),
+            )
+        }
+        .upgrade()
+        .map_err(|_| RsmpegError::OpenInputError)?;
+
+        // After `avformat_open_input`, we can `avformat_close_input` after it,
+        // so here we can safely construct a `AVFormatContextInput`.
+        let mut input_format_context = unsafe { Self::from_raw(input_format_context) };
+        input_format_context.io_context = Some(io_context);
+
+        unsafe {
+            ffi::avformat_find_stream_info(input_format_context.as_mut_ptr(), ptr::null_mut())
+        }
+        .upgrade()
+        .map_err(|_| RsmpegError::FindStreamInfoError)?;
+
+        Ok(input_format_context)
     }
 
     /// Dump [`ffi::AVFormatContext`]'s info in the "FFmpeg" way.
@@ -139,11 +194,15 @@ impl Drop for AVFormatContextInput {
     }
 }
 
-wrap!(AVFormatContextOutput: ffi::AVFormatContext);
+wrap! {
+    AVFormatContextOutput: ffi::AVFormatContext,
+    io_context: Option<AVIOContextContainer> = None,
+}
 
 impl AVFormatContextOutput {
-    /// Open a file and create a [`AVFormatContextOutput`] instance of that file.
-    pub fn create(filename: &CStr) -> Result<Self> {
+    /// Open a file and create a [`AVFormatContextOutput`] instance of that
+    /// file. Give it an [`AVIOContext`] if you want custom IO.
+    pub fn create(filename: &CStr, io_context: Option<AVIOContextContainer>) -> Result<Self> {
         let mut output_format_context = ptr::null_mut();
 
         // Alloc the context
@@ -161,10 +220,29 @@ impl AVFormatContextOutput {
         let mut output_format_context =
             unsafe { Self::from_raw(NonNull::new(output_format_context).unwrap()) };
 
-        // Open corresponding file
+        // Documentation of [`ffi::AVFormatContext::pb`] states:
+        //
+        // Do NOT set this field if AVFMT_NOFILE flag is set in
+        // iformat/oformat.flags. In such a case, the (de)muxer will handle I/O
+        // in some other way and this field will be NULL.
+        //
+        // For safeness, we don't use the user the given AVIOContext even if the
+        // caller provides one.
         if unsafe { *output_format_context.oformat }.flags & ffi::AVFMT_NOFILE as i32 == 0 {
-            let io_context = AVIOContext::open(filename, ffi::AVIO_FLAG_WRITE)?.into_raw();
-            unsafe { output_format_context.deref_mut() }.pb = io_context.as_ptr();
+            // If user provides us an `AVIOCustomContext`, use it, or we create a default one.
+            let mut io_context = match io_context {
+                Some(x) => x,
+                None => {
+                    AVIOContextContainer::Url(AVIOContextURL::open(filename, ffi::AVIO_FLAG_WRITE)?)
+                }
+            };
+            unsafe {
+                output_format_context.deref_mut().pb = match &mut io_context {
+                    AVIOContextContainer::Url(ctx) => ctx.as_mut_ptr(),
+                    AVIOContextContainer::Custom(ctx) => ctx.as_mut_ptr(),
+                };
+            }
+            output_format_context.io_context = Some(io_context);
         }
 
         Ok(output_format_context)

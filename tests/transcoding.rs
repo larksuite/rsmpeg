@@ -59,7 +59,7 @@ fn open_output_file(
     input_format_context: &mut AVFormatContextInput,
     stream_contexts: &mut [StreamContext],
 ) -> Result<AVFormatContextOutput> {
-    let mut output_format_context = AVFormatContextOutput::create(filename)?;
+    let mut output_format_context = AVFormatContextOutput::create(filename, None)?;
 
     for (
         i,

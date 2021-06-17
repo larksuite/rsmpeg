@@ -237,7 +237,7 @@ fn shadertoy(
 
     // Create a output_format_context for video container writing.
     let mut output_format_context = {
-        let mut output_format_context = AVFormatContextOutput::create(output_video_path)?;
+        let mut output_format_context = AVFormatContextOutput::create(output_video_path, None)?;
         {
             let mut stream = output_format_context.new_stream();
             stream.set_codecpar(encode_context.extract_codecpar());
