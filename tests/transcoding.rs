@@ -404,33 +404,40 @@ pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
         }
     }
 
-    // Flush the filter graph by pushing EOF packet to buffer_src
-    // Flush the encoder by pushing EOF frame to encoder_context
-    for in_stream_index in 0..stream_contexts.len() {
-        if let Some(StreamContext {
-            decode_context: _,
-            encode_context,
-            out_stream_index,
-        }) = stream_contexts[in_stream_index].as_mut()
-        {
-            let FilterContext {
-                buffer_src_context,
-                buffer_sink_context,
-            } = (&mut filter_contexts[in_stream_index]).as_mut().unwrap();
-
-            filter_encode_write_frame(
-                None,
-                buffer_src_context,
-                buffer_sink_context,
-                encode_context,
-                &mut output_format_context,
-                *out_stream_index,
-            )?;
-            flush_encoder(
-                encode_context,
-                &mut output_format_context,
-                *out_stream_index,
-            )?;
+    // Flush the filter graph by pushing EOF packet to buffer_src_context.
+    // Flush the encoder by pushing EOF frame to encode_context.
+    for (stream_context, filter_context) in
+        stream_contexts.iter_mut().zip(filter_contexts.iter_mut())
+    {
+        match (stream_context.as_mut(), filter_context.as_mut()) {
+            (
+                Some(StreamContext {
+                    decode_context: _,
+                    encode_context,
+                    out_stream_index,
+                }),
+                Some(FilterContext {
+                    buffer_src_context,
+                    buffer_sink_context,
+                }),
+            ) => {
+                filter_encode_write_frame(
+                    None,
+                    buffer_src_context,
+                    buffer_sink_context,
+                    encode_context,
+                    &mut output_format_context,
+                    *out_stream_index,
+                )?;
+                flush_encoder(
+                    encode_context,
+                    &mut output_format_context,
+                    *out_stream_index,
+                )?;
+            }
+            (Some(_), None) => panic!("Unsynced stream cnotext and filter context"),
+            (None, Some(_)) => panic!("unsynced stream context and filter context"),
+            (None, None) => (),
         }
     }
     output_format_context.write_trailer()?;
