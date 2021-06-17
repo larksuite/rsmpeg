@@ -1,9 +1,7 @@
 use anyhow::Result;
 use cstr::cstr;
 use rsmpeg::{
-    avformat::{
-        AVFormatContextInput, AVIOContextContainer, AVIOContextCustom,
-    },
+    avformat::{AVFormatContextInput, AVIOContextContainer, AVIOContextCustom},
     avutil::{AVMem, AVMmap},
     ffi,
 };
