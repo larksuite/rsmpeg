@@ -8,7 +8,9 @@ wrap! {
 
 impl AVMem {
     pub fn new(len: usize) -> Self {
-        let data = unsafe { ffi::av_malloc(len as _) as *mut u8 }.upgrade().unwrap();
+        let data = unsafe { ffi::av_malloc(len as _) as *mut u8 }
+            .upgrade()
+            .unwrap();
         let mut mem = unsafe { AVMem::from_raw(data) };
         mem.len = len;
         mem
