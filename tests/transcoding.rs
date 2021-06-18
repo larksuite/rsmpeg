@@ -53,7 +53,6 @@ fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFo
                 let mut decode_context = AVCodecContext::new(&decoder);
                 decode_context.apply_codecpar(codecpar)?;
                 if let Some(framerate) = input_stream.guess_framerate() {
-                    // TODO Really useful?
                     decode_context.set_framerate(framerate);
                 }
                 decode_context.open(None)?;
@@ -500,6 +499,26 @@ fn transcoding_test3() {
     transcoding(
         cstr!("tests/assets/vids/vp8.mp4"),
         cstr!("tests/output/transcoding/vp8.webm"),
+    )
+    .unwrap();
+}
+
+#[test]
+fn transcoding_test4() {
+    std::fs::create_dir_all("tests/output/transcoding/").unwrap();
+    transcoding(
+        cstr!("tests/assets/vids/big_buck_bunny.mp4"),
+        cstr!("tests/output/transcoding/big_buck_bunny.mp4"),
+    )
+    .unwrap();
+}
+
+#[test]
+fn transcoding_test5() {
+    std::fs::create_dir_all("tests/output/transcoding/").unwrap();
+    transcoding(
+        cstr!("tests/assets/vids/with_pic.mp4"),
+        cstr!("tests/output/transcoding/with_pic.mp4"),
     )
     .unwrap();
 }
