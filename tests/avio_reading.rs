@@ -1,3 +1,4 @@
+//! Demo of custom IO using `AVIOContextCustom`.
 use anyhow::Result;
 use cstr::cstr;
 use rsmpeg::{
