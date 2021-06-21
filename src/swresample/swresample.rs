@@ -79,8 +79,7 @@ impl SwrContext {
     /// required number of output samples for the given number of input samples.
     /// Conversion will run directly without copying whenever possible.
     ///
-    /// `out`       output buffers, only the first one need be set in case of packed audio
-    /// `out_count` amount of space available for output in samples per channel
+    /// `out_buffer`output buffers, only the first one need be set in case of packed audio
     /// `in`        input buffers, only the first one need to be set in case of packed audio
     /// `in_count`  number of input samples available in one channel
     ///
