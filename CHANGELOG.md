@@ -1,3 +1,19 @@
+## 0.6.0
+
+- Better docs and tests (rewrites the `transcoding` and `transcoding_aac` tests), more bug fixes.
+
+- Add `channel_layout` getter for `AVCodecContext`.
+
+- Sync implementation between `AVImage` and `AVSamples` since they share many things in common.
+
+- Rename `AVCodecContext::set_codecpar` to `AVCodecContext::apply_codecpar`, because this function doesn't set a field named as `codecpar` in `AVCodecContext`, but extracts the given codec parameters and set several fields of `AVCodecContext`.
+
+- Rename `AVFrameWithImageBuffer` to `AVFrameWithImage`. And it's implementation was rewritten which aims at binding more information with it. Not it's more ergonomic.
+
+- Wrap `av_malloc` and `av_free` in `AVMem`.
+
+- Implment `AVIOContextUrl` and `AVIOContextCustom` for custom IO processing ability, `AVFormatContext*`'s methods changed accordingly.
+
 ## 0.5.0
 
 - Better docs and tests.
