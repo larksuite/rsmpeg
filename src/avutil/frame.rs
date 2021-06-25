@@ -1,5 +1,5 @@
 use crate::{
-    avutil::{av_image_fill_arrays, AVImage, AVMotionVector, AVPixelFormat},
+    avutil::{av_image_fill_arrays, AVImage, AVMotionVector, AVPixelFormat, AVSamples},
     error::*,
     ffi,
     shared::*,
@@ -191,6 +191,67 @@ impl AVFrameWithImage {
     /// Convert `self` into an [`AVImage`] instance.
     pub fn into_image(self) -> AVImage {
         self.image
+    }
+}
+
+/// It's a `AVFrame` binded with `AVImage`, the `AVFrame` references the buffer
+/// of the `AVImage`.
+pub struct AVFrameWithSamples {
+    frame: AVFrame,
+    samples: AVSamples,
+}
+
+impl std::ops::Deref for AVFrameWithSamples {
+    type Target = AVFrame;
+    fn deref(&self) -> &Self::Target {
+        &self.frame
+    }
+}
+
+impl std::ops::DerefMut for AVFrameWithSamples {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.frame
+    }
+}
+
+impl AVFrameWithSamples {
+    /// Create a [`AVFrame`] instance and wrap it with the given [`AVSamples`]
+    /// into a [`AVFrameWithSamples`]. The created frame instance uses the buffer
+    /// of given [`AVSamples`], and is initialized with the parameter of the given
+    /// [`AVSamples`]. You can get the inner frame instance by derefenceing. You
+    /// can get the inner samples instance by [`Self::samples()`].
+    /// 
+    /// This function takes metadata from [`AVSamples`] and store them in the frame.
+    /// Metadata list:
+    /// ```txt
+    /// frame.data <= samples.audio_data
+    /// frame.linesize[0] <= samples.line_size
+    /// frame.format <= samples.sample_fmt
+    /// frame.nb_samples <= samples.nb_samples
+    /// ```
+    pub fn new(samples: AVSamples, sample_rate: i32, channel_layout: u64) -> Self {
+        let mut frame = AVFrame::new();
+        unsafe {
+            // Borrow the image buffer.
+            let nb_channel = frame.data.len().min(samples.audio_data.len());
+            frame.deref_mut().data[0..nb_channel].copy_from_slice(&samples.audio_data[0..nb_channel]);
+            frame.deref_mut().linesize[0] = samples.linesize;
+            frame.deref_mut().sample_rate = sample_rate;
+            frame.deref_mut().channel_layout = channel_layout;
+            frame.deref_mut().format = samples.sample_fmt;
+            frame.deref_mut().nb_samples = samples.nb_samples;
+        }
+        Self { frame, samples }
+    }
+
+    /// Get reference to inner [`AVSamples`] instance.
+    pub fn samples(&self) -> &AVSamples {
+        &self.samples
+    }
+
+    /// Convert `self` into an [`AVSamples`] instance.
+    pub fn into_samples(self) -> AVSamples {
+        self.samples
     }
 }
 
