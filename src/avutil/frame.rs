@@ -220,7 +220,7 @@ impl AVFrameWithSamples {
     /// of given [`AVSamples`], and is initialized with the parameter of the given
     /// [`AVSamples`]. You can get the inner frame instance by derefenceing. You
     /// can get the inner samples instance by [`Self::samples()`].
-    /// 
+    ///
     /// This function takes metadata from [`AVSamples`] and store them in the frame.
     /// Metadata list:
     /// ```txt
@@ -234,7 +234,8 @@ impl AVFrameWithSamples {
         unsafe {
             // Borrow the image buffer.
             let nb_channel = frame.data.len().min(samples.audio_data.len());
-            frame.deref_mut().data[0..nb_channel].copy_from_slice(&samples.audio_data[0..nb_channel]);
+            frame.deref_mut().data[0..nb_channel]
+                .copy_from_slice(&samples.audio_data[0..nb_channel]);
             frame.deref_mut().linesize[0] = samples.linesize;
             frame.deref_mut().sample_rate = sample_rate;
             frame.deref_mut().channel_layout = channel_layout;
