@@ -79,11 +79,11 @@ impl SwrContext {
     /// required number of output samples for the given number of input samples.
     /// Conversion will run directly without copying whenever possible.
     ///
-    /// `out_buffer`output buffers, only the first one need be set in case of packed audio
-    /// `in`        input buffers, only the first one need to be set in case of packed audio
-    /// `in_count`  number of input samples available in one channel
+    /// `out_buffer`    output buffers, only the first one need be set in case of packed audio
+    /// `in`            input buffers, only the first one need to be set in case of packed audio
+    /// `in_count`      number of input samples available in one channel
     ///
-    /// return number of samples output per channel
+    /// Returns number of samples output per channel.
     ///
     /// # Safety
     ///
@@ -97,6 +97,10 @@ impl SwrContext {
         // ATTENTION: We can confidently use immuable reference here because we
         // ensure the safety on SwrContext's the api level (Cannot take inner
         // reference of the SwrContext, and also no Send & Sync implementations).
+        //
+        // The swr_convert's documentation states: out_count is the amount of
+        // space available for output in samples per channel, rather than being
+        // the number of the output samples per channel.
         unsafe {
             ffi::swr_convert(
                 self.as_ptr() as _,
