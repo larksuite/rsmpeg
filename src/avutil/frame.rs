@@ -48,15 +48,21 @@ impl AVFrame {
     /// Allocate new buffer(s) for audio or video data.
     /// The following fields must be set on frame before calling this function:
     ///
-    /// - format (pixel format for video, sample format for audio)
-    /// - width and height for video
-    /// - nb_samples and channel_layout for audio
+    /// Video:
+    /// - format (pixel format)
+    /// - width
+    /// - height
+    ///
+    /// Audio:
+    /// - format (sample format)
+    /// - nb_samples
+    /// - channel_layout or channels
     ///
     /// Return Error when the some of the frame settings are invalid, allocating
     /// buffer for an already initialized frame or allocation fails because of
     /// no memory.
     pub fn alloc_buffer(&mut self) -> Result<()> {
-        // If frame already has been allocated, calling av_frame_get_buffer will
+        // If frame has already been allocated, calling av_frame_get_buffer will
         // leak memory. So we do a check here.
         if self.is_allocated() {
             return Err(RsmpegError::AVFrameDoubleAllocatingError);
