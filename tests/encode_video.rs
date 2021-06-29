@@ -2,9 +2,9 @@ use anyhow::{Context, Result};
 use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
-    avutil::AVFrame,
+    avutil::{ra, AVFrame},
     error::RsmpegError,
-    ffi::{self, AVRational},
+    ffi::{self},
 };
 use std::{
     ffi::CStr,
@@ -40,8 +40,8 @@ fn encode_video(codec_name: &CStr, file_name: &str) -> Result<()> {
     encode_context.set_bit_rate(400000);
     encode_context.set_width(WIDTH as i32);
     encode_context.set_height(HEIGHT as i32);
-    encode_context.set_time_base(AVRational { num: 1, den: 25 });
-    encode_context.set_framerate(AVRational { num: 25, den: 1 });
+    encode_context.set_time_base(ra(1, 25));
+    encode_context.set_framerate(ra(25, 1));
     encode_context.set_gop_size(10);
     encode_context.set_max_b_frames(1);
     encode_context.set_pix_fmt(ffi::AVPixelFormat_AV_PIX_FMT_YUV420P);

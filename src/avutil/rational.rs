@@ -2,6 +2,12 @@ use crate::ffi;
 
 pub use ffi::AVRational;
 
+#[inline]
+/// return `AVRational: num / den`;
+pub fn ra(num: i32, den: i32) -> AVRational {
+    AVRational { num, den }
+}
+
 pub use ffi::av_cmp_q;
 pub use ffi::av_inv_q;
 pub use ffi::av_make_q;
@@ -63,4 +69,22 @@ pub fn av_q2intfloat(q: AVRational) -> u32 {
 /// resulting denominator is larger than max_den, return def.
 pub fn av_gcd_q(a: AVRational, b: AVRational, max_den: libc::c_int, def: AVRational) -> AVRational {
     unsafe { ffi::av_gcd_q(a, b, max_den, def) }
+}
+
+/// Rescale a 64-bit integer by 2 rational numbers.
+///
+/// The operation is mathematically equivalent to `a * bq / cq`.
+///
+/// This function is equivalent to av_rescale_q_rnd() with #AV_ROUND_NEAR_INF.
+#[inline]
+pub fn av_rescale_q(a: i64, bq: AVRational, cq: AVRational) -> i64 {
+    unsafe { ffi::av_rescale_q(a, bq, cq) }
+}
+
+/// Rescale a 64-bit integer by 2 rational numbers with specified rounding.
+///
+/// The operation is mathematically equivalent to `a * bq / cq`.
+#[inline]
+pub fn av_rescale_q_rnd(a: i64, bq: AVRational, cq: AVRational, rnd: u32) -> i64 {
+    unsafe { ffi::av_rescale_q_rnd(a, bq, cq, rnd as _) }
 }
