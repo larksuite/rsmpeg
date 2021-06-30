@@ -7,7 +7,7 @@ use rsmpeg::{
     avformat::{AVFormatContextInput, AVFormatContextOutput},
     avutil::{
         av_get_channel_layout_nb_channels, av_get_default_channel_layout, av_inv_q, av_mul_q,
-        get_sample_fmt_name, AVFrame, AVRational,
+        get_sample_fmt_name, ra, AVFrame,
     },
     error::RsmpegError,
     ffi,
@@ -103,10 +103,7 @@ fn open_output_file(
                 });
                 new_encode_context.set_time_base(av_inv_q(av_mul_q(
                     decode_context.framerate,
-                    AVRational {
-                        num: decode_context.ticks_per_frame,
-                        den: 1,
-                    },
+                    ra(decode_context.ticks_per_frame, 1),
                 )));
             } else if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
                 new_encode_context.set_sample_rate(decode_context.sample_rate);
@@ -115,10 +112,7 @@ fn open_output_file(
                     decode_context.channel_layout,
                 ));
                 new_encode_context.set_sample_fmt(encoder.sample_fmts().unwrap()[0]);
-                new_encode_context.set_time_base(AVRational {
-                    num: 1,
-                    den: decode_context.sample_rate,
-                });
+                new_encode_context.set_time_base(ra(1, decode_context.sample_rate));
             } else {
                 unreachable!("Shouldn't have decode_context when a codec is non-av!")
             }
