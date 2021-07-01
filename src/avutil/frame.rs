@@ -109,6 +109,27 @@ impl AVFrame {
         .map_err(|_| RsmpegError::AVImageFillArrayError)?;
         Ok(())
     }
+
+    /// Ensure that the frame data is writable, avoiding data copy if possible.
+    ///
+    /// Do nothing if the frame is writable, allocate new buffers and copy the
+    /// data if it is not.
+    pub fn make_writable(&mut self) -> Result<()> {
+        unsafe { ffi::av_frame_make_writable(self.as_mut_ptr()) }
+            .upgrade()
+            .map_err(RsmpegError::AVError)?;
+        Ok(())
+    }
+
+    /// Check if the frame data is writable.
+    pub fn is_writable(&self) -> Result<bool> {
+        match unsafe { ffi::av_frame_is_writable(self.as_ptr() as *mut _) }.upgrade() {
+            Ok(1) => Ok(true),
+            Ok(0) => Ok(false),
+            Ok(_) => unreachable!(),
+            Err(e) => Err(RsmpegError::AVError(e)),
+        }
+    }
 }
 
 impl Clone for AVFrame {
