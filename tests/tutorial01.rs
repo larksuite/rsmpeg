@@ -141,7 +141,6 @@ fn tutorial01_test2() {
     .unwrap();
 }
 
-/*
 #[test]
 fn tutorial01_test3() {
     _main(
@@ -150,4 +149,3 @@ fn tutorial01_test3() {
     )
     .unwrap();
 }
-*/
