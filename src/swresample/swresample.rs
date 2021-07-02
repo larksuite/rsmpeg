@@ -70,7 +70,7 @@ impl SwrContext {
         unsafe { ffi::swr_get_out_samples(self.as_ptr() as _, in_samples) }
     }
 
-    /// Convert audio.
+    /// Convert audio to a given [`AVSamples`] buffer.
     ///
     /// `in_buffer` and `in_count` can be set to 0 to flush the last few samples
     /// out at the end.  If more input is provided than output space, then the
@@ -94,6 +94,42 @@ impl SwrContext {
         in_buffer: *const *const u8,
         in_count: i32,
     ) -> Result<i32> {
+        unsafe {
+            self.convert_raw(
+                out_buffer.audio_data.as_mut_ptr(),
+                out_buffer.nb_samples,
+                in_buffer,
+                in_count,
+            )
+        }
+    }
+
+    /// Convert audio.
+    ///
+    /// `in_buffer` and `in_count` can be set to 0 to flush the last few samples
+    /// out at the end.  If more input is provided than output space, then the
+    /// input will be buffered. You can avoid this buffering by using
+    /// [`SwrContext::get_out_samples`] to retrieve an upper bound on the
+    /// required number of output samples for the given number of input samples.
+    /// Conversion will run directly without copying whenever possible.
+    ///
+    /// `out_buffer`    output buffers, only the first one need be set in case of packed audio
+    /// `out_count`     amount of space available for output in samples per channel
+    /// `in`            input buffers, only the first one need to be set in case of packed audio
+    /// `in_count`      number of input samples available in one channel
+    ///
+    /// Returns number of samples output per channel.
+    ///
+    /// # Safety
+    ///
+    /// Only safe when the `in_buffer` is valid.
+    pub unsafe fn convert_raw(
+        &self,
+        out_buffer: *mut *mut u8,
+        out_count: i32,
+        in_buffer: *const *const u8,
+        in_count: i32,
+    ) -> Result<i32> {
         // ATTENTION: We can confidently use immuable reference here because we
         // ensure the safety on SwrContext's the api level (Cannot take inner
         // reference of the SwrContext, and also no Send & Sync implementations).
@@ -103,9 +139,9 @@ impl SwrContext {
         // the number of the output samples per channel.
         unsafe {
             ffi::swr_convert(
-                self.as_ptr() as _,
-                out_buffer.audio_data.as_mut_ptr(),
-                out_buffer.nb_samples,
+                self.as_ptr() as *mut _,
+                out_buffer,
+                out_count,
                 in_buffer as *mut _,
                 in_count,
             )
