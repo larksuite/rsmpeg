@@ -43,7 +43,7 @@ impl AVFormatContextInput {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::OpenInputError)?;
+        .map_err(RsmpegError::OpenInputError)?;
 
         // Here we can be sure that context is non null, constructing here for
         // dropping when `avformat_find_stream_info` fails.
@@ -86,7 +86,7 @@ impl AVFormatContextInput {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::OpenInputError)?;
+        .map_err(RsmpegError::OpenInputError)?;
 
         // After `avformat_open_input`, we can `avformat_close_input` after it,
         // so here we can safely construct a `AVFormatContextInput`.
