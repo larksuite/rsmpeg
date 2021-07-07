@@ -15,8 +15,8 @@ pub enum RsmpegError {
     // --------- Unstablized error type below ------
 
     // FFmpeg errors
-    #[error("Cannot open input file.")]
-    OpenInputError,
+    #[error("Cannot open input file. ({0})")]
+    OpenInputError(c_int),
     #[error("Cannot open output file.")]
     OpenOutputError,
     #[error("Cannot find stream information.")]
