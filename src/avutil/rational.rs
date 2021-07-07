@@ -8,10 +8,7 @@ pub fn ra(num: i32, den: i32) -> AVRational {
     AVRational { num, den }
 }
 
-pub use ffi::av_cmp_q;
-pub use ffi::av_inv_q;
-pub use ffi::av_make_q;
-pub use ffi::av_q2d;
+pub use ffi::{av_cmp_q, av_inv_q, av_make_q, av_q2d};
 
 #[inline]
 /// Convert a double precision floating point number to a rational.

@@ -1,10 +1,15 @@
-use std::ptr::{null_mut, NonNull};
-use std::slice;
-use std::{ffi::CStr, ops::Deref};
+use std::{
+    ffi::CStr,
+    ops::Deref,
+    ptr::{null_mut, NonNull},
+    slice,
+};
 
-use crate::error::{Result, RsmpegError};
-use crate::ffi;
-use crate::shared::RetUpgrade;
+use crate::{
+    error::{Result, RsmpegError},
+    ffi,
+    shared::RetUpgrade,
+};
 
 /// A read-only file buffer, the file is mmaped when available.
 pub struct AVMmap {
@@ -47,9 +52,7 @@ impl Drop for AVMmap {
 
 #[cfg(test)]
 mod test {
-    use std::ffi::CString;
-    use std::fs::File;
-    use std::io::Write;
+    use std::{ffi::CString, fs::File, io::Write};
 
     use super::*;
     use tempdir::TempDir;

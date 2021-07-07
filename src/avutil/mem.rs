@@ -1,5 +1,4 @@
-use crate::ffi;
-use crate::shared::PointerUpgrade;
+use crate::{ffi, shared::PointerUpgrade};
 
 wrap! {
     AVMem: u8,

@@ -1,17 +1,14 @@
-use rsmpeg::avcodec::*;
-use rsmpeg::avformat::*;
-use rsmpeg::avutil::*;
-use rsmpeg::error::RsmpegError;
-use rsmpeg::ffi;
-use rsmpeg::swscale::*;
+use rsmpeg::{avcodec::*, avformat::*, avutil::*, error::RsmpegError, ffi, swscale::*};
 
 use anyhow::{Context, Result};
 use cstr::cstr;
-use std::ffi::CStr;
-use std::fs::{self, File};
-use std::io::prelude::*;
-use std::ops::Deref;
-use std::slice;
+use std::{
+    ffi::CStr,
+    fs::{self, File},
+    io::prelude::*,
+    ops::Deref,
+    slice,
+};
 
 fn thumbnail(
     input_video_path: &CStr,
