@@ -5,7 +5,6 @@ use cstr::cstr;
 use rsmpeg::{
     self,
     avcodec::{AVCodec, AVCodecContext},
-    avfilter::{AVFilter, AVFilterContextMut, AVFilterGraph, AVFilterInOut},
     avformat::{
         AVFormatContextInput, AVFormatContextOutput, AVIOContextContainer, AVIOContextCustom,
     },
@@ -66,17 +65,20 @@ fn open_output_file(
         })),
         Some(Box::new(
             move |_: &mut Vec<u8>, offset: i64, whence: i32| {
-                println!("offset: {}, whence, {}", offset, whence);
-                let mut buffer = buffer.lock().unwrap();
-                let mut seek_ = |offset: i64, whence: i32| -> Result<u64> {
+                println!("offset: {}, whence: {}", offset, whence);
+                let mut buffer = match buffer.lock() {
+                    Ok(x) => x,
+                    Err(_) => return -1,
+                };
+                let mut seek_ = |offset: i64, whence: i32| -> Result<i64> {
                     Ok(match whence {
                         libc::SEEK_CUR => buffer.seek(SeekFrom::Current(offset))?,
                         libc::SEEK_SET => buffer.seek(SeekFrom::Start(offset as u64))?,
                         libc::SEEK_END => buffer.seek(SeekFrom::End(offset))?,
-                        _ => unimplemented!(),
-                    })
+                        _ => return Err(anyhow!("Unsupported whence")),
+                    } as i64)
                 };
-                seek_(offset, whence).expect("Seek failed") as i64
+                seek_(offset, whence).unwrap_or(-1)
             },
         )),
     );
