@@ -348,6 +348,12 @@ impl Drop for AVCodecContext {
 
 wrap_ref_mut!(AVSubtitle: ffi::AVSubtitle);
 
+impl Default for AVSubtitle {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AVSubtitle {
     /// Create a new [`AVSubtitle`].
     pub fn new() -> Self {
