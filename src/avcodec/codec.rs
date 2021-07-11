@@ -232,6 +232,67 @@ impl AVCodecContext {
         }
     }
 
+    /// Decode a subtitle message.
+    ///
+    /// Some decoders (those marked with `AV_CODEC_CAP_DELAY`) have a delay
+    /// between input and output. This means that for some packets they will not
+    /// immediately produce decoded output and need to be flushed at the end of
+    /// decoding to get all the decoded data. Flushing is done by calling this
+    /// function with `None`.
+    pub fn decode_subtitle(&mut self, packet: Option<&mut AVPacket>) -> Result<Option<AVSubtitle>> {
+        let mut subtitle = AVSubtitle::new();
+        let mut got_sub = 0;
+        let mut local_packet;
+
+        // FFmpeg's documentation of `avcodec_decode_subtitle2`:
+        //
+        // Flushing is done by calling this function with packets with
+        // avpkt->data set to NULL and avpkt->size set to 0 until it stops
+        // returning subtitles. It is safe to flush even those decoders that
+        // are not marked with AV_CODEC_CAP_DELAY, then no subtitles will be
+        // returned.
+        let packet = match packet {
+            Some(x) => x.as_mut_ptr(),
+            None => {
+                local_packet = AVPacket::new();
+                debug_assert_eq!(local_packet.data, ptr::null_mut());
+                debug_assert_eq!(local_packet.size, 0);
+                local_packet.as_mut_ptr()
+            }
+        };
+
+        let _ = unsafe {
+            ffi::avcodec_decode_subtitle2(
+                self.as_mut_ptr(),
+                subtitle.as_mut_ptr(),
+                &mut got_sub,
+                packet,
+            )
+        }
+        .upgrade()
+        .map_err(RsmpegError::AVError)?;
+
+        if got_sub == 0 {
+            return Ok(None);
+        }
+        Ok(Some(subtitle))
+    }
+
+    /// Encode subtitle to buffer.
+    pub fn encode_subtitle(&mut self, subtitle: &AVSubtitle, buf: &mut [u8]) -> Result<()> {
+        unsafe {
+            ffi::avcodec_encode_subtitle(
+                self.as_mut_ptr(),
+                buf.as_mut_ptr(),
+                buf.len() as i32,
+                subtitle.as_ptr(),
+            )
+        }
+        .upgrade()
+        .map_err(RsmpegError::AVError)?;
+        Ok(())
+    }
+
     /// Fill the codec context based on the values from the supplied codec parameters.
     ///
     /// ATTENTION: There is no codecpar field in `AVCodecContext`, this function
@@ -281,6 +342,43 @@ impl Drop for AVCodecContext {
         let mut context = self.as_mut_ptr();
         unsafe {
             ffi::avcodec_free_context(&mut context);
+        }
+    }
+}
+
+wrap_ref_mut!(AVSubtitle: ffi::AVSubtitle);
+
+impl Default for AVSubtitle {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AVSubtitle {
+    /// Create a new [`AVSubtitle`].
+    pub fn new() -> Self {
+        let subtitle = ffi::AVSubtitle {
+            format: 0,
+            start_display_time: 0,
+            end_display_time: 0,
+            num_rects: 0,
+            rects: ptr::null_mut(),
+            pts: 0,
+        };
+        let subtitle = Box::leak(Box::new(subtitle));
+        // Shouldn't be null, so unwrap here.
+        let subtitle = NonNull::new(subtitle).unwrap();
+        unsafe { AVSubtitle::from_raw(subtitle) }
+    }
+}
+
+impl Drop for AVSubtitle {
+    fn drop(&mut self) {
+        unsafe {
+            // Free all allocated data in the given subtitle struct.
+            ffi::avsubtitle_free(self.as_mut_ptr());
+            // Free the subtitle struct.
+            let _ = Box::from_raw(self.as_mut_ptr());
         }
     }
 }
