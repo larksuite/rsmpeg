@@ -232,6 +232,125 @@ impl AVCodecContext {
         }
     }
 
+    /// Trying to push a packet to current decoding_context([`AVCodecContext`]).
+    pub fn send_one_packet(&mut self, packet: Option<&AVPacket>) -> Result<()> {
+        loop {
+            let ret = self.send_packet(packet);
+
+            if ret.is_ok() {
+                break ret;
+            }
+
+            if let Err(e) = ret {
+                let err;
+                match e {
+                    RsmpegError::DecoderFullError => {
+                        // flush internal buffers
+                        unsafe {
+                            ffi::avcodec_flush_buffers(self.as_mut_ptr());
+                        }
+                        continue;
+                    }
+                    e => err = e,
+                }
+                match err {
+                    // read input until no data, then continue to run: send_packet
+                    RsmpegError::DecoderDrainError => {
+                        continue;
+                    }
+                    e => break Err(e),
+                }
+            }
+        }
+    }
+
+    /// Trying to pull a frame from current decoding_context([`AVCodecContext`]).
+    pub fn receive_one_frame(&mut self, packet: Option<&AVPacket>) -> Result<AVFrame> {
+        loop {
+            let ret = self.receive_frame();
+
+            if ret.is_ok() {
+                break ret;
+            }
+
+            if let Err(e) = ret {
+                match e {
+                    // Decoder have no frame currently, Try send new input.
+                    RsmpegError::DecoderDrainError => {
+                        let ret = self.send_packet(packet);
+                        match ret {
+                            Ok(_) => {
+                                continue;
+                            }
+                            Err(e) => break Err(e),
+                        }
+                    }
+                    e => break Err(e),
+                }
+            }
+        }
+    }
+
+    /// Trying to push a frame to current encoding_context([`AVCodecContext`]).
+    pub fn send_one_frame(&mut self, frame: Option<&AVFrame>) -> Result<()> {
+        loop {
+            let ret = self.send_frame(frame);
+
+            if ret.is_ok() {
+                break ret;
+            }
+
+            if let Err(e) = ret {
+                let err;
+                match e {
+                    // Decoder isn't accepting input, try to receive several frames and send again.
+                    RsmpegError::SendFrameAgainError => loop {
+                        // flush internal buffers
+                        unsafe {
+                            ffi::avcodec_flush_buffers(self.as_mut_ptr());
+                        }
+                        continue;
+                    },
+                    e => err = e,
+                }
+                match err {
+                    // read input until no data, then continue to run: send_frame
+                    RsmpegError::EncoderDrainError => {
+                        continue;
+                    }
+                    e => break Err(e),
+                }
+            }
+        }
+    }
+
+    /// Trying to pull a packet from current encoding_context([`AVCodecContext`]).
+    pub fn receive_one_packet(&mut self, frame: Option<&AVFrame>) -> Result<AVPacket> {
+        loop {
+            let ret = self.receive_packet();
+
+            if ret.is_ok() {
+                break ret;
+            }
+
+            if let Err(e) = ret {
+                match e {
+                    // Decoder have no frame currently, Try send new input.
+                    RsmpegError::EncoderDrainError => {
+                        let ret = self.send_frame(frame);
+                        match ret {
+                            Ok(_) => {
+                                continue;
+                            }
+                            Err(e) => break Err(e),
+                        }
+                    }
+                    e => break Err(e),
+                }
+            }
+        }
+    }
+
     /// Decode a subtitle message.
     ///
     /// Some decoders (those marked with `AV_CODEC_CAP_DELAY`) have a delay
