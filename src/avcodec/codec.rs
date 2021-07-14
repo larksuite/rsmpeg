@@ -242,20 +242,12 @@ impl AVCodecContext {
             }
 
             if let Err(e) = ret {
-                let err;
                 match e {
                     RsmpegError::DecoderFullError => {
                         // flush internal buffers
                         unsafe {
                             ffi::avcodec_flush_buffers(self.as_mut_ptr());
                         }
-                        continue;
-                    }
-                    e => err = e,
-                }
-                match err {
-                    // read input until no data, then continue to run: send_packet
-                    RsmpegError::DecoderDrainError => {
                         continue;
                     }
                     e => break Err(e),
@@ -301,7 +293,6 @@ impl AVCodecContext {
             }
 
             if let Err(e) = ret {
-                let err;
                 match e {
                     // Decoder isn't accepting input, try to receive several frames and send again.
                     RsmpegError::SendFrameAgainError => loop {
@@ -311,13 +302,6 @@ impl AVCodecContext {
                         }
                         continue;
                     },
-                    e => err = e,
-                }
-                match err {
-                    // read input until no data, then continue to run: send_frame
-                    RsmpegError::EncoderDrainError => {
-                        continue;
-                    }
                     e => break Err(e),
                 }
             }
