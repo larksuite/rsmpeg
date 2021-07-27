@@ -377,6 +377,7 @@ pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
         .map(|_| AVFilterGraph::new())
         .collect();
     let mut transcoding_contexts = init_filters(&mut filter_graphs, stream_contexts)?;
+    let mut last_timestamp = vec![-1; transcoding_contexts.len()];
 
     loop {
         let mut packet = match input_format_context.read_packet() {
@@ -409,7 +410,16 @@ pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
                         Err(e) => bail!(e),
                     };
 
-                    frame.set_pts(frame.best_effort_timestamp);
+                    let mut best_effort_timestamp = frame.best_effort_timestamp;
+                    if best_effort_timestamp == last_timestamp[in_stream_index] {
+                        best_effort_timestamp += 1;
+                        eprintln!(
+                            "fix timestamp: {} -> {}",
+                            last_timestamp[in_stream_index], best_effort_timestamp
+                        );
+                    }
+                    last_timestamp[in_stream_index] = best_effort_timestamp;
+                    frame.set_pts(best_effort_timestamp);
                     filter_encode_write_frame(
                         Some(frame),
                         buffer_src_context,
@@ -513,6 +523,16 @@ fn transcoding_test5() {
     transcoding(
         cstr!("tests/assets/vids/with_pic.mp4"),
         cstr!("tests/output/transcoding/with_pic.mp4"),
+    )
+    .unwrap();
+}
+
+#[test]
+fn transcoding_test6() {
+    std::fs::create_dir_all("tests/output/transcoding/").unwrap();
+    transcoding(
+        cstr!("tests/assets/vids/screen-fragment.mp4"),
+        cstr!("tests/output/transcoding/screen-fragment.mp4"),
     )
     .unwrap();
 }
