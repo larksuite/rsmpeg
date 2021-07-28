@@ -141,69 +141,6 @@ jobs:
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
           cargo ${{ matrix.cargo-prefix }} test --verbose
 
-  build_with_vcpkg_ffmpeg_windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        config:
-          - target: "x86_64-pc-windows-msvc"
-            vcpkg_triplet: "x64-windows-static"
-            rustflags: "-Ctarget-feature=+crt-static"
-          - target: "x86_64-pc-windows-msvc"
-            vcpkg_triplet: "x64-windows-static-md"
-          - target: "x86_64-pc-windows-msvc"
-            vcpkg_triplet: "x64-windows"
-            dynamic: true
-
-          - target: "i686-pc-windows-msvc"
-            vcpkg_triplet: "x86-windows-static"
-            rustflags: "-Ctarget-feature=+crt-static"
-          - target: "i686-pc-windows-msvc"
-            vcpkg_triplet: "x86-windows-static-md"
-          - target: "i686-pc-windows-msvc"
-            vcpkg_triplet: "x86-windows"
-            dynamic: true
-      fail-fast: false
-
-    steps:
-      - uses: actions/checkout@v2
-
-      # Using this since it's used by clang-sys's CI
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "10.0"
-          directory: ${{ github.workspace }}/clang
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          target: ${{ matrix.config.target }}
-
-      - run: |
-          git clone https://github.com/microsoft/vcpkg --depth 1
-          ./vcpkg/bootstrap-vcpkg.bat
-          ./vcpkg/vcpkg.exe install ffmpeg:${{ matrix.config.vcpkg_triplet }}
-
-      - name: Set env
-        shell: bash
-        run: |
-          if [ '${{ matrix.config.dynamic }}' != '' ]; then
-            echo "VCPKGRS_DYNAMIC=1" >> $GITHUB_ENV
-          fi
-
-      - name: Binding build
-        shell: bash
-        env:
-          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-          RUSTFLAGS: ${{ matrix.config.rustflags }}
-          VCPKG_DEFAULT_TRIPLET: ${{ matrix.config.vcpkg_triplet }}
-          LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
-          LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
-        run: cargo build --target ${{ matrix.config.target }} --verbose
-
   # Cross build on Ubuntu, then send it to Windows machine for CI.
   build_dynamic_and_test_windows_pre:
     runs-on: ubuntu-latest
