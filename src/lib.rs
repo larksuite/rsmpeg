@@ -18,3 +18,5 @@ pub mod swresample;
 pub mod swscale;
 
 pub mod error;
+
+pub use shared::UnsafeDerefMut;
