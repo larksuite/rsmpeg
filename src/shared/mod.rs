@@ -69,6 +69,10 @@ impl RetUpgrade for c_int {
 /// in a unsafe block if type of foo implements this trait.
 pub trait UnsafeDerefMut: Deref {
     /// Mutably dereferences the value, unsafely.
+    /// # Safety
+    ///
+    /// This function should be used carefully, adding safe convenient for
+    /// rsmpeg is preferred.
     unsafe fn deref_mut(&mut self) -> &mut Self::Target;
 }
 
