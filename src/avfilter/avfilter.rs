@@ -132,11 +132,17 @@ impl AVFilterGraph {
     pub fn parse_ptr(
         &self,
         filter_spec: &CStr,
-        mut inputs: AVFilterInOut,
-        mut outputs: AVFilterInOut,
+        mut inputs: Option<AVFilterInOut>,
+        mut outputs: Option<AVFilterInOut>,
     ) -> Result<(Option<AVFilterInOut>, Option<AVFilterInOut>)> {
-        let mut inputs_new = inputs.as_mut_ptr();
-        let mut outputs_new = outputs.as_mut_ptr();
+        let mut inputs_new = inputs
+            .as_mut()
+            .map(|x| x.as_mut_ptr())
+            .unwrap_or(ptr::null_mut());
+        let mut outputs_new = outputs
+            .as_mut()
+            .map(|x| x.as_mut_ptr())
+            .unwrap_or(ptr::null_mut());
 
         // FFmpeg `avfilter_graph_parse*`'s documentation states:
         //
@@ -158,10 +164,10 @@ impl AVFilterGraph {
         .upgrade()?;
 
         // If no error, inputs and outputs pointer are dangling, manually erase
-        // them without dropping. Do this because we need to drop inputs and
-        // outputs on the error path.
-        let _ = inputs.into_raw();
-        let _ = outputs.into_raw();
+        // them *without* dropping. Do this because we need to drop inputs and
+        // outputs on the error path, but don't drop them on normal path.
+        let _ = inputs.map(|x| x.into_raw());
+        let _ = outputs.map(|x| x.into_raw());
 
         // ATTENTION: TODO here we didn't bind the AVFilterInOut to the lifetime of the AVFilterGraph
         let new_inputs = inputs_new

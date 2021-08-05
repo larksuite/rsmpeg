@@ -221,7 +221,7 @@ fn init_filter<'graph>(
     // Yes the outputs' name is `in` -_-b
     let outputs = AVFilterInOut::new(cstr!("in"), &mut buffer_src_context, 0);
     let inputs = AVFilterInOut::new(cstr!("out"), &mut buffer_sink_context, 0);
-    let (_inputs, _outputs) = filter_graph.parse_ptr(filter_spec, inputs, outputs)?;
+    let (_inputs, _outputs) = filter_graph.parse_ptr(filter_spec, Some(inputs), Some(outputs))?;
 
     filter_graph.config()?;
 
