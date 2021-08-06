@@ -186,6 +186,15 @@ impl AVFilterGraph {
             .upgrade()?;
         Ok(())
     }
+
+    /// Get a filter instance identified by instance name from graph.
+    pub fn get_filter(&mut self, name: &CStr) -> Option<AVFilterContextMut> {
+        unsafe {
+            ffi::avfilter_graph_get_filter(self.as_mut_ptr(), name.as_ptr())
+                .upgrade()
+                .map(|raw| AVFilterContextMut::from_raw(raw))
+        }
+    }
 }
 
 impl<'graph> AVFilterGraph {
