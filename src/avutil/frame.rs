@@ -19,6 +19,8 @@ settable!(AVFrame {
     sample_rate: i32,
 });
 
+unsafe impl Send for AVFrame {}
+
 impl fmt::Debug for AVFrame {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AVFrame")
@@ -86,7 +88,8 @@ impl AVFrame {
     ///
     /// # Safety
     /// The buffer src points to cannot outlive the AVFrame. Recommend using
-    /// fill_image_buffer() instead.
+    /// fill_image_buffer() instead. And don't fill thread-local buffer in,
+    /// since `AVFrame` is `Send`.
     pub unsafe fn fill_arrays(
         &mut self,
         src: *const u8,
