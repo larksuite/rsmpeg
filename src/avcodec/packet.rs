@@ -5,6 +5,8 @@ use crate::{avutil::AVRational, ffi, shared::*};
 wrap!(AVPacket: ffi::AVPacket);
 settable!(AVPacket { stream_index: i32 });
 
+unsafe impl Send for AVPacket {}
+
 impl AVPacket {
     /// Create an [`AVPacket`] and set its fields to default values.
     pub fn new() -> Self {
