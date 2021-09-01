@@ -35,19 +35,21 @@ fn thumbnail(
     let cover_frame = loop {
         let cover_packet = loop {
             match input_format_context.read_packet()? {
-                // Get first video packet.
-                Some(x) if x.stream_index == video_stream_index as i32 => break x,
-                Some(_) => {}
-                None => bail!("Can't find video cover packet"),
+                Some(x) if x.stream_index != video_stream_index as i32 => {}
+                x => break x,
             }
         };
 
-        decode_context.send_packet(Some(&cover_packet))?;
+        decode_context.send_packet(cover_packet.as_ref())?;
         // repeatedly send packet until a frame can be extracted
         match decode_context.receive_frame() {
             Ok(x) => break x,
             Err(RsmpegError::DecoderDrainError) => {}
             Err(e) => return Err(e.into()),
+        }
+
+        if cover_packet.is_none() {
+            bail!("Can't find video cover frame");
         }
     };
 
