@@ -45,7 +45,7 @@ fn thumbnail(
         match decode_context.receive_frame() {
             Ok(x) => break x,
             Err(RsmpegError::DecoderDrainError) => {}
-            Err(e) => return Err(e.into()),
+            Err(e) => bail!(e),
         }
 
         if cover_packet.is_none() {
@@ -119,7 +119,7 @@ fn thumbnail(
 }
 
 #[test]
-fn thumbnail_test() {
+fn thumbnail_test0() {
     fs::create_dir_all("tests/output/thumbnail").unwrap();
 
     thumbnail(
@@ -127,6 +127,19 @@ fn thumbnail_test() {
         cstr!("tests/output/thumbnail/bear.jpg"),
         Some(192),
         Some(108),
+    )
+    .unwrap();
+}
+
+#[test]
+fn thumbnail_test1() {
+    fs::create_dir_all("tests/output/thumbnail").unwrap();
+
+    thumbnail(
+        cstr!("tests/assets/vids/video.mp4"),
+        cstr!("tests/output/thumbnail/video.jpg"),
+        Some(280),
+        Some(240),
     )
     .unwrap();
 }
