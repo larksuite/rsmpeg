@@ -1,6 +1,6 @@
 use rsmpeg::{avcodec::*, avformat::*, avutil::*, error::RsmpegError, ffi, swscale::*};
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use cstr::cstr;
 use std::{
     ffi::CStr,
@@ -33,16 +33,13 @@ fn thumbnail(
     };
 
     let cover_frame = loop {
-        let cover_packet = {
-            let mut cover_packet = None;
-            while let Some(packet) = input_format_context.read_packet()? {
+        let cover_packet = loop {
+            match input_format_context.read_packet()? {
                 // Get first video packet.
-                if packet.stream_index == video_stream_index as i32 {
-                    cover_packet = Some(packet);
-                    break;
-                }
+                Some(x) if x.stream_index == video_stream_index as i32 => break x,
+                Some(_) => {}
+                None => bail!("Can't find video cover packet"),
             }
-            cover_packet.context("Cannnot find video cover packet")?
         };
 
         decode_context.send_packet(Some(&cover_packet))?;
