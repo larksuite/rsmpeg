@@ -1,3 +1,23 @@
+## 0.7.0
+
+- Better docs and tests (`transcoding`, `avio_writing`, `thumbnail`), more bug fixes.
+
+- Add `av_rescale_q`, `av_rescale_q_rnd` and `ra` for easier `AVRational` manipulation.
+
+- Add `AVFrame::make_writable`, `AVFrame::is_writable` for frame writable checking.
+
+- Split `SwrContext::convert` into `convert` and `convert_raw` for more flexible audio api.
+
+- Make FFmpeg's error code included in `OpenInputError`.
+
+- Add `AVSubtitle` and related encoding and decoding api for subtitle manipulation.
+
+- Export `UnsafeDerefMut` for users to access raw FFmpeg structure with an unsafe context.
+
+- Allow `AVFilterGraph::parse_ptr` accept no filter inputs or outputs.
+
+- Impl `Send` for `AVPacket` and `AVFrame`, which makes video packet processing across thread boundary possible.
+
 ## 0.6.0
 
 - Better docs and tests (rewrites the `transcoding` and `transcoding_aac` tests), more bug fixes.
