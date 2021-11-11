@@ -64,7 +64,7 @@ Prepare a simple image in your current folder:
 
 ![test.jpg](./assets/mountain.jpg)
 
-Run with `FFMPEG_PKG_CONFIG_PATH` set to the pkgconfig file path (Absolute path!) in your artifact folder (`xxx/ffmpeg_build/lib/pkgconfig`).
+Run with `FFMPEG_PKG_CONFIG_PATH` set to the pkgconfig file path (**Absolute path!**) in your artifact folder (`xxx/ffmpeg_build/lib/pkgconfig`).
 
 ```bash
 # macOS & Linux
