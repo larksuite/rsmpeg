@@ -103,6 +103,7 @@ Minimum Supported Rust Version is 1.52(Stable channel).
 
 Thanks for your contributions!
 
++ [@aegroto](https://github.com/aegroto)
 + [@nanpuyue](https://github.com/nanpuyue)
 + [@imxood](https://github.com/imxood)
 + [@FallingSnow](https://github.com/FallingSnow)
