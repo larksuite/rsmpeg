@@ -346,6 +346,8 @@ impl Drop for AVCodecContext {
     }
 }
 
+unsafe impl Send for AVCodecContext {}
+
 wrap_ref_mut!(AVSubtitle: ffi::AVSubtitle);
 
 impl Default for AVSubtitle {

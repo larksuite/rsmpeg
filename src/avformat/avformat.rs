@@ -194,6 +194,8 @@ impl Drop for AVFormatContextInput {
     }
 }
 
+unsafe impl Send for AVFormatContextInput {}
+
 wrap! {
     AVFormatContextOutput: ffi::AVFormatContext,
     io_context: Option<AVIOContextContainer> = None,
