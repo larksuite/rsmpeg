@@ -19,8 +19,6 @@ settable!(AVFrame {
     sample_rate: i32,
 });
 
-unsafe impl Send for AVFrame {}
-
 impl fmt::Debug for AVFrame {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AVFrame")

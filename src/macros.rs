@@ -62,6 +62,8 @@ macro_rules! wrap_pure {
                 unsafe { self.something_should_not_be_touched_directly.as_mut() }
             }
         }
+
+        unsafe impl Send for $wrapped_type {}
     };
 }
 
