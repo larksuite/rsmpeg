@@ -2,7 +2,7 @@
 name = "rsmpeg"
 version = "0.7.0"
 authors = ["liudingming <liudingming@bytedance.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "A Rust crate that exposes FFmpeg's power as much as possible."
 keywords = ["ffmpeg", "ffi", "binding", "audio", "video"]
