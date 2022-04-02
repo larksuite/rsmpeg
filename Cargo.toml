@@ -13,7 +13,7 @@ readme = "README.md"
 exclude = ["tests/*", "examples/*", "utils/*"]
 
 [dependencies]
-rusty_ffmpeg = "0.7"
+rusty_ffmpeg = "0.8"
 libc = "0.2"
 paste = "1.0"
 thiserror = "1.0"

@@ -231,7 +231,7 @@ mod test {
     #[test]
     fn test_null_filter() {
         let ctx = AVBSFContextUninit::get_null();
-        assert_eq!(cstr!("bsf_list"), ctx.filter().name());
+        assert_eq!(cstr!("null"), ctx.filter().name());
     }
 
     #[test]
