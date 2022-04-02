@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [ "nightly", "1.52.0" ]
+        rust: [ "nightly", "1.56.0" ]
         valgrind: [ "valgrind", "no valgrind" ]
         include:
           - valgrind: "valgrind"
@@ -202,7 +202,7 @@ jobs:
   build_dynamic_and_test_windows:
     strategy:
       matrix:
-        rust: [ "nightly", "1.52.0" ]
+        rust: [ "nightly", "1.56.0" ]
       fail-fast: false
     runs-on: windows-latest
     needs: build_dynamic_and_test_windows_pre

@@ -2,7 +2,7 @@
 name = "rsmpeg"
 version = "0.7.0"
 authors = ["liudingming <liudingming@bytedance.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "A Rust crate that exposes FFmpeg's power as much as possible."
 keywords = ["ffmpeg", "ffi", "binding", "audio", "video"]
@@ -19,11 +19,11 @@ paste = "1.0"
 thiserror = "1.0"
 
 [dev-dependencies]
-env_logger = "0.8"
-log = "0.4"
-anyhow = "1.0"
-glfw = "0.41"
-gl = "0.14"
-cstr = "0.2.8"
-once_cell = "1.7.2"
+env_logger = "0.9.0"
+log = "0.4.16"
+anyhow = "1.0.56"
+glfw = "0.44.0"
+gl = "0.14.0"
+cstr = "0.2.10"
+once_cell = "1.10.0"
 tempdir = "0.3.7"
