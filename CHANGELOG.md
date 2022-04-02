@@ -1,3 +1,9 @@
+## 0.7.1
+
+- `impl Send` for binding types.
+
+- Dependencies version bump
+
 ## 0.7.0
 
 - Better docs and tests (`transcoding`, `avio_writing`, `thumbnail`), more bug fixes.
