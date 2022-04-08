@@ -1,3 +1,7 @@
+## 0.8.0
+
+- Supports FFmpeg 5.0
+
 ## 0.7.1
 
 - `impl Send` for binding types.

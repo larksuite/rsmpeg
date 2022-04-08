@@ -321,7 +321,7 @@ impl AVCodecContext {
 
     /// Is hardware accelaration enabled in this codec context.
     pub fn is_hwaccel(&self) -> bool {
-        // We doesn't expose the `AVHWAccel` because the documentationstates:
+        // We doesn't expose the `AVHWAccel` because the documentation states:
         //
         // Nothing in this structure should be accessed by the user. At some
         // point in future it will not be externally visible at all.
