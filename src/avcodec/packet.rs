@@ -3,7 +3,14 @@ use std::{fmt, ops::Drop, ptr::NonNull};
 use crate::{avutil::AVRational, ffi, shared::*};
 
 wrap!(AVPacket: ffi::AVPacket);
-settable!(AVPacket { stream_index: i32 });
+settable!(AVPacket {
+    pts: i64,
+    dts: i64,
+    stream_index: i32,
+    flags: i32,
+    duration: i64,
+    pos: i64,
+});
 
 impl AVPacket {
     /// Create an [`AVPacket`] and set its fields to default values.
