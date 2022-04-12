@@ -1,3 +1,7 @@
+## 0.8.1
+
+- Bump `rusty_ffmpeg` to 0.8.1
+
 ## 0.8.0
 
 - Supports FFmpeg 5.0

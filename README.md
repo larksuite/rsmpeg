@@ -39,7 +39,7 @@ Start by adding `rsmpeg` to your `Cargo.toml` file:
 
 ```rust
 [dependencies]
-rsmpeg = "0.8.0"
+rsmpeg = "0.8.1"
 ```
 
 Write your simple media file info dumper:
