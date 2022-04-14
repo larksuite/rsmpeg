@@ -1,3 +1,9 @@
+## 0.8.2
+
+- More field setter methods for `AVPacket`.
+
+- Wrap `AVPixFmtDescriptor`.
+
 ## 0.8.1
 
 - Bump `rusty_ffmpeg` to 0.8.1
