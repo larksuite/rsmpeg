@@ -7,7 +7,7 @@ use rsmpeg::{
     avformat::{AVFormatContextInput, AVFormatContextOutput},
     avutil::{
         av_get_channel_layout_nb_channels, av_get_default_channel_layout, av_inv_q, av_mul_q,
-        get_sample_fmt_name, ra, AVFrame,
+        get_sample_fmt_name, ra, AVDictionary, AVFrame,
     },
     error::RsmpegError,
     ffi,
@@ -82,6 +82,7 @@ fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFo
 fn open_output_file(
     filename: &CStr,
     decode_contexts: Vec<Option<AVCodecContext>>,
+    dict: &mut Option<AVDictionary>,
 ) -> Result<(Vec<Option<StreamContext>>, AVFormatContextOutput)> {
     let mut output_format_context = AVFormatContextOutput::create(filename, None)?;
     let mut stream_contexts = vec![];
@@ -141,7 +142,7 @@ fn open_output_file(
     }
 
     output_format_context.dump(0, filename)?;
-    output_format_context.write_header()?;
+    output_format_context.write_header(dict)?;
 
     Ok((stream_contexts, output_format_context))
 }
@@ -369,10 +370,14 @@ fn flush_encoder(
 }
 
 /// Transcoding audio and video stream in a multi media file.
-pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
+pub fn transcoding(
+    input_file: &CStr,
+    output_file: &CStr,
+    dict: &mut Option<AVDictionary>,
+) -> Result<()> {
     let (decode_contexts, mut input_format_context) = open_input_file(input_file)?;
     let (stream_contexts, mut output_format_context) =
-        open_output_file(output_file, decode_contexts)?;
+        open_output_file(output_file, decode_contexts, dict)?;
     let mut filter_graphs: Vec<_> = (0..stream_contexts.len())
         .map(|_| AVFilterGraph::new())
         .collect();
@@ -473,6 +478,7 @@ fn transcoding_test0() {
     transcoding(
         cstr!("tests/assets/vids/mov_sample.mov"),
         cstr!("tests/output/transcoding/mov_sample.mov"),
+        &mut None,
     )
     .unwrap();
 }
@@ -483,6 +489,7 @@ fn transcoding_test1() {
     transcoding(
         cstr!("tests/assets/vids/centaur.mpg"),
         cstr!("tests/output/transcoding/centaur.mpg"),
+        &mut None,
     )
     .unwrap();
 }
@@ -493,6 +500,7 @@ fn transcoding_test2() {
     transcoding(
         cstr!("tests/assets/vids/bear.mp4"),
         cstr!("tests/output/transcoding/bear.mp4"),
+        &mut None,
     )
     .unwrap();
 }
@@ -503,6 +511,7 @@ fn transcoding_test3() {
     transcoding(
         cstr!("tests/assets/vids/vp8.mp4"),
         cstr!("tests/output/transcoding/vp8.webm"),
+        &mut None,
     )
     .unwrap();
 }
@@ -513,6 +522,7 @@ fn transcoding_test4() {
     transcoding(
         cstr!("tests/assets/vids/big_buck_bunny.mp4"),
         cstr!("tests/output/transcoding/big_buck_bunny.mp4"),
+        &mut None,
     )
     .unwrap();
 }
@@ -523,6 +533,7 @@ fn transcoding_test5() {
     transcoding(
         cstr!("tests/assets/vids/with_pic.mp4"),
         cstr!("tests/output/transcoding/with_pic.mp4"),
+        &mut None,
     )
     .unwrap();
 }
@@ -533,6 +544,28 @@ fn transcoding_test6() {
     transcoding(
         cstr!("tests/assets/vids/screen-fragment.mp4"),
         cstr!("tests/output/transcoding/screen-fragment.mp4"),
+        &mut None,
     )
     .unwrap();
+}
+
+#[test]
+fn transcoding_test7() {
+    // Fragmented MP4 transcoding.
+    std::fs::create_dir_all("tests/output/transcoding/").unwrap();
+    let mut dict = Some(AVDictionary::new(
+        cstr!("movflags"),
+        cstr!("frag_keyframe+empty_moov"),
+        0,
+    ));
+
+    transcoding(
+        cstr!("tests/assets/vids/with_pic.mp4"),
+        cstr!("tests/output/transcoding/with_pic_fragmented.mp4"),
+        &mut dict,
+    )
+    .unwrap();
+
+    // Ensure `dict` is consumed.
+    assert!(dict.is_none());
 }

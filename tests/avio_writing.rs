@@ -120,7 +120,7 @@ fn open_output_file(
     }
 
     output_format_context.dump(0, filename)?;
-    output_format_context.write_header()?;
+    output_format_context.write_header(&mut None)?;
 
     Ok((output_format_context, encode_context))
 }

@@ -244,7 +244,7 @@ fn shadertoy(
             stream.set_time_base(encode_context.time_base);
         }
         output_format_context.dump(0, output_video_path)?;
-        output_format_context.write_header()?;
+        output_format_context.write_header(&mut None)?;
         output_format_context
     };
 

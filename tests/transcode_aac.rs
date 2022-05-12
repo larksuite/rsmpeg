@@ -181,7 +181,7 @@ fn transcode_aac(input_file: &CStr, output_file: &CStr) -> Result<()> {
     let mut fifo = AVAudioFifo::new(encode_context.sample_fmt, encode_context.channels, 1);
 
     // Write the header of the output file container.
-    output_format_context.write_header()?;
+    output_format_context.write_header(&mut None)?;
 
     let output_nb_sample = encode_context.frame_size;
 
