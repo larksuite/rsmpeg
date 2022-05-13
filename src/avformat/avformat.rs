@@ -250,10 +250,25 @@ impl AVFormatContextOutput {
 
     /// Allocate the stream private data and write the stream header to an
     /// output media file.
-    pub fn write_header(&mut self) -> Result<()> {
-        unsafe { ffi::avformat_write_header(self.as_mut_ptr(), ptr::null_mut()) }
+    ///
+    /// - `options`: An [`AVDictionary`] filled with [`AVFormatContextInput`]
+    ///     and muxer-private options. On return this parameter will be replaced
+    ///     with a dict containing options that were not found. Set this to `None`
+    ///     if it's not needed.
+    pub fn write_header(&mut self, dict: &mut Option<AVDictionary>) -> Result<()> {
+        let mut dict_ptr = dict
+            .take()
+            .map(|x| x.into_raw().as_ptr())
+            .unwrap_or_else(ptr::null_mut);
+
+        let result = unsafe { ffi::avformat_write_header(self.as_mut_ptr(), &mut dict_ptr as _) };
+
+        // Move back the ownership if not consumed.
+        *dict = dict_ptr
             .upgrade()
-            .map_err(RsmpegError::WriteHeaderError)?;
+            .map(|x| unsafe { AVDictionary::from_raw(x) });
+
+        result.upgrade().map_err(RsmpegError::WriteHeaderError)?;
 
         Ok(())
     }
