@@ -38,9 +38,6 @@ fn decode(
     packet: Option<&AVPacket>,
     out_dir: &str,
 ) -> Result<()> {
-    // Create output dir
-    fs::create_dir_all(out_dir)?;
-
     decode_context.send_packet(packet)?;
     loop {
         let frame = match decode_context.receive_frame() {
@@ -63,6 +60,8 @@ fn decode_video(video_path: &str, out_dir: &str) {
     decode_context.open(None).unwrap();
 
     let video_data = fs::read(video_path).unwrap();
+    // Create output dir
+    fs::create_dir_all(out_dir).unwrap();
 
     let mut parsed_offset = 0;
     let mut parser_context = AVCodecParserContext::find(decoder.id).unwrap();
@@ -81,6 +80,9 @@ fn decode_video(video_path: &str, out_dir: &str) {
         }
         parsed_offset += offset;
     }
+
+    // Flush decoder
+    decode(&mut decode_context, None, out_dir).unwrap();
 }
 
 #[test]
