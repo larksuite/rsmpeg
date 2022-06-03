@@ -62,11 +62,11 @@ impl RetUpgrade for c_int {
     }
 }
 
-/// This is a convenient trait we dont't find in the rust std library. Accessing
+/// This is a convenient trait we cannot find in the rust std library. Accessing
 /// member of a ffi struct mutably is not always safe(consider directly changing
 /// the capacity of a Vec). But for some members, accessing them is a need. So
-/// UnsafeDerefMut is come to rescue. You can use `foo.deref_mut().member = bar`
-/// in a unsafe block if type of foo implements this trait.
+/// `UnsafeDerefMut` is come to rescue. You can use `foo.deref_mut().member =
+/// bar` in a unsafe block if type of foo implements this trait.
 pub trait UnsafeDerefMut: Deref {
     /// Mutably dereferences the value, unsafely.
     /// # Safety
