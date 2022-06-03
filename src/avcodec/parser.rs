@@ -38,9 +38,9 @@ impl AVCodecParserContext {
                 &mut packet_size,
                 data.as_ptr(),
                 data.len() as i32,
-                ffi::AV_NOPTS_VALUE,
-                ffi::AV_NOPTS_VALUE,
-                0,
+                packet.pts,
+                packet.dts,
+                packet.pos,
             )
         }
         .upgrade()?;
