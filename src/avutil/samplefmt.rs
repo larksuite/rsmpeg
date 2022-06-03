@@ -96,8 +96,10 @@ pub fn get_planar_sample_fmt(sample_fmt: AVSampleFormat) -> Option<AVSampleForma
 }
 
 /// Return number of bytes per sample, return `None` when sample format is unknown.
-pub fn get_bytes_per_sample(sample_fmt: AVSampleFormat) -> Option<i32> {
-    NonZeroI32::new(unsafe { ffi::av_get_bytes_per_sample(sample_fmt) }).map(NonZeroI32::get)
+pub fn get_bytes_per_sample(sample_fmt: AVSampleFormat) -> Option<usize> {
+    NonZeroI32::new(unsafe { ffi::av_get_bytes_per_sample(sample_fmt) })
+        .map(NonZeroI32::get)
+        .and_then(|x| x.try_into().ok())
 }
 
 /// Check if the sample format is planar.
