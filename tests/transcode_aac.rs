@@ -255,11 +255,11 @@ fn transcode_aac(input_file: &CStr, output_file: &CStr) -> Result<()> {
 }
 
 #[test]
-fn transcode_aac_test() {
+fn transcode_aac_test0() {
     std::fs::create_dir_all("tests/output/transcode_aac/").unwrap();
     transcode_aac(
-        cstr!("tests/assets/audios/sample1.aac"),
-        cstr!("tests/output/transcode_aac/output.aac"),
+        cstr!("tests/assets/audios/sample1_short.aac"),
+        cstr!("tests/output/transcode_aac/output_short.aac"),
     )
     .unwrap();
 }
