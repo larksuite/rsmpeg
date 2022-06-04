@@ -1,3 +1,14 @@
+## 0.9.0
+
+- Enable metadata dict specifying in `write_header`.
+
+- Change `get_bytes_per_sample`'s return-type from `Option<i32>` to `Option<usize>`.
+
+- Make `AVCodecParserContext::parse_packet` respect packet's pts, dts and pos.
+
+- Add `decode_audio` test, make existing tests robuster and faster.
+
+
 ## 0.8.2
 
 - More field setter methods for `AVPacket`.
