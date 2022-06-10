@@ -31,6 +31,7 @@ fn get_format_from_sample_fmt(sample_fmt: AVSampleFormat) -> Option<&'static str
 
 fn frame_save(frame: &AVFrame, channels: usize, data_size: usize, mut file: &File) -> Result<()> {
     let nb_samples: usize = frame.nb_samples.try_into().context("nb_samples overflow")?;
+    // ATTENTION: This is only valid for planar sample formats.
     for i in 0..nb_samples {
         for channel in 0..channels {
             let data = unsafe { from_raw_parts(frame.data[channel].add(data_size * i), data_size) };
@@ -78,7 +79,7 @@ fn decode_audio(audio_path: &str, out_file_path: &str) -> Result<()> {
         let mut decode_context = AVCodecContext::new(&decoder);
         decode_context
             .apply_codecpar(
-                input_format_context
+                &input_format_context
                     .streams()
                     .get(stream_index)
                     .unwrap()

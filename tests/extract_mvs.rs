@@ -59,7 +59,7 @@ fn extract_mvs(video_path: &CStr) -> Result<Vec<MotionVector>> {
 
         let mut decode_context = AVCodecContext::new(&decoder);
 
-        decode_context.apply_codecpar(stream.codecpar())?;
+        decode_context.apply_codecpar(&stream.codecpar())?;
 
         let key = cstr!("flags2");
         let value = cstr!("+export_mvs");

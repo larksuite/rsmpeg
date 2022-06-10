@@ -51,7 +51,7 @@ fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFo
                 let decoder = AVCodec::find_decoder(codec_id)
                     .with_context(|| anyhow!("video decoder ({}) not found.", codec_id))?;
                 let mut decode_context = AVCodecContext::new(&decoder);
-                decode_context.apply_codecpar(codecpar)?;
+                decode_context.apply_codecpar(&codecpar)?;
                 if let Some(framerate) = input_stream.guess_framerate() {
                     decode_context.set_framerate(framerate);
                 }
@@ -63,7 +63,7 @@ fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFo
                 let decoder = AVCodec::find_decoder(codec_id)
                     .with_context(|| anyhow!("audio decoder ({}) not found.", codec_id))?;
                 let mut decode_context = AVCodecContext::new(&decoder);
-                decode_context.apply_codecpar(codecpar)?;
+                decode_context.apply_codecpar(&codecpar)?;
                 decode_context.open(None)?;
                 Some(decode_context)
             }
