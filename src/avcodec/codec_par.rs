@@ -1,5 +1,10 @@
 use crate::{avcodec::AVCodecContext, ffi, shared::*};
-use std::{clone::Clone, default::Default, ops::Drop};
+use std::{
+    clone::Clone,
+    default::Default,
+    fmt,
+    ops::{Deref, Drop},
+};
 
 wrap_ref_mut!(AVCodecParameters: ffi::AVCodecParameters);
 
@@ -33,6 +38,12 @@ impl AVCodecParameters {
         unsafe { ffi::avcodec_parameters_copy(self.as_mut_ptr(), from.as_ptr()) }
             .upgrade()
             .unwrap();
+    }
+}
+
+impl fmt::Debug for AVCodecParameters {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.deref().fmt(f)
     }
 }
 
