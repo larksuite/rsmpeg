@@ -331,11 +331,19 @@ impl<'stream> AVFormatContextOutput {
         }
     }
 
-    /// Get [`AVOutputFormatRef`] in the [`AVFormatContextOutput`].
-    pub fn oformat(&'stream self) -> AVOutputFormatRef<'stream> {
+    /// Get [`AVOutputFormat`] from the [`AVFormatContextOutput`].
+    pub fn oformat(&self) -> AVOutputFormatRef<'static> {
         // From the implementation of FFmpeg's `avformat_alloc_output_context2`,
         // we can be sure that `oformat` won't be null when muxing.
         unsafe { AVOutputFormatRef::from_raw(NonNull::new(self.oformat as *mut _).unwrap()) }
+    }
+
+    /// Set [`AVOutputFormat`] in the [`AVFormatContextOutput`].
+    pub fn set_oformat(&mut self, format: AVOutputFormatRef<'static>) {
+        // `as _` is for compatibility with older FFmpeg versions(< 5.0)
+        unsafe {
+            self.deref_mut().oformat = format.as_ptr() as _;
+        }
     }
 
     /// Add a new stream to a media file, should be called by the user before
@@ -370,6 +378,25 @@ impl Drop for AVFormatContextOutput {
 wrap_ref!(AVInputFormat: ffi::AVInputFormat);
 
 wrap_ref!(AVOutputFormat: ffi::AVOutputFormat);
+
+impl AVOutputFormat {
+    /// Return the output format in the list of registered output formats which
+    /// best matches the provided parameters, or return NULL if there is no
+    /// match.
+    pub fn guess_format(
+        short_name: Option<&CStr>,
+        filename: Option<&CStr>,
+        mime_type: Option<&CStr>,
+    ) -> Option<AVOutputFormatRef<'static>> {
+        let short_name = short_name.map(|x| x.as_ptr()).unwrap_or_else(ptr::null);
+        let filename = filename.map(|x| x.as_ptr()).unwrap_or_else(ptr::null);
+        let mime_type = mime_type.map(|x| x.as_ptr()).unwrap_or_else(ptr::null);
+
+        unsafe { ffi::av_guess_format(short_name, filename, mime_type) }
+            .upgrade()
+            .map(|x| unsafe { AVOutputFormatRef::from_raw(x) })
+    }
+}
 
 wrap_ref_mut!(AVStream: ffi::AVStream);
 settable!(AVStream {
