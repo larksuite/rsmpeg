@@ -26,7 +26,7 @@ fn thumbnail(
         let stream = input_format_context.streams().get(stream_index).unwrap();
 
         let mut decode_context = AVCodecContext::new(&decoder);
-        decode_context.apply_codecpar(stream.codecpar())?;
+        decode_context.apply_codecpar(&stream.codecpar())?;
         decode_context.open(None)?;
 
         (stream_index, decode_context)

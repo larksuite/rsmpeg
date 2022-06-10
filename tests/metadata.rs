@@ -48,7 +48,7 @@ fn metadata(file: &str) -> Result<Vec<(String, String)>> {
         // Get `width` and `height` from `decode_context`
         let mut decode_context = AVCodecContext::new(&decoder);
         decode_context
-            .apply_codecpar(video_stream.codecpar())
+            .apply_codecpar(&video_stream.codecpar())
             .unwrap();
         decode_context.open(None).unwrap();
         result.push(("width".into(), decode_context.width.to_string()));

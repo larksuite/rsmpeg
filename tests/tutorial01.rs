@@ -62,7 +62,7 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
         let decoder = AVCodec::find_decoder(video_stream.codecpar().codec_id)
             .context("Cannot find the decoder for video stream")?;
         let mut decode_context = AVCodecContext::new(&decoder);
-        decode_context.apply_codecpar(video_stream.codecpar())?;
+        decode_context.apply_codecpar(&video_stream.codecpar())?;
         decode_context.open(None)?;
         decode_context
     };

@@ -20,7 +20,7 @@ fn open_input_file(input_file: &CStr) -> Result<(AVFormatContextInput, AVCodecCo
 
     let mut decode_context = AVCodecContext::new(&decoder);
     decode_context.apply_codecpar(
-        input_format_context
+        &input_format_context
             .streams()
             .get(audio_index)
             .unwrap()

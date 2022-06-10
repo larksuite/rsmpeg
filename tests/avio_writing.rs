@@ -33,7 +33,7 @@ fn open_input_file(filename: &CStr) -> Result<(usize, AVFormatContextInput, AVCo
         let input_stream = input_format_context.streams().get(video_index).unwrap();
 
         let mut decode_context = AVCodecContext::new(&decoder);
-        decode_context.apply_codecpar(input_stream.codecpar())?;
+        decode_context.apply_codecpar(&input_stream.codecpar())?;
         if let Some(framerate) = input_stream.guess_framerate() {
             decode_context.set_framerate(framerate);
         }
