@@ -305,7 +305,7 @@ impl AVCodecContext {
     pub fn apply_codecpar(&mut self, codecpar: &AVCodecParameters) -> Result<()> {
         unsafe { ffi::avcodec_parameters_to_context(self.as_mut_ptr(), codecpar.as_ptr()) }
             .upgrade()
-            .map_err(|_| RsmpegError::CodecSetParameterError)?;
+            .map_err(RsmpegError::CodecSetParameterError)?;
         Ok(())
     }
 

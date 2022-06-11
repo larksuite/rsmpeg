@@ -69,7 +69,7 @@ impl AVFrame {
         }
         unsafe { ffi::av_frame_get_buffer(self.as_mut_ptr(), 0) }
             .upgrade()
-            .map_err(|_| RsmpegError::AVFrameInvalidAllocatingError)?;
+            .map_err(RsmpegError::AVFrameInvalidAllocatingError)?;
         Ok(())
     }
 
@@ -107,7 +107,7 @@ impl AVFrame {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::AVImageFillArrayError)?;
+        .map_err(RsmpegError::AVImageFillArrayError)?;
         Ok(())
     }
 
@@ -255,7 +255,7 @@ mod test {
         let mut frame = AVFrame::new();
         assert!(matches!(
             frame.alloc_buffer(),
-            Err(RsmpegError::AVFrameInvalidAllocatingError)
+            Err(RsmpegError::AVFrameInvalidAllocatingError(_))
         ));
     }
 

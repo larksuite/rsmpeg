@@ -9,7 +9,7 @@ use thiserror::Error;
 pub enum RsmpegError {
     #[error("AVERROR({0})")]
     AVError(c_int),
-    #[error("CustomError({0})")]
+    #[error("{0}")]
     CustomError(String),
 
     // --------- Unstablized error type below ------
@@ -17,45 +17,45 @@ pub enum RsmpegError {
     // FFmpeg errors
     #[error("Cannot open input file. ({0})")]
     OpenInputError(c_int),
-    #[error("Cannot open output file.")]
-    OpenOutputError,
-    #[error("Cannot find stream information.")]
-    FindStreamInfoError,
+    #[error("Cannot open output file. ({0})")]
+    OpenOutputError(c_int),
+    #[error("Cannot find stream information. ({0})")]
+    FindStreamInfoError(c_int),
     #[error("Cannot write header to output file. ({0})")]
     WriteHeaderError(c_int),
-    #[error("Cannot write trailer to output file.")]
-    WriteTrailerError,
+    #[error("Cannot write trailer to output file. ({0})")]
+    WriteTrailerError(c_int),
 
     #[error("Failed to open codec. ({0})")]
     CodecOpenError(c_int),
-    #[error("Failed to copy decoder parameters to input decoder context.")]
-    CodecSetParameterError,
+    #[error("Failed to copy decoder parameters to input decoder context. ({0})")]
+    CodecSetParameterError(c_int),
     #[error("Filter not found.")]
     FilterNotFound,
-    #[error("Create filter instance in a filter graph failed.")]
-    CreateFilterError,
-    #[error("Set property to a filter context failed.")]
-    SetPropertyError,
+    #[error("Create filter instance in a filter graph failed. ({0})")]
+    CreateFilterError(c_int),
+    #[error("Set property to a filter context failed. ({0})")]
+    SetPropertyError(c_int),
 
     // Decoder errors
-    #[error("Send packet to a codec context failed: ({0})")]
-    SendPacketError(i32),
+    #[error("Send packet to a codec context failed. ({0})")]
+    SendPacketError(c_int),
     #[error("Decoder isn't accepting input, try to receive several frames and send again.")]
     DecoderFullError,
-    #[error("Receive frame from a codec context failed: ({0})")]
-    ReceiveFrameError(i32),
+    #[error("Receive frame from a codec context failed. ({0})")]
+    ReceiveFrameError(c_int),
     #[error("Decoder have no frame currently, Try send new input.")]
     DecoderDrainError,
     #[error("Decoder is already flushed.")]
     DecoderFlushedError,
 
     // Encoder errors
-    #[error("Send frame to a codec context failed: ({0})")]
-    SendFrameError(i32),
+    #[error("Send frame to a codec context failed. ({0})")]
+    SendFrameError(c_int),
     #[error("Encoder isn't accepting input, try to receive several packets and send again.")]
     SendFrameAgainError,
-    #[error("Receive packet from a codec context failed: ({0})")]
-    ReceivePacketError(i32),
+    #[error("Receive packet from a codec context failed. ({0})")]
+    ReceivePacketError(c_int),
     #[error("Encoder have no packet currently, Try send new input.")]
     EncoderDrainError,
     #[error("Encoder is already flushed.")]
@@ -68,57 +68,57 @@ pub enum RsmpegError {
     BitstreamDrainError,
     #[error("Bitstream filter is already flushed")]
     BitstreamFlushedError,
-    #[error("Send packet to a bitstream filter context failed: ({0})")]
-    BitstreamSendPacketError(i32),
-    #[error("Receive packet from a bitstream filter context failed: ({0})")]
-    BitstreamReceivePacketError(i32),
-    #[error("Failed to initialize bitstream filter context: ({0})")]
-    BitstreamInitializationError(i32),
+    #[error("Send packet to a bitstream filter context failed. ({0})")]
+    BitstreamSendPacketError(c_int),
+    #[error("Receive packet from a bitstream filter context failed. ({0})")]
+    BitstreamReceivePacketError(c_int),
+    #[error("Failed to initialize bitstream filter context. ({0})")]
+    BitstreamInitializationError(c_int),
 
-    #[error("Read frame to an input format context failed: ({0})")]
-    ReadFrameError(i32),
-    #[error("Write frame to an output format context failed.")]
-    WriteFrameError,
-    #[error("Interleaved write frame to an output format context failed.")]
-    InterleavedWriteFrameError(i32),
+    #[error("Read frame to an input format context failed. ({0})")]
+    ReadFrameError(c_int),
+    #[error("Write frame to an output format context failed. ({0})")]
+    WriteFrameError(c_int),
+    #[error("Interleaved write frame to an output format context failed. ({0})")]
+    InterleavedWriteFrameError(c_int),
 
-    #[error("Error while feeding the filtergraph failed.")]
-    BufferSrcAddFrameError,
-    #[error("Pulling filtered frame from filters failed")]
-    BufferSinkGetFrameError,
+    #[error("Error while feeding the filtergraph failed. ({0})")]
+    BufferSrcAddFrameError(c_int),
+    #[error("Pulling filtered frame from filters failed ({0})")]
+    BufferSinkGetFrameError(c_int),
     #[error("No frames are available at this point")]
     BufferSinkDrainError,
     #[error("There will be no more output frames on this sink")]
     BufferSinkEofError,
 
-    #[error("AVDictionary doesn't understand provided string")]
-    DictionaryParseError,
-    #[error("AVDictionary failed to get string.")]
-    DictionaryGetStringError,
+    #[error("AVDictionary doesn't understand provided string. ({0})")]
+    DictionaryParseError(c_int),
+    #[error("AVDictionary failed to get string. ({0})")]
+    DictionaryGetStringError(c_int),
 
     #[error("AVIO Open failure. ({0})")]
-    AVIOOpenError(i32),
+    AVIOOpenError(c_int),
 
-    #[error("SwrContext init failed.")]
-    SwrContextInitError,
-    #[error("SwrContext converting data failed.")]
-    SwrConvertError,
+    #[error("SwrContext init failed. ({0})")]
+    SwrContextInitError(c_int),
+    #[error("SwrContext converting data failed. ({0})")]
+    SwrConvertError(c_int),
 
-    #[error("SwsContext scale failed.")]
-    SwsScaleError,
+    #[error("SwsContext scale failed. ({0})")]
+    SwsScaleError(c_int),
 
-    #[error("AudioFifo write failed.")]
-    AudioFifoWriteError,
-    #[error("AudioFifo read failed.")]
-    AudioFifoReadError,
+    #[error("AudioFifo write failed. ({0})")]
+    AudioFifoWriteError(c_int),
+    #[error("AudioFifo read failed. ({0})")]
+    AudioFifoReadError(c_int),
 
     #[error("AVFrame buffer double allocating.")]
     AVFrameDoubleAllocatingError,
-    #[error("AVFrame buffer allocating with incorrect parameters.")]
-    AVFrameInvalidAllocatingError,
+    #[error("AVFrame buffer allocating with incorrect parameters. ({0})")]
+    AVFrameInvalidAllocatingError(c_int),
 
-    #[error("Failed to fill data to image buffer.")]
-    AVImageFillArrayError,
+    #[error("Failed to fill data to image buffer. ({0})")]
+    AVImageFillArrayError(c_int),
 
     // Non exhaustive
     #[error("Unknown error, contact ldm0 when you see this.")]
