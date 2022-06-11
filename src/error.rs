@@ -3,6 +3,8 @@ use libc::c_int;
 use std::cmp::{Eq, PartialEq};
 use thiserror::Error;
 
+use crate::{ffi, shared::AVERROR_EAGAIN};
+
 /// All the error variants of rsmpeg.
 #[non_exhaustive]
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -123,6 +125,60 @@ pub enum RsmpegError {
     // Non exhaustive
     #[error("Unknown error, contact ldm0 when you see this.")]
     Unknown,
+}
+
+impl RsmpegError {
+    pub fn raw_error(&self) -> Option<c_int> {
+        match self {
+            RsmpegError::AVError(err) => Some(*err),
+            RsmpegError::CustomError(_) => None,
+            RsmpegError::OpenInputError(err) => Some(*err),
+            RsmpegError::OpenOutputError(err) => Some(*err),
+            RsmpegError::FindStreamInfoError(err) => Some(*err),
+            RsmpegError::WriteHeaderError(err) => Some(*err),
+            RsmpegError::WriteTrailerError(err) => Some(*err),
+            RsmpegError::CodecOpenError(err) => Some(*err),
+            RsmpegError::CodecSetParameterError(err) => Some(*err),
+            RsmpegError::FilterNotFound => None,
+            RsmpegError::CreateFilterError(err) => Some(*err),
+            RsmpegError::SetPropertyError(err) => Some(*err),
+            RsmpegError::SendPacketError(err) => Some(*err),
+            RsmpegError::DecoderFullError => Some(AVERROR_EAGAIN),
+            RsmpegError::ReceiveFrameError(err) => Some(*err),
+            RsmpegError::DecoderDrainError => Some(AVERROR_EAGAIN),
+            RsmpegError::DecoderFlushedError => Some(ffi::AVERROR_EOF),
+            RsmpegError::SendFrameError(err) => Some(*err),
+            RsmpegError::SendFrameAgainError => Some(AVERROR_EAGAIN),
+            RsmpegError::ReceivePacketError(err) => Some(*err),
+            RsmpegError::EncoderDrainError => Some(AVERROR_EAGAIN),
+            RsmpegError::EncoderFlushedError => Some(ffi::AVERROR_EOF),
+            RsmpegError::BitstreamFullError => Some(AVERROR_EAGAIN),
+            RsmpegError::BitstreamDrainError => Some(AVERROR_EAGAIN),
+            RsmpegError::BitstreamFlushedError => Some(ffi::AVERROR_EOF),
+            RsmpegError::BitstreamSendPacketError(err) => Some(*err),
+            RsmpegError::BitstreamReceivePacketError(err) => Some(*err),
+            RsmpegError::BitstreamInitializationError(err) => Some(*err),
+            RsmpegError::ReadFrameError(err) => Some(*err),
+            RsmpegError::WriteFrameError(err) => Some(*err),
+            RsmpegError::InterleavedWriteFrameError(err) => Some(*err),
+            RsmpegError::BufferSrcAddFrameError(err) => Some(*err),
+            RsmpegError::BufferSinkGetFrameError(err) => Some(*err),
+            RsmpegError::BufferSinkDrainError => Some(AVERROR_EAGAIN),
+            RsmpegError::BufferSinkEofError => Some(ffi::AVERROR_EOF),
+            RsmpegError::DictionaryParseError(err) => Some(*err),
+            RsmpegError::DictionaryGetStringError(err) => Some(*err),
+            RsmpegError::AVIOOpenError(err) => Some(*err),
+            RsmpegError::SwrContextInitError(err) => Some(*err),
+            RsmpegError::SwrConvertError(err) => Some(*err),
+            RsmpegError::SwsScaleError(err) => Some(*err),
+            RsmpegError::AudioFifoWriteError(err) => Some(*err),
+            RsmpegError::AudioFifoReadError(err) => Some(*err),
+            RsmpegError::AVFrameDoubleAllocatingError => None,
+            RsmpegError::AVFrameInvalidAllocatingError(err) => Some(*err),
+            RsmpegError::AVImageFillArrayError(err) => Some(*err),
+            RsmpegError::Unknown => None,
+        }
+    }
 }
 
 /// Overall result of Rsmpeg functions
