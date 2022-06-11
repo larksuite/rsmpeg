@@ -74,7 +74,7 @@ impl SwsContext {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::SwsScaleError)?;
+        .map_err(RsmpegError::SwsScaleError)?;
         Ok(())
     }
 

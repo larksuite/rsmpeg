@@ -100,7 +100,7 @@ impl AVDictionary {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::DictionaryParseError)?;
+        .map_err(RsmpegError::DictionaryParseError)?;
         unsafe { self.set_ptr(NonNull::new(dict).unwrap()) };
         Ok(self)
     }
@@ -124,7 +124,7 @@ impl AVDictionary {
         let mut s = ptr::null_mut();
         unsafe { ffi::av_dict_get_string(self.as_ptr(), &mut s, key_val_sep as _, pairs_sep as _) }
             .upgrade()
-            .map_err(|_| RsmpegError::DictionaryGetStringError)?;
+            .map_err(RsmpegError::DictionaryGetStringError)?;
         let result = unsafe { CStr::from_ptr(s).to_owned() };
         unsafe {
             ffi::av_freep(&mut s as *mut _ as *mut libc::c_void);

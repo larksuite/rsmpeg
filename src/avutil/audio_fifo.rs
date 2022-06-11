@@ -58,7 +58,7 @@ impl AVAudioFifo {
     pub unsafe fn write(&mut self, data: *const *mut u8, nb_samples: i32) -> Result<i32> {
         unsafe { ffi::av_audio_fifo_write(self.as_mut_ptr(), data as *mut _, nb_samples) }
             .upgrade()
-            .map_err(|_| RsmpegError::AudioFifoWriteError)
+            .map_err(RsmpegError::AudioFifoWriteError)
     }
 
     /// Return actually read size if success.
@@ -68,7 +68,7 @@ impl AVAudioFifo {
     pub unsafe fn read(&mut self, data: *mut *mut u8, nb_samples: i32) -> Result<i32> {
         unsafe { ffi::av_audio_fifo_read(self.as_mut_ptr(), data as _, nb_samples) }
             .upgrade()
-            .map_err(|_| RsmpegError::AudioFifoReadError)
+            .map_err(RsmpegError::AudioFifoReadError)
     }
 }
 

@@ -45,7 +45,7 @@ impl AVFilterContext {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::SetPropertyError)?;
+        .map_err(RsmpegError::SetPropertyError)?;
         Ok(())
     }
 
@@ -65,7 +65,7 @@ impl AVFilterContext {
 
         unsafe { ffi::av_buffersrc_add_frame_flags(self.as_mut_ptr(), frame_ptr, flags) }
             .upgrade()
-            .map_err(|_| RsmpegError::BufferSrcAddFrameError)?;
+            .map_err(RsmpegError::BufferSrcAddFrameError)?;
         Ok(())
     }
 
@@ -82,7 +82,7 @@ impl AVFilterContext {
             Ok(_) => Ok(frame),
             Err(AVERROR_EAGAIN) => Err(RsmpegError::BufferSinkDrainError),
             Err(ffi::AVERROR_EOF) => Err(RsmpegError::BufferSinkEofError),
-            Err(_) => Err(RsmpegError::BufferSinkGetFrameError),
+            Err(err) => Err(RsmpegError::BufferSinkGetFrameError(err)),
         }
     }
 }
@@ -223,7 +223,7 @@ impl<'graph> AVFilterGraph {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::CreateFilterError)?;
+        .map_err(RsmpegError::CreateFilterError)?;
 
         let filter_context = NonNull::new(filter_context).unwrap();
 

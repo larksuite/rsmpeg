@@ -51,7 +51,7 @@ impl AVFormatContextInput {
 
         unsafe { ffi::avformat_find_stream_info(context.as_mut_ptr(), ptr::null_mut()) }
             .upgrade()
-            .map_err(|_| RsmpegError::FindStreamInfoError)?;
+            .map_err(RsmpegError::FindStreamInfoError)?;
 
         Ok(context)
     }
@@ -97,7 +97,7 @@ impl AVFormatContextInput {
             ffi::avformat_find_stream_info(input_format_context.as_mut_ptr(), ptr::null_mut())
         }
         .upgrade()
-        .map_err(|_| RsmpegError::FindStreamInfoError)?;
+        .map_err(RsmpegError::FindStreamInfoError)?;
 
         Ok(input_format_context)
     }
@@ -215,7 +215,7 @@ impl AVFormatContextOutput {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::OpenOutputError)?;
+        .map_err(RsmpegError::OpenOutputError)?;
 
         let mut output_format_context =
             unsafe { Self::from_raw(NonNull::new(output_format_context).unwrap()) };
@@ -278,7 +278,7 @@ impl AVFormatContextOutput {
     pub fn write_trailer(&mut self) -> Result<()> {
         unsafe { ffi::av_write_trailer(self.as_mut_ptr()) }
             .upgrade()
-            .map_err(|_| RsmpegError::WriteTrailerError)?;
+            .map_err(RsmpegError::WriteTrailerError)?;
         Ok(())
     }
 
@@ -303,7 +303,7 @@ impl AVFormatContextOutput {
     pub fn write_frame(&mut self, packet: &mut AVPacket) -> Result<()> {
         unsafe { ffi::av_write_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }
             .upgrade()
-            .map_err(|_| RsmpegError::WriteFrameError)?;
+            .map_err(RsmpegError::WriteFrameError)?;
         Ok(())
     }
 

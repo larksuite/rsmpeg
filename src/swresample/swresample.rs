@@ -59,7 +59,7 @@ impl SwrContext {
     pub fn init(&mut self) -> Result<()> {
         unsafe { ffi::swr_init(self.as_mut_ptr()) }
             .upgrade()
-            .map_err(|_| RsmpegError::SwrContextInitError)?;
+            .map_err(RsmpegError::SwrContextInitError)?;
         Ok(())
     }
 
@@ -181,7 +181,7 @@ impl SwrContext {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::SwrConvertError)
+        .map_err(RsmpegError::SwrConvertError)
     }
 
     /// Convert the samples in the input `AVFrame` and write them to the output
@@ -214,7 +214,7 @@ impl SwrContext {
             )
         }
         .upgrade()
-        .map_err(|_| RsmpegError::SwrConvertError)?;
+        .map_err(RsmpegError::SwrConvertError)?;
         Ok(())
     }
 }
