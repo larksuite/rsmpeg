@@ -228,7 +228,7 @@ impl AVFormatContextOutput {
         //
         // For safeness, we don't use the user the given AVIOContext even if the
         // caller provides one.
-        if unsafe { *output_format_context.oformat }.flags & ffi::AVFMT_NOFILE as i32 == 0 {
+        if output_format_context.oformat().flags & ffi::AVFMT_NOFILE as i32 == 0 {
             // If user provides us an `AVIOCustomContext`, use it, or we create a default one.
             let mut io_context = match io_context {
                 Some(x) => x,
