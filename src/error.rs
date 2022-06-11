@@ -30,10 +30,6 @@ pub enum RsmpegError {
     CodecOpenError(c_int),
     #[error("Failed to copy decoder parameters to input decoder context.")]
     CodecSetParameterError,
-    #[error("Failed to copy encoder parameters to output stream.")]
-    CodecGetParameterError,
-    #[error("Copying parameters failed.")]
-    CopyParameterError,
     #[error("Filter not found.")]
     FilterNotFound,
     #[error("Create filter instance in a filter graph failed.")]
@@ -42,8 +38,6 @@ pub enum RsmpegError {
     SetPropertyError,
 
     // Decoder errors
-    #[error("Failed to decode a packet")]
-    DecodePacketError,
     #[error("Send packet to a codec context failed: ({0})")]
     SendPacketError(i32),
     #[error("Decoder isn't accepting input, try to receive several frames and send again.")]
@@ -88,9 +82,6 @@ pub enum RsmpegError {
     #[error("Interleaved write frame to an output format context failed.")]
     InterleavedWriteFrameError(i32),
 
-    #[error("Flush an encoder failed.")]
-    FlushEncoderError,
-
     #[error("Error while feeding the filtergraph failed.")]
     BufferSrcAddFrameError,
     #[error("Pulling filtered frame from filters failed")]
@@ -125,13 +116,6 @@ pub enum RsmpegError {
     AVFrameDoubleAllocatingError,
     #[error("AVFrame buffer allocating with incorrect parameters.")]
     AVFrameInvalidAllocatingError,
-
-    #[error("Get picture size error.")]
-    AVPictureGetSizeError,
-    #[error("Cannot copy a AVPicture.")]
-    AVPictureCopyError,
-    #[error("Failed to copy a AVPicture's data to buffer.")]
-    AVPictureCopyToBufferError,
 
     #[error("Failed to fill data to image buffer.")]
     AVImageFillArrayError,
