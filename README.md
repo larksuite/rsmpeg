@@ -16,7 +16,7 @@ To use your first rsmpeg demo, you need to compile your FFmpeg:
 1. <https://github.com/ffmpeg/ffmpeg>.
 2. <https://trac.ffmpeg.org/wiki/CompilationGuide>
 
-If you find the compilation compilcated, there are some helpful compiling scripts for you (under the `utils` folder).
+If you find the compilation complicated, there are some helpful compiling scripts for you (under the `utils` folder).
 
 To build a FFmpeg with some common parameters: (don't forget to install the build dependencies)
 
@@ -103,6 +103,7 @@ Minimum Supported Rust Version is 1.56(Stable channel).
 
 Thanks for your contributions!
 
++ [@nxtn](https://github.com/nxtn)
 + [@aegroto](https://github.com/aegroto)
 + [@nanpuyue](https://github.com/nanpuyue)
 + [@imxood](https://github.com/imxood)
