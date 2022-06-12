@@ -1,3 +1,17 @@
+## 0.10.0
+
+- Added methods:
+    - `AVFormatContextOutput::set_oformat`
+    - `AVOutputFormat::guess_format`
+    - `SwrContext::convert_frame`
+    - `SwrContext::get_delay`
+
+- `AVCodecContext::apply_codecpar` now accepts `&AVCodecParameters`
+
+- `RsmpegError`:
+    - Remove unused error variants
+    - Add `RsmpegError::raw_error` for raw FFmpeg error code extraction.
+
 ## 0.9.0
 
 - Enable metadata dict specifying in `write_header`.
