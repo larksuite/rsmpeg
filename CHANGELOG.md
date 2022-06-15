@@ -1,3 +1,7 @@
+## 0.11.0
+
+- Bump `rusty_ffmpeg` version to `0.10.0`
+
 ## 0.10.0
 
 - Added methods:
