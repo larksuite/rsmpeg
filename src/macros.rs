@@ -44,6 +44,7 @@ macro_rules! wrap_pure {
                     something_should_not_be_touched_directly: raw,
                     $($attach: _,)*
                 } = self;
+                #[allow(clippy::forget_non_drop)]
                 std::mem::forget(self);
                 raw
             }

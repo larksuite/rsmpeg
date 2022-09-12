@@ -115,9 +115,9 @@ impl AVIOContextCustom {
             }
 
             (
-                read_packet.is_some().then(|| read_c as _),
-                write_packet.is_some().then(|| write_c as _),
-                seek.is_some().then(|| seek_c as _),
+                read_packet.is_some().then_some(read_c as _),
+                write_packet.is_some().then_some(write_c as _),
+                seek.is_some().then_some(seek_c as _),
             )
         };
 
