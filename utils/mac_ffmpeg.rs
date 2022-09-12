@@ -36,7 +36,7 @@ fn main() -> Result<()> {
         .arg("clone")
         .arg("--single-branch")
         .arg("--branch")
-        .arg("release/5.0")
+        .arg("release/5.1")
         .arg("--depth")
         .arg("1")
         .arg("https://github.com/ffmpeg/ffmpeg")

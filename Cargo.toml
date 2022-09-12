@@ -1,6 +1,6 @@
 [package]
 name = "rsmpeg"
-version = "0.11.0"
+version = "0.12.0+ffmpeg.5.1"
 authors = ["liudingming <liudingming@bytedance.com>"]
 edition = "2021"
 license = "MIT"
@@ -13,7 +13,7 @@ readme = "README.md"
 exclude = ["tests/*", "examples/*", "utils/*"]
 
 [dependencies]
-rusty_ffmpeg = "0.9"
+rusty_ffmpeg = "0.10"
 libc = "0.2"
 paste = "1.0"
 thiserror = "1.0"
