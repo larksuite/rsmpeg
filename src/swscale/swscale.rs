@@ -39,8 +39,8 @@ impl SwsContext {
         unsafe { Some(Self::from_raw(context)) }
     }
 
-    /// Scale the image slice in src_slice and put the resulting scaled
-    /// slice in the image in dst. A slice is a sequence of consecutive
+    /// Scale the image slice in `src_slice` and put the resulting scaled
+    /// slice in the image in `dst`. A slice is a sequence of consecutive
     /// rows in an image.
     ///
     /// Slices have to be provided in sequential order, either in
@@ -59,9 +59,9 @@ impl SwsContext {
         dst: *const *mut u8,
         dst_stride: *const i32,
     ) -> Result<()> {
-        // ATTENTION, ffmpeg's documentation doesn't say sws_scale returns
-        // negative number, but after looking at the implementation, it can
-        // returns nagative number as error avtually.
+        // ATTENTION, ffmpeg's documentation doesn't say `sws_scale` could
+        // return negative number, but after checking it's implementation, you
+        // will find it returns negative number on error.
         unsafe {
             ffi::sws_scale(
                 self.as_mut_ptr(),
@@ -78,7 +78,7 @@ impl SwsContext {
         Ok(())
     }
 
-    /// A wrapper of `Self::scale`, check it's documentation.
+    /// A wrapper of [`Self::scale`], check it's documentation.
     pub fn scale_frame(
         &mut self,
         src_frame: &AVFrame,
