@@ -420,7 +420,7 @@ impl AVStream {
     /// the retuned value is None when used with a demuxer.
     pub fn get_end_pts(&self) -> Option<i64> {
         let result = unsafe { ffi::av_stream_get_end_pts(self.as_ptr()) };
-        (result >= 0).then(|| result as i64)
+        (result >= 0).then_some(result as i64)
     }
 }
 
