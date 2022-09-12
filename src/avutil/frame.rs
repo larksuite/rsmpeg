@@ -172,8 +172,8 @@ impl Drop for AVFrame {
     }
 }
 
-/// It's a `AVFrame` binded with `AVImage`, the `AVFrame` references the buffer
-/// of the `AVImage`.
+/// It's a `AVFrame` bound with `AVImage`, the `AVFrame` references the buffer
+/// owned by the `AVImage`.
 pub struct AVFrameWithImage {
     frame: AVFrame,
     image: AVImage,
