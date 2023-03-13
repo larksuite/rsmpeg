@@ -160,13 +160,18 @@ fn init_filter<'graph>(
             let buffer_src = AVFilter::get_by_name(cstr!("buffer")).unwrap();
             let buffer_sink = AVFilter::get_by_name(cstr!("buffersink")).unwrap();
 
+            let time_base = ffi::AVRational {
+                num: decode_context.framerate.den,
+                den: decode_context.framerate.num,
+            };
+
             let args = format!(
                 "video_size={}x{}:pix_fmt={}:time_base={}/{}:pixel_aspect={}/{}",
                 decode_context.width,
                 decode_context.height,
                 decode_context.pix_fmt,
-                decode_context.time_base.num,
-                decode_context.time_base.den,
+                time_base.num,
+                time_base.den,
                 decode_context.sample_aspect_ratio.num,
                 decode_context.sample_aspect_ratio.den,
             );
@@ -528,6 +533,7 @@ fn transcoding_test4() {
 }
 
 #[test]
+#[ignore = "FFmpeg 6.0 frame size bug"]
 fn transcoding_test5() {
     std::fs::create_dir_all("tests/output/transcoding/").unwrap();
     transcoding(
@@ -550,6 +556,7 @@ fn transcoding_test6() {
 }
 
 #[test]
+#[ignore = "FFmpeg 6.0 frame size bug"]
 fn transcoding_test7() {
     // Fragmented MP4 transcoding.
     std::fs::create_dir_all("tests/output/transcoding/").unwrap();

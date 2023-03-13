@@ -64,8 +64,8 @@ fn metadata_test0() {
         metadata("tests/assets/vids/bear.mp4").unwrap(),
         vec![
             ("image_path".into(), "tests/assets/vids/bear.mp4".into()),
-            ("duration".into(), "1066667".into()),
-            ("bit_rate".into(), "308242".into()),
+            ("duration".into(), "1068118".into()),
+            ("bit_rate".into(), "307823".into()),
             ("major_brand".into(), "isom".into()),
             ("minor_version".into(), "1".into()),
             ("compatible_brands".into(), "isomavc1".into()),
