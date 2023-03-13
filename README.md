@@ -39,7 +39,7 @@ Start by adding `rsmpeg` to your `Cargo.toml` file:
 
 ```rust
 [dependencies]
-rsmpeg = "0.11"
+rsmpeg = "0.13"
 ```
 
 Write your simple media file info dumper:
@@ -95,7 +95,7 @@ You can also put any video or audio file here, this program will dump the media 
 
 ## Dependency version
 
-Supported FFmpeg version is 5.1.
+Supported FFmpeg version is 6.0.
 
 Minimum Supported Rust Version is 1.64.0(Stable channel).
 

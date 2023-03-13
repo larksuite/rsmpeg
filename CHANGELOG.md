@@ -1,3 +1,9 @@
+## 0.13.0
+
+- Supports FFmpeg 6.0
+
+- Bump `rusty_ffmpeg` version to `0.11.0`
+
 ## 0.12.0
 
 - Supports FFmpeg 5.1
