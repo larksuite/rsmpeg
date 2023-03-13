@@ -522,8 +522,7 @@ impl<'stream> std::iter::IntoIterator for AVStreamRefs<'stream> {
 impl<'stream> AVStreamRefs<'stream> {
     /// Get `streams[`index`]`.
     pub fn get(&self, index: usize) -> Option<AVStreamRef<'stream>> {
-        // From u32 to usize, safe.
-        if index < self.len as usize {
+        if index < self.num() {
             let stream_ptr = unsafe { *self.stream_head.as_ptr().add(index) };
             Some(unsafe { AVStreamRef::from_raw(stream_ptr) })
         } else {
