@@ -97,7 +97,7 @@ You can also put any video or audio file here, this program will dump the media 
 
 Supported FFmpeg version is 5.1.
 
-Minimum Supported Rust Version is 1.62.0(Stable channel).
+Minimum Supported Rust Version is 1.64.0(Stable channel).
 
 ## Contributors
 
