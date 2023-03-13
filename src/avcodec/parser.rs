@@ -12,7 +12,11 @@ wrap!(AVCodecParserContext: ffi::AVCodecParserContext);
 impl AVCodecParserContext {
     /// Allocate a [`AVCodecParserContext`] with given [`AVCodecID`].
     pub fn find(codec_id: AVCodecID) -> Option<Self> {
-        unsafe { ffi::av_parser_init(codec_id as i32) }
+        // On Windows enum is i32, On *nix enum is u32.
+        // ref: https://github.com/rust-lang/rust-bindgen/issues/1361
+        #[cfg(not(windows))]
+        let codec_id = codec_id as i32;
+        unsafe { ffi::av_parser_init(codec_id) }
             .upgrade()
             .map(|x| unsafe { Self::from_raw(x) })
     }

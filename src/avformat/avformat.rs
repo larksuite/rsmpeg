@@ -417,10 +417,10 @@ impl AVStream {
     }
 
     /// Returns the pts of the last muxed packet + its duration
-    /// the retuned value is None when used with a demuxer.
+    /// the returned value is None when used with a demuxer.
     pub fn get_end_pts(&self) -> Option<i64> {
         let result = unsafe { ffi::av_stream_get_end_pts(self.as_ptr()) };
-        (result >= 0).then_some(result as i64)
+        (result >= 0).then_some(result)
     }
 }
 
@@ -522,8 +522,7 @@ impl<'stream> std::iter::IntoIterator for AVStreamRefs<'stream> {
 impl<'stream> AVStreamRefs<'stream> {
     /// Get `streams[`index`]`.
     pub fn get(&self, index: usize) -> Option<AVStreamRef<'stream>> {
-        // From u32 to usize, safe.
-        if index < self.len as usize {
+        if index < self.num() {
             let stream_ptr = unsafe { *self.stream_head.as_ptr().add(index) };
             Some(unsafe { AVStreamRef::from_raw(stream_ptr) })
         } else {
