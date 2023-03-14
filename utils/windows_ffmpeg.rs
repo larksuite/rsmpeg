@@ -36,7 +36,7 @@ fn main() -> Result<()> {
         .arg("clone")
         .arg("--single-branch")
         .arg("--branch")
-        .arg("release/5.1")
+        .arg("release/6.0")
         .arg("--depth")
         .arg("1")
         .arg("https://github.com/ffmpeg/ffmpeg")
@@ -57,6 +57,8 @@ fn main() -> Result<()> {
         // .arg("--enable-libvpx")
         // .arg("--enable-libx264")
         // .arg("--enable-libx265")
+        // To workaround `https://github.com/larksuite/rsmpeg/pull/98#issuecomment-1467511193`
+        .arg("--disable-decoder=exr,phm")
         .arg("--disable-programs")
         .arg("--enable-nonfree")
         .arg("--arch=x86")
