@@ -1,1 +1,0 @@
-Well, most of the interesting examples is actually placed in `tests/`.
