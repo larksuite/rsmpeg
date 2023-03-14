@@ -229,7 +229,7 @@ impl<'frame> AVFrameSideDataRef<'frame> {
         unsafe {
             slice::from_raw_parts(
                 self.data as *const _ as *const ffi::AVMotionVector,
-                self.size as usize / size_of::<ffi::AVMotionVector>(),
+                self.size / size_of::<ffi::AVMotionVector>(),
             )
         }
     }
