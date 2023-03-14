@@ -14,7 +14,7 @@ use crate::{
 /// A read-only file buffer, the file is mmaped when available.
 pub struct AVMmap {
     bufptr: NonNull<u8>,
-    size: ffi::size_t,
+    size: usize,
 }
 
 unsafe impl Send for AVMmap {}
@@ -22,7 +22,7 @@ unsafe impl Send for AVMmap {}
 impl Deref for AVMmap {
     type Target = [u8];
     fn deref(&self) -> &Self::Target {
-        unsafe { slice::from_raw_parts(self.bufptr.as_ptr(), self.size as _) }
+        unsafe { slice::from_raw_parts(self.bufptr.as_ptr(), self.size) }
     }
 }
 
