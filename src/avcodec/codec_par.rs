@@ -1,4 +1,4 @@
-use crate::{avcodec::AVCodecContext, ffi, shared::*};
+use crate::{avcodec::AVCodecContext, avutil::AVMediaType, ffi, shared::*};
 use std::{
     clone::Clone,
     default::Default,
@@ -38,6 +38,11 @@ impl AVCodecParameters {
         unsafe { ffi::avcodec_parameters_copy(self.as_mut_ptr(), from.as_ptr()) }
             .upgrade()
             .unwrap();
+    }
+
+    /// Get the codec type.
+    pub fn codec_type(&self) -> AVMediaType {
+        AVMediaType(self.codec_type)
     }
 }
 
