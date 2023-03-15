@@ -41,8 +41,9 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
         .context("Read packet failed.")?
     {
         let input_stream_index = packet.stream_index as usize;
-        let Some(output_stream_index) = stream_mapping[input_stream_index] else {
-            continue;
+        let output_stream_index = match stream_mapping[input_stream_index] {
+            Some(x) => x,
+            None => continue,
         };
         let output_stream_index = output_stream_index as usize;
         {
