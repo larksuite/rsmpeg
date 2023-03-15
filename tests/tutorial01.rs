@@ -52,7 +52,7 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
     let video_stream_index = input_format_context
         .streams()
         .into_iter()
-        .position(|stream| stream.codecpar().codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO)
+        .position(|stream| stream.codecpar().codec_type().is_video())
         .context("No video stream")?;
     let mut decode_context = {
         let video_stream = input_format_context

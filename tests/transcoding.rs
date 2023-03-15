@@ -43,31 +43,29 @@ fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFo
 
     for input_stream in input_format_context.streams().into_iter() {
         let codecpar = input_stream.codecpar();
-        let codec_type = codecpar.codec_type;
+        let codec_type = codecpar.codec_type();
 
-        let decode_context = match codec_type {
-            ffi::AVMediaType_AVMEDIA_TYPE_VIDEO => {
-                let codec_id = codecpar.codec_id;
-                let decoder = AVCodec::find_decoder(codec_id)
-                    .with_context(|| anyhow!("video decoder ({}) not found.", codec_id))?;
-                let mut decode_context = AVCodecContext::new(&decoder);
-                decode_context.apply_codecpar(&codecpar)?;
-                if let Some(framerate) = input_stream.guess_framerate() {
-                    decode_context.set_framerate(framerate);
-                }
-                decode_context.open(None)?;
-                Some(decode_context)
+        let decode_context = if codec_type.is_video() {
+            let codec_id = codecpar.codec_id;
+            let decoder = AVCodec::find_decoder(codec_id)
+                .with_context(|| anyhow!("video decoder ({}) not found.", codec_id))?;
+            let mut decode_context = AVCodecContext::new(&decoder);
+            decode_context.apply_codecpar(&codecpar)?;
+            if let Some(framerate) = input_stream.guess_framerate() {
+                decode_context.set_framerate(framerate);
             }
-            ffi::AVMediaType_AVMEDIA_TYPE_AUDIO => {
-                let codec_id = codecpar.codec_id;
-                let decoder = AVCodec::find_decoder(codec_id)
-                    .with_context(|| anyhow!("audio decoder ({}) not found.", codec_id))?;
-                let mut decode_context = AVCodecContext::new(&decoder);
-                decode_context.apply_codecpar(&codecpar)?;
-                decode_context.open(None)?;
-                Some(decode_context)
-            }
-            _ => None,
+            decode_context.open(None)?;
+            Some(decode_context)
+        } else if codec_type.is_audio() {
+            let codec_id = codecpar.codec_id;
+            let decoder = AVCodec::find_decoder(codec_id)
+                .with_context(|| anyhow!("audio decoder ({}) not found.", codec_id))?;
+            let mut decode_context = AVCodecContext::new(&decoder);
+            decode_context.apply_codecpar(&codecpar)?;
+            decode_context.open(None)?;
+            Some(decode_context)
+        } else {
+            None
         };
 
         stream_contexts.push(decode_context);
