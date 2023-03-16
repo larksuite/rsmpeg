@@ -23,12 +23,12 @@ fn av_spliter(file_path: &CStr, out_video: &str, out_audio: &CStr) -> Result<()>
     let video_index = input_format_context
         .streams()
         .into_iter()
-        .position(|x| x.codecpar().codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO)
+        .position(|x| x.codecpar().codec_type().is_video())
         .context("Cannot find video stream!")?;
     let audio_index = input_format_context
         .streams()
         .into_iter()
-        .position(|x| x.codecpar().codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO)
+        .position(|x| x.codecpar().codec_type().is_audio())
         .context("Cannot find audio stream!")?;
 
     let bsf = AVBitStreamFilter::find_by_name(cstr!("h264_mp4toannexb"))
