@@ -65,7 +65,8 @@ fn main() -> Result<()> {
         .wait()?;
 
     Command::new("make")
-        .arg("-j8")
+        .arg("-j")
+        .arg(std::thread::available_parallelism().unwrap().get().to_string())
         .spawn()?
         .wait()?;
 
