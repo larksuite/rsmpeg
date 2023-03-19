@@ -1,17 +1,14 @@
 #!/bin/sh
-#![allow()] /*
+#![allow(unused_attributes)] /*
 OUT=/tmp/tmp && rustc "$0" -o ${OUT} && exec ${OUT} $@ || exit $? #*/
 
 use std::process::Command;
 use std::io::Result;
 use std::path::PathBuf;
+use std::fs;
 
 fn mkdir(dir_name: &str) -> Result<()> {
-    Command::new("mkdir")
-        .arg(dir_name)
-        .spawn()?
-        .wait()?;
-    Ok(())
+    fs::create_dir(dir_name)
 }
 
 fn pwd() -> Result<PathBuf> {
@@ -19,34 +16,48 @@ fn pwd() -> Result<PathBuf> {
 }
 
 fn cd(dir_name: &str) -> Result<()> {
-    let mut current_dir = pwd()?;
-    current_dir.push(dir_name);
-    std::env::set_current_dir(current_dir)?;
-    Ok(())
+    std::env::set_current_dir(dir_name)
 }
 
 fn main() -> Result<()> {
-    mkdir("tmp")?;
+    let _ = mkdir("tmp");
+
     cd("tmp")?;
 
-    let tmp_path = pwd()?;
-    let tmp_path = tmp_path.to_str().unwrap();
+    let tmp_path = pwd()?.to_string_lossy().to_string();
+    let build_path = format!("{}/ffmpeg_build", tmp_path);
+    let branch = std::env::args().nth(1).unwrap_or_else(|| "release/6.0".to_string());
+    let num_job = std::thread::available_parallelism().unwrap().get();
 
-    Command::new("git")
-        .arg("clone")
-        .arg("--single-branch")
-        .arg("--branch")
-        .arg("release/6.0")
-        .arg("--depth")
-        .arg("1")
-        .arg("https://github.com/ffmpeg/ffmpeg")
-        .spawn()?
-        .wait()?;
+    if fs::metadata("ffmpeg").is_err() {
+        Command::new("git")
+            .arg("clone")
+            .arg("--single-branch")
+            .arg("--branch")
+            .arg(&branch)
+            .arg("--depth")
+            .arg("1")
+            .arg("https://github.com/ffmpeg/ffmpeg")
+            .status()?;
+    }
 
     cd("ffmpeg")?;
 
+    Command::new("git")
+        .arg("fetch")
+        .arg("origin")
+        .arg(&branch)
+        .arg("--depth")
+        .arg("1")
+        .status()?;
+
+    Command::new("git")
+        .arg("checkout")
+        .arg("FETCH_HEAD")
+        .status()?;
+
     Command::new("./configure")
-        .arg(format!("--prefix={}/ffmpeg_build", tmp_path))
+        .arg(format!("--prefix={}", build_path))
         .arg("--enable-gpl")
         // .arg("--enable-libass")
         // .arg("--enable-libfdk-aac")
@@ -65,19 +76,16 @@ fn main() -> Result<()> {
         .arg("--target-os=mingw32")
         .arg("--cross-prefix=i686-w64-mingw32-")
         .arg("--pkg-config=pkg-config")
-        .spawn()?
-        .wait()?;
+        .status()?;
 
     Command::new("make")
         .arg("-j")
-        .arg(std::thread::available_parallelism().unwrap().get().to_string())
-        .spawn()?
-        .wait()?;
+        .arg(num_job.to_string())
+        .status()?;
 
     Command::new("make")
         .arg("install")
-        .spawn()?
-        .wait()?;
+        .status()?;
 
     cd("..")?;
 
