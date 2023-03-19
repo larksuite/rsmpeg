@@ -1,3 +1,4 @@
+#![cfg(feature = "ffmpeg6")]
 use anyhow::{Context, Result};
 use rsmpeg::{avcodec::AVCodecContext, avformat::AVFormatContextInput, avutil::av_q2d, ffi};
 use std::ffi::CString;

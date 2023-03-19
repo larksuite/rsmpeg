@@ -6,7 +6,6 @@ use crate::{
 
 use std::{
     ffi::{CStr, CString},
-    marker::PhantomData,
     ops::Drop,
     ptr::{self, NonNull},
 };
@@ -139,6 +138,9 @@ impl<'dict> AVDictionary {
     ///
     /// The returned entry key or value must not be changed, or it will
     /// cause undefined behavior.
+    ///
+    /// To iterate through all the dictionary entries, you can set the matching key
+    /// to the null string "" and set the AV_DICT_IGNORE_SUFFIX flag.
     pub fn get(
         &'dict self,
         key: &CStr,
@@ -155,11 +157,12 @@ impl<'dict> AVDictionary {
     }
 
     /// Iterates through all entries in the dictionary by reference.
+    #[cfg(feature = "ffmpeg6")]
     pub fn iter(&'dict self) -> AVDictionaryIter<'dict> {
         AVDictionaryIter {
             dict: self,
             ptr: ptr::null(),
-            _phantom: PhantomData,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
@@ -182,6 +185,7 @@ impl Drop for AVDictionary {
     }
 }
 
+#[cfg(feature = "ffmpeg6")]
 impl<'dict> IntoIterator for &'dict AVDictionary {
     type IntoIter = AVDictionaryIter<'dict>;
     type Item = AVDictionaryEntryRef<'dict>;
@@ -191,12 +195,14 @@ impl<'dict> IntoIterator for &'dict AVDictionary {
 }
 
 /// Iterator over [`AVDictionary`] by reference.
+#[cfg(feature = "ffmpeg6")]
 pub struct AVDictionaryIter<'dict> {
     dict: &'dict AVDictionary,
     ptr: *const ffi::AVDictionaryEntry,
-    _phantom: PhantomData<&'dict ()>,
+    _phantom: std::marker::PhantomData<&'dict ()>,
 }
 
+#[cfg(feature = "ffmpeg6")]
 impl<'dict> Iterator for AVDictionaryIter<'dict> {
     type Item = AVDictionaryEntryRef<'dict>;
     fn next(&mut self) -> Option<Self::Item> {
