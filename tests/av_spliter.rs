@@ -6,7 +6,6 @@ use rsmpeg::{
     avcodec::{AVBSFContextUninit, AVBitStreamFilter},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
     error::RsmpegError,
-    ffi::{self},
 };
 use std::{
     ffi::CStr,
