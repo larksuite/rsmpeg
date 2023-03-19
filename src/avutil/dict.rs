@@ -157,7 +157,7 @@ impl<'dict> AVDictionary {
     /// Iterates through all entries in the dictionary by reference.
     pub fn iter(&'dict self) -> AVDictionaryIter<'dict> {
         AVDictionaryIter {
-            dict: &self,
+            dict: self,
             ptr: ptr::null(),
             _phantom: PhantomData,
         }
