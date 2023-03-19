@@ -6,6 +6,7 @@ use crate::{
 
 use std::{
     ffi::{CStr, CString},
+    marker::PhantomData,
     ops::Drop,
     ptr::{self, NonNull},
 };
@@ -138,9 +139,6 @@ impl<'dict> AVDictionary {
     ///
     /// The returned entry key or value must not be changed, or it will
     /// cause undefined behavior.
-    ///
-    /// To iterate through all the dictionary entries, you can set the matching key
-    /// to the null string "" and set the AV_DICT_IGNORE_SUFFIX flag.
     pub fn get(
         &'dict self,
         key: &CStr,
@@ -154,6 +152,15 @@ impl<'dict> AVDictionary {
         unsafe { ffi::av_dict_get(self.as_ptr(), key.as_ptr(), prev_ptr, flags as i32) }
             .upgrade()
             .map(|ptr| unsafe { AVDictionaryEntryRef::from_raw(ptr) })
+    }
+
+    /// Iterates through all entries in the dictionary by reference.
+    pub fn iter(&'dict self) -> AVDictionaryIter<'dict> {
+        AVDictionaryIter {
+            dict: &self,
+            ptr: ptr::null(),
+            _phantom: PhantomData,
+        }
     }
 }
 
@@ -172,6 +179,31 @@ impl Drop for AVDictionary {
     fn drop(&mut self) {
         let mut dict = self.as_mut_ptr();
         unsafe { ffi::av_dict_free(&mut dict) }
+    }
+}
+
+impl<'dict> IntoIterator for &'dict AVDictionary {
+    type IntoIter = AVDictionaryIter<'dict>;
+    type Item = AVDictionaryEntryRef<'dict>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+/// Iterator over [`AVDictionary`] by reference.
+pub struct AVDictionaryIter<'dict> {
+    dict: &'dict AVDictionary,
+    ptr: *const ffi::AVDictionaryEntry,
+    _phantom: PhantomData<&'dict ()>,
+}
+
+impl<'dict> Iterator for AVDictionaryIter<'dict> {
+    type Item = AVDictionaryEntryRef<'dict>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.ptr = unsafe { ffi::av_dict_iterate(self.dict.as_ptr(), self.ptr) };
+        self.ptr
+            .upgrade()
+            .map(|x| unsafe { AVDictionaryEntryRef::from_raw(x) })
     }
 }
 
