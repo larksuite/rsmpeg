@@ -8,6 +8,12 @@
 
 Taking advantage of Rust's language design, you can build robust multi-media projects even quicker than using FFmpeg's C API.
 
+## Dependency version
+
+Supported FFmpeg versions are `5.*`, `6.*`(Enabled by feature `ffmpeg6`).
+
+Minimum Supported Rust Version is 1.64.0(Stable channel).
+
 ## Getting started
 
 ### FFmpeg compilation
@@ -92,12 +98,6 @@ You can also put any video or audio file here, this program will dump the media 
 1. FFmpeg linking: refer to [`rusty_ffmpeg`](https://github.com/CCExtractor/rusty_ffmpeg)'s documentation for how to use environment variables to statically or dynamically link FFmpeg.
 
 2. Advanced usage of rsmpeg: Check out the `tests` and `examples` folder.
-
-## Dependency version
-
-Supported FFmpeg version is 6.0.
-
-Minimum Supported Rust Version is 1.64.0(Stable channel).
 
 ## Contributors
 
