@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 env:
   CARGO_TERM_COLOR: always
@@ -95,11 +95,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [ "nightly", "1.64.0" ]
-        valgrind: [ "valgrind", "no valgrind" ]
+        ffmpeg-version: ["release/5.0", "release/6.0"]
+        rust: ["nightly", "1.64.0"]
+        valgrind: ["valgrind", "no valgrind"]
         include:
+          - ffmpeg-version: "release/6.0"
+            cargo-features: --features ffmpeg6
+          - rust: "nightly"
+            should_test: "true"
+        exclude:
+          # Only run valgrind with latest FFmpeg and nightly rust to reduce resource consumption.
           - valgrind: "valgrind"
-            cargo-prefix: "valgrind"
+            ffmpeg-version: "release/5.0"
+          - valgrind: "valgrind"
+            rust: "1.64.0"
       fail-fast: false
 
     steps:
@@ -123,7 +132,7 @@ jobs:
             libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
 
       - name: Build Linux FFmpeg
-        run: bash utils/linux_ffmpeg.rs
+        run: bash utils/linux_ffmpeg.rs ${{ matrix.ffmpeg_version }}
 
       - name: Build valgrind
         run: |
@@ -141,7 +150,15 @@ jobs:
       - name: Test
         run: |
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
-          cargo ${{ matrix.cargo-prefix }} test -vv
+          if [ '${{ matrix.should_test }}' == 'true' ]; then
+            if [ '${{ matrix.valgrind }}' == 'valgrind' ]; then
+              cargo valgrind test ${{ matrix.cargo-features }} -vv
+            else
+              cargo test ${{ matrix.cargo-features }} -vv
+            fi
+          else
+            cargo test ${{ matrix.cargo-features }} --no-run -vv
+          fi
 
   # Cross build on Ubuntu, then send it to Windows machine for CI.
   build_dynamic_and_test_windows_pre:
@@ -204,7 +221,7 @@ jobs:
   build_dynamic_and_test_windows:
     strategy:
       matrix:
-        rust: [ "nightly", "1.64.0" ]
+        rust: ["nightly", "1.64.0"]
       fail-fast: false
     runs-on: windows-latest
     needs: build_dynamic_and_test_windows_pre
@@ -217,7 +234,7 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
- 
+
       - name: Download Cross Compiled FFmpeg for Windows
         uses: actions/download-artifact@v2
         with:
