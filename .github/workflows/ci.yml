@@ -76,11 +76,13 @@ jobs:
           version: "10.0"
           directory: ${{ github.workspace }}/clang
 
+      - name: Setup vcpkg
+        uses: friendlyanon/setup-vcpkg@v1
+        with:
+          committish: "2023.02.24"
+
       - name: Install vcpkg
-        run: |
-          git clone https://github.com/microsoft/vcpkg --depth 1
-          ./vcpkg/bootstrap-vcpkg.bat
-          ./vcpkg/vcpkg.exe install ffmpeg:x64-windows-static-md
+        run: ./vcpkg/vcpkg.exe install ffmpeg:x64-windows-static-md
 
       - name: Clippy check
         env:
