@@ -25,3 +25,6 @@ gl = "0.14.0"
 cstr = "0.2.11"
 once_cell = "1.12.0"
 tempdir = "0.3.7"
+
+[features]
+ffmpeg6 = []
