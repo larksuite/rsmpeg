@@ -76,13 +76,23 @@ jobs:
           version: "10.0"
           directory: ${{ github.workspace }}/clang
 
-      - name: Setup vcpkg
-        uses: friendlyanon/setup-vcpkg@v1
+      - name: Cache vcpkg
+        id: cache
+        uses: actions/cache@v3
         with:
-          committish: "2023.02.24"
+          path: |
+            ${{ github.workspace }}/vcpkg
+          key: vcpkg-${{ runner.os }}
+
+      - name: Build vcpkg
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/microsoft/vcpkg --depth 1
+          ./vcpkg/bootstrap-vcpkg.bat
 
       - name: Install vcpkg
-        run: ./vcpkg/vcpkg.exe install ffmpeg:x64-windows-static-md
+        run: |
+          ./vcpkg/vcpkg.exe install ffmpeg:x64-windows-static-md
 
       - name: Clippy check
         env:
@@ -119,6 +129,33 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
 
+      - name: Install valgrind dependencies
+        run: |
+          sudo apt-get -y install libc6-dbg
+          cargo install cargo-valgrind
+
+      - name: Cache valgrind
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ github.workspace }}/valgrind
+          key: valgrind-${{ runner.os }}
+
+      - name: Build valgrind
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git clone git://sourceware.org/git/valgrind.git --depth 1
+          cd valgrind
+          ./autogen.sh
+          ./configure
+          make -j$(nproc)
+
+      - name: Install valgrind
+        run: |
+          cd valgrind
+          sudo make install
+
       # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
       - name: Install FFmpegBuildTools
         run: |
@@ -133,19 +170,6 @@ jobs:
 
       - name: Build Linux FFmpeg
         run: bash utils/linux_ffmpeg.rs ${{ matrix.ffmpeg_version }}
-
-      - name: Build valgrind
-        run: |
-          if [ '${{ matrix.valgrind }}' == 'valgrind' ]; then
-            sudo apt-get -y install libc6-dbg
-            git clone git://sourceware.org/git/valgrind.git --depth 1
-            cd valgrind
-            ./autogen.sh
-            ./configure
-            make -j$(nproc)
-            sudo make install
-            cargo install cargo-valgrind
-          fi
 
       - name: Test
         run: |
