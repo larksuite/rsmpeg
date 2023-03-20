@@ -24,6 +24,7 @@
     - `SwrContext::convert_frame`
     - `SwrContext::get_delay`
 
+
 - `AVCodecContext::apply_codecpar` now accepts `&AVCodecParameters`
 
 - `RsmpegError`:
