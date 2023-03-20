@@ -18,6 +18,7 @@
 
 ## 0.10.0
 
+
 - Added methods:
     - `AVFormatContextOutput::set_oformat`
     - `AVOutputFormat::guess_format`
