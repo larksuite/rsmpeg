@@ -1,5 +1,5 @@
+#![cfg(feature = "ffmpeg6")]
 use anyhow::{Context, Result};
-use cstr::cstr;
 use rsmpeg::{avcodec::AVCodecContext, avformat::AVFormatContextInput, avutil::av_q2d, ffi};
 use std::ffi::CString;
 
@@ -17,15 +17,11 @@ fn metadata(file: &str) -> Result<Vec<(String, String)>> {
 
     // Get additional info from `input_format_context.metadata()`
     if let Some(metadata) = input_format_context.metadata() {
-        let mut prev_entry = None;
-
-        // Trick to get all entries.
-        while let Some(entry) = metadata.get(cstr!(""), prev_entry, ffi::AV_DICT_IGNORE_SUFFIX) {
+        for entry in metadata.iter() {
             result.push((
                 entry.key().to_str().unwrap().to_string(),
                 entry.value().to_str().unwrap().to_string(),
             ));
-            prev_entry = Some(entry);
         }
     }
 

@@ -155,6 +155,16 @@ impl<'dict> AVDictionary {
             .upgrade()
             .map(|ptr| unsafe { AVDictionaryEntryRef::from_raw(ptr) })
     }
+
+    /// Iterates through all entries in the dictionary by reference.
+    #[cfg(feature = "ffmpeg6")]
+    pub fn iter(&'dict self) -> AVDictionaryIter<'dict> {
+        AVDictionaryIter {
+            dict: self,
+            ptr: ptr::null(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
 }
 
 impl std::clone::Clone for AVDictionary {
@@ -172,6 +182,34 @@ impl Drop for AVDictionary {
     fn drop(&mut self) {
         let mut dict = self.as_mut_ptr();
         unsafe { ffi::av_dict_free(&mut dict) }
+    }
+}
+
+#[cfg(feature = "ffmpeg6")]
+impl<'dict> IntoIterator for &'dict AVDictionary {
+    type IntoIter = AVDictionaryIter<'dict>;
+    type Item = AVDictionaryEntryRef<'dict>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+/// Iterator over [`AVDictionary`] by reference.
+#[cfg(feature = "ffmpeg6")]
+pub struct AVDictionaryIter<'dict> {
+    dict: &'dict AVDictionary,
+    ptr: *const ffi::AVDictionaryEntry,
+    _phantom: std::marker::PhantomData<&'dict ()>,
+}
+
+#[cfg(feature = "ffmpeg6")]
+impl<'dict> Iterator for AVDictionaryIter<'dict> {
+    type Item = AVDictionaryEntryRef<'dict>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.ptr = unsafe { ffi::av_dict_iterate(self.dict.as_ptr(), self.ptr) };
+        self.ptr
+            .upgrade()
+            .map(|x| unsafe { AVDictionaryEntryRef::from_raw(x) })
     }
 }
 
