@@ -226,10 +226,16 @@ wrap_ref!(AVFrameSideData: ffi::AVFrameSideData);
 
 impl<'frame> AVFrameSideDataRef<'frame> {
     unsafe fn as_motion_vectors(&self) -> &'frame [AVMotionVector] {
+        // FFmpeg 4 defines `AVFrameSideData::size` as `int`
+        // ref: https://github.com/CCExtractor/rusty_ffmpeg/issues/93
+        #[cfg(not(any(feature = "ffmpeg5", feature = "ffmpeg6")))]
+        let size = self.size as usize;
+        #[cfg(any(feature = "ffmpeg5", feature = "ffmpeg6"))]
+        let size = self.size;
         unsafe {
             slice::from_raw_parts(
                 self.data as *const _ as *const ffi::AVMotionVector,
-                self.size / size_of::<ffi::AVMotionVector>(),
+                size / size_of::<ffi::AVMotionVector>(),
             )
         }
     }

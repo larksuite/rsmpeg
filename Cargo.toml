@@ -29,6 +29,6 @@ tempdir = "0.3.7"
 # FFmpeg 5.* support
 ffmpeg5 = ["rusty_ffmpeg/ffmpeg5"]
 # FFmpeg 6.* support
-ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
+ffmpeg6 = ["rusty_ffmpeg/ffmpeg5", "rusty_ffmpeg/ffmpeg6"]
 # linking system ffmpeg as fallback.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
