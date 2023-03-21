@@ -121,6 +121,8 @@ jobs:
           - valgrind: "valgrind"
             ffmpeg-version: "release/5.0"
           - valgrind: "valgrind"
+            ffmpeg-version: "release/4.0"
+          - valgrind: "valgrind"
             rust: "1.64.0"
       fail-fast: false
 
@@ -172,7 +174,7 @@ jobs:
             libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
 
       - name: Build Linux FFmpeg
-        run: bash utils/linux_ffmpeg.rs ${{ matrix.ffmpeg_version }}
+        run: bash utils/linux_ffmpeg.rs ${{ matrix.ffmpeg-version }}
 
       - name: Test
         run: |
