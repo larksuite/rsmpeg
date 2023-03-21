@@ -1,3 +1,17 @@
+## 0.14.0
+
+- Feature `ffmpeg5` and `ffmpeg6` are added to support FFmpeg `4.*/5.*/6.*` in parallel
+
+- Bump `rusty_ffmpeg` version to `0.13.0`
+
+- Implement iterator for `AVDictionary`
+
+- Add `non_exhaustive` wrapper for `AVMediaType`
+
+- Add `remux` test for pure remuxing usage
+
+- More versatile FFmpeg build scripts in `utils/`
+
 ## 0.13.0
 
 - Supports FFmpeg 6.0
