@@ -231,7 +231,10 @@ mod test {
     #[test]
     fn test_null_filter() {
         let ctx = AVBSFContextUninit::get_null();
+        #[cfg(any(feature = "ffmpeg5", feature = "ffmpeg6"))]
         assert_eq!(cstr!("null"), ctx.filter().name());
+        #[cfg(not(any(feature = "ffmpeg5", feature = "ffmpeg6")))]
+        assert_eq!(cstr!("bsf_list"), ctx.filter().name());
     }
 
     #[test]
