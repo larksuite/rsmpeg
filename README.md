@@ -108,7 +108,7 @@ You can also put any video or audio file here, this program will dump the media 
 
 1. FFmpeg linking: refer to [`rusty_ffmpeg`](https://github.com/CCExtractor/rusty_ffmpeg)'s documentation for how to use environment variables to statically or dynamically link FFmpeg.
 
-2. Advanced usage of rsmpeg: Check out the `tests` and `examples` folder.
+2. Advanced usage of rsmpeg: Check out the `tests` folder.
 
 ## Contributors
 
