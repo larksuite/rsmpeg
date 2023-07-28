@@ -42,7 +42,7 @@ impl AVFormatContextInput {
             ffi::avformat_open_input(
                 &mut input_format_context,
                 url.as_ptr(),
-                fmt.map(|x| x.as_ptr()).unwrap_or_else(|| std::ptr::null()),
+                fmt.map(|x| x.as_ptr()).unwrap_or_else(std::ptr::null),
                 ptr::null_mut(),
             )
         }
