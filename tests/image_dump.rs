@@ -4,7 +4,7 @@ use std::ffi::CStr;
 
 /// Dump video/audio/image info to stdout.
 fn image_dump(image_path: &CStr) -> Result<(), Box<dyn std::error::Error>> {
-    let mut input_format_context = AVFormatContextInput::open(image_path)?;
+    let mut input_format_context = AVFormatContextInput::open(image_path, None)?;
     input_format_context.dump(0, image_path)?;
     Ok(())
 }

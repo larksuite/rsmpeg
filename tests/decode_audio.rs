@@ -71,7 +71,7 @@ fn decode_audio(audio_path: &str, out_file_path: &str) -> Result<()> {
         // safety, &str ensures no internal null bytes.
         let audio_path = CString::new(audio_path).unwrap();
         let mut input_format_context =
-            AVFormatContextInput::open(&audio_path).context("Open audio file failed.")?;
+            AVFormatContextInput::open(&audio_path, None).context("Open audio file failed.")?;
         let (stream_index, decoder) = input_format_context
             .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_AUDIO)
             .context("Find best stream failed.")?

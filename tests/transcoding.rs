@@ -39,7 +39,7 @@ struct TranscodingContext<'graph> {
 /// audio, decode context at this index is set to `None`.
 fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFormatContextInput)> {
     let mut stream_contexts = vec![];
-    let mut input_format_context = AVFormatContextInput::open(filename)?;
+    let mut input_format_context = AVFormatContextInput::open(filename, None)?;
 
     for input_stream in input_format_context.streams().into_iter() {
         let codecpar = input_stream.codecpar();

@@ -16,7 +16,7 @@ use std::{
 fn av_spliter(file_path: &CStr, out_video: &str, out_audio: &CStr) -> Result<()> {
     let mut out_video = File::create(out_video)?;
 
-    let mut input_format_context = AVFormatContextInput::open(file_path)?;
+    let mut input_format_context = AVFormatContextInput::open(file_path, None)?;
     input_format_context.dump(0, file_path)?;
 
     let video_index = input_format_context

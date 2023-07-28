@@ -47,7 +47,7 @@ fn pgm_save(frame: &AVFrame, filename: &str) -> Result<()> {
 
 fn _main(file: &CStr, out_dir: &str) -> Result<()> {
     fs::create_dir_all(out_dir)?;
-    let mut input_format_context = AVFormatContextInput::open(file)?;
+    let mut input_format_context = AVFormatContextInput::open(file, None)?;
     input_format_context.dump(0, file)?;
     let video_stream_index = input_format_context
         .streams()

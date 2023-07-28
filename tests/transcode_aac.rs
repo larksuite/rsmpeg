@@ -13,7 +13,7 @@ use std::{ffi::CStr, sync::Mutex};
 
 fn open_input_file(input_file: &CStr) -> Result<(AVFormatContextInput, AVCodecContext, usize)> {
     let input_format_context =
-        AVFormatContextInput::open(input_file).context("Failed to get encoder")?;
+        AVFormatContextInput::open(input_file, None).context("Failed to get encoder")?;
     let (audio_index, decoder) = input_format_context
         .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_AUDIO)?
         .context("Failed to find audio stream")?;
