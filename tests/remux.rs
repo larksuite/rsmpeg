@@ -4,8 +4,8 @@ use rsmpeg::avformat::{AVFormatContextInput, AVFormatContextOutput};
 use std::ffi::CStr;
 
 fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
-    let mut input_format_context =
-        AVFormatContextInput::open(input_path).context("Create input format context failed.")?;
+    let mut input_format_context = AVFormatContextInput::open(input_path, None, &mut None)
+        .context("Create input format context failed.")?;
     input_format_context
         .dump(0, input_path)
         .context("Dump input format context failed.")?;

@@ -30,20 +30,42 @@ wrap! {
 impl AVFormatContextInput {
     /// Create a [`AVFormatContextInput`] instance of a file, and find info of
     /// all streams.
-    pub fn open(filename: &CStr) -> Result<Self> {
+    ///
+    /// - `url`: url of the stream to open.
+    /// - `format`: input format hint. If `format` is some, this parameter forces
+    /// a specific input format.
+    /// - `options`: A dictionary filled with AVFormatContext and demuxer-private options.
+    ///    On return this parameter will be destroyed and replaced with a dict containing
+    ///    options that were not found.
+    pub fn open(
+        url: &CStr,
+        fmt: Option<&AVInputFormat>,
+        options: &mut Option<AVDictionary>,
+    ) -> Result<Self> {
         let mut input_format_context = ptr::null_mut();
+        let fmt = fmt.map(|x| x.as_ptr()).unwrap_or_else(std::ptr::null) as _;
+        let mut options_ptr = options
+            .as_mut()
+            .map(|x| x.as_mut_ptr())
+            .unwrap_or_else(std::ptr::null_mut);
 
-        // GoodToHave: support custom Input format and custom avdictionary
         unsafe {
             ffi::avformat_open_input(
                 &mut input_format_context,
-                filename.as_ptr(),
-                ptr::null_mut(),
-                ptr::null_mut(),
+                url.as_ptr(),
+                fmt,
+                &mut options_ptr,
             )
         }
         .upgrade()
         .map_err(RsmpegError::OpenInputError)?;
+
+        // Forget the old options since it's ownership is transferred.
+        let mut new_options = options_ptr
+            .upgrade()
+            .map(|x| unsafe { AVDictionary::from_raw(x) });
+        std::mem::swap(options, &mut new_options);
+        std::mem::forget(new_options);
 
         // Here we can be sure that context is non null, constructing here for
         // dropping when `avformat_find_stream_info` fails.
@@ -377,6 +399,15 @@ impl Drop for AVFormatContextOutput {
 
 wrap_ref!(AVInputFormat: ffi::AVInputFormat);
 
+impl AVInputFormat {
+    /// Find [`AVInputFormat`] based on the short name of the input format.
+    pub fn find(short_name: &CStr) -> Option<AVInputFormatRef<'static>> {
+        unsafe { ffi::av_find_input_format(short_name.as_ptr()) }
+            .upgrade()
+            .map(|x| unsafe { AVInputFormatRef::from_raw(x) })
+    }
+}
+
 wrap_ref!(AVOutputFormat: ffi::AVOutputFormat);
 
 impl AVOutputFormat {
@@ -534,5 +565,31 @@ impl<'stream> AVStreamRefs<'stream> {
     pub fn num(&self) -> usize {
         // From u32 to usize, safe.
         self.len as usize
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use cstr::cstr;
+
+    #[test]
+    fn test_find_input_format() {
+        let name = cstr!("mpeg");
+        let filter_ref = AVInputFormat::find(name).unwrap();
+        assert_eq!(
+            unsafe { CStr::from_ptr(filter_ref.long_name) },
+            cstr!("MPEG-PS (MPEG-2 Program Stream)")
+        );
+
+        let name = cstr!("asf");
+        let filter_ref = AVInputFormat::find(name).unwrap();
+        assert_eq!(
+            unsafe { CStr::from_ptr(filter_ref.long_name) },
+            cstr!("ASF (Advanced / Active Streaming Format)")
+        );
+
+        let name = cstr!("__random__");
+        assert!(AVInputFormat::find(name).is_none());
     }
 }

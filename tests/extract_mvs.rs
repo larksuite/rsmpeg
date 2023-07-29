@@ -34,11 +34,11 @@ fn decode_packet(
         *frame_index += 1;
 
         if let Some(raw_motion_vectors) = frame.get_motion_vectors() {
-            for motion_vector in raw_motion_vectors {
+            for &motion_vector in raw_motion_vectors {
                 // framenum,source,blockw,blockh,srcx,srcy,dstx,dsty,flags
                 motion_vectors.push(MotionVector {
+                    motion_vector,
                     frame_index: *frame_index,
-                    motion_vector: motion_vector.clone(),
                 });
             }
         }
@@ -48,7 +48,7 @@ fn decode_packet(
 
 /// Extract motion vectors from a video.
 fn extract_mvs(video_path: &CStr) -> Result<Vec<MotionVector>> {
-    let mut input_format_context = AVFormatContextInput::open(video_path)?;
+    let mut input_format_context = AVFormatContextInput::open(video_path, None, &mut None)?;
 
     let (stream_index, mut decode_context) = {
         let (stream_index, decoder) = input_format_context

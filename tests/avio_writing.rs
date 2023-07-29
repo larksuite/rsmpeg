@@ -21,7 +21,7 @@ use std::{
 
 /// Get `video_stream_index`, `input_format_context`, `decode_context`.
 fn open_input_file(filename: &CStr) -> Result<(usize, AVFormatContextInput, AVCodecContext)> {
-    let mut input_format_context = AVFormatContextInput::open(filename)?;
+    let mut input_format_context = AVFormatContextInput::open(filename, None, &mut None)?;
     input_format_context.dump(0, filename)?;
 
     let (video_index, decoder) = input_format_context
