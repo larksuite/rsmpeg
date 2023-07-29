@@ -240,7 +240,7 @@ mod test {
     #[test]
     fn test_filter_iterate() {
         let mut iter = AVBitStreamFilter::iterate();
-        while let Some(_) = iter.next() {}
-        let _iter = iter.next();
+        for _ in iter.by_ref() {}
+        assert!(iter.next().is_none());
     }
 }

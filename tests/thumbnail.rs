@@ -16,7 +16,7 @@ fn thumbnail(
     width: Option<i32>,
     height: Option<i32>,
 ) -> Result<()> {
-    let mut input_format_context = AVFormatContextInput::open(&input_video_path, None)?;
+    let mut input_format_context = AVFormatContextInput::open(input_video_path, None, &mut None)?;
 
     let (video_stream_index, mut decode_context) = {
         let (stream_index, decoder) = input_format_context

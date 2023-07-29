@@ -39,7 +39,7 @@ struct TranscodingContext<'graph> {
 /// audio, decode context at this index is set to `None`.
 fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFormatContextInput)> {
     let mut stream_contexts = vec![];
-    let mut input_format_context = AVFormatContextInput::open(filename, None)?;
+    let mut input_format_context = AVFormatContextInput::open(filename, None, &mut None)?;
 
     for input_stream in input_format_context.streams().into_iter() {
         let codecpar = input_stream.codecpar();
@@ -238,10 +238,10 @@ fn init_filter<'graph>(
 /// Create transcoding context corresponding to the given `stream_contexts`, the
 /// added filter contexts is mutable reference to objects stored in
 /// `filter_graphs`.
-fn init_filters<'graph>(
-    filter_graphs: &'graph mut [AVFilterGraph],
+fn init_filters(
+    filter_graphs: &mut [AVFilterGraph],
     stream_contexts: Vec<Option<StreamContext>>,
-) -> Result<Vec<Option<TranscodingContext<'graph>>>> {
+) -> Result<Vec<Option<TranscodingContext>>> {
     let mut filter_contexts = vec![];
 
     for (filter_graph, stream_context) in filter_graphs.iter_mut().zip(stream_contexts.into_iter())
@@ -397,49 +397,47 @@ pub fn transcoding(
 
         let in_stream_index = packet.stream_index as usize;
 
-        match transcoding_contexts[in_stream_index].as_mut() {
-            Some(TranscodingContext {
-                decode_context,
-                encode_context,
-                out_stream_index,
-                buffer_src_context,
-                buffer_sink_context,
-            }) => {
-                let input_stream = input_format_context.streams().get(in_stream_index).unwrap();
-                packet.rescale_ts(input_stream.time_base, encode_context.time_base);
+        if let Some(TranscodingContext {
+            decode_context,
+            encode_context,
+            out_stream_index,
+            buffer_src_context,
+            buffer_sink_context,
+        }) = transcoding_contexts[in_stream_index].as_mut()
+        {
+            let input_stream = input_format_context.streams().get(in_stream_index).unwrap();
+            packet.rescale_ts(input_stream.time_base, encode_context.time_base);
 
-                decode_context.send_packet(Some(&packet)).unwrap();
+            decode_context.send_packet(Some(&packet)).unwrap();
 
-                loop {
-                    let mut frame = match decode_context.receive_frame() {
-                        Ok(frame) => frame,
-                        Err(RsmpegError::DecoderDrainError)
-                        | Err(RsmpegError::DecoderFlushedError) => break,
-                        Err(e) => bail!(e),
-                    };
-
-                    let mut best_effort_timestamp = frame.best_effort_timestamp;
-                    if best_effort_timestamp == last_timestamp[in_stream_index] {
-                        best_effort_timestamp += 1;
-                        eprintln!(
-                            "fix timestamp: {} -> {}",
-                            last_timestamp[in_stream_index], best_effort_timestamp
-                        );
+            loop {
+                let mut frame = match decode_context.receive_frame() {
+                    Ok(frame) => frame,
+                    Err(RsmpegError::DecoderDrainError) | Err(RsmpegError::DecoderFlushedError) => {
+                        break
                     }
-                    last_timestamp[in_stream_index] = best_effort_timestamp;
-                    frame.set_pts(best_effort_timestamp);
-                    filter_encode_write_frame(
-                        Some(frame),
-                        buffer_src_context,
-                        buffer_sink_context,
-                        encode_context,
-                        &mut output_format_context,
-                        *out_stream_index,
-                    )?;
+                    Err(e) => bail!(e),
+                };
+
+                let mut best_effort_timestamp = frame.best_effort_timestamp;
+                if best_effort_timestamp == last_timestamp[in_stream_index] {
+                    best_effort_timestamp += 1;
+                    eprintln!(
+                        "fix timestamp: {} -> {}",
+                        last_timestamp[in_stream_index], best_effort_timestamp
+                    );
                 }
+                last_timestamp[in_stream_index] = best_effort_timestamp;
+                frame.set_pts(best_effort_timestamp);
+                filter_encode_write_frame(
+                    Some(frame),
+                    buffer_src_context,
+                    buffer_sink_context,
+                    encode_context,
+                    &mut output_format_context,
+                    *out_stream_index,
+                )?;
             }
-            // Discard non-av video packets.
-            None => (),
         }
     }
 

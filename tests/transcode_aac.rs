@@ -13,7 +13,7 @@ use std::{ffi::CStr, sync::Mutex};
 
 fn open_input_file(input_file: &CStr) -> Result<(AVFormatContextInput, AVCodecContext, usize)> {
     let input_format_context =
-        AVFormatContextInput::open(input_file, None).context("Failed to get encoder")?;
+        AVFormatContextInput::open(input_file, None, &mut None).context("Failed to get encoder")?;
     let (audio_index, decoder) = input_format_context
         .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_AUDIO)?
         .context("Failed to find audio stream")?;
@@ -172,7 +172,7 @@ fn transcode_aac(input_file: &CStr, output_file: &CStr) -> Result<()> {
 
     // Open the output file for writing.
     let (mut output_format_context, mut encode_context) =
-        open_output_file(output_file, &mut decode_context)?;
+        open_output_file(output_file, &decode_context)?;
 
     // Initialize the resampler to be able to convert audio sample formats.
     let resample_context = init_resampler(&mut decode_context, &mut encode_context)?;
