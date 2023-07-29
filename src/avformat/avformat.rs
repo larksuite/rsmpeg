@@ -34,20 +34,38 @@ impl AVFormatContextInput {
     /// - `url`: url of the stream to open.
     /// - `format`: input format hint. If `format` is some, this parameter forces
     /// a specific input format.
-    pub fn open(url: &CStr, fmt: Option<&AVInputFormat>) -> Result<Self> {
+    /// - `options`: A dictionary filled with AVFormatContext and demuxer-private options.
+    ///    On return this parameter will be destroyed and replaced with a dict containing
+    ///    options that were not found.
+    pub fn open(
+        url: &CStr,
+        fmt: Option<&AVInputFormat>,
+        options: &mut Option<AVDictionary>,
+    ) -> Result<Self> {
         let mut input_format_context = ptr::null_mut();
+        let fmt = fmt.map(|x| x.as_ptr()).unwrap_or_else(std::ptr::null) as _;
+        let mut options_ptr = options
+            .as_mut()
+            .map(|x| x.as_mut_ptr())
+            .unwrap_or_else(std::ptr::null_mut);
 
-        // TODO(ldm0): support custom AVDictionary
         unsafe {
             ffi::avformat_open_input(
                 &mut input_format_context,
                 url.as_ptr(),
-                fmt.map(|x| x.as_ptr()).unwrap_or_else(std::ptr::null),
-                ptr::null_mut(),
+                fmt,
+                &mut options_ptr,
             )
         }
         .upgrade()
         .map_err(RsmpegError::OpenInputError)?;
+
+        // Forget the old options since it's ownership is transferred.
+        let mut new_options = options_ptr
+            .upgrade()
+            .map(|x| unsafe { AVDictionary::from_raw(x) });
+        std::mem::swap(options, &mut new_options);
+        std::mem::forget(new_options);
 
         // Here we can be sure that context is non null, constructing here for
         // dropping when `avformat_find_stream_info` fails.
