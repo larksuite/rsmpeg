@@ -90,7 +90,7 @@ The features may vary depending on your application, in our case to build the de
 Setup the environment: 
 
 ```bash
-export FFMPEG_PKG_CONFIG_PATH=${PWD}/target/vcpkg/packages/ffmpeg_x64-linux/lib/pkgconfig
+export FFMPEG_PKG_CONFIG_PATH=${PWD}/target/vcpkg/installed/x64-linux/lib/pkgconfig
 ```
 
 Run the vcpkg build:
