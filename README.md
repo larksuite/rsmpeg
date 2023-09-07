@@ -48,6 +48,63 @@ These scripts build latest stable FFmpeg by default. You can build specific FFmp
 zsh utils/mac_ffmpeg.rs release/5.0
 ```
 
+### Compiling FFmpeg through cargo-vcpkg
+
+Using [vcpkg](https://github.com/microsoft/vcpkg) to manage ffmpeg dependencies may be easier as all the configuration is included in your `Cargo.toml`. 
+This is especially handy for users who download your project as they can build all necessary dependencies by running a single command.
+Care that by using this method building ffmpeg may take a lot of time, although after the first time the generated library files may be cached. 
+
+To begin, install the [cargo-vcpkg](https://github.com/mcgoo/cargo-vcpkg) tool:
+
+```bash
+cargo install cargo-vcpkg
+```
+
+Add vcpkg dependencies:
+
+```rust
+[package.metadata.vcpkg]
+dependencies = ["ffmpeg"]
+git = "https://github.com/microsoft/vcpkg"
+rev = "4a600e9" // Although it is possible to link to the master branch of vcpkg, it may be better to fix a specific revision in order to avoid unwanted breaking changes.
+```
+
+
+You may want to specify a subset of features based on the modules of FFmpeg you need. For instance, if your code makes use of x264 and VPX codecs the dependency should look like:
+
+```rust
+dependencies = ["ffmpeg[x264,vpx]"]
+```
+
+In some cases you may need to specify the triplet and/or additional dependencies. For instance, on Windows the above section would look similar to the following:
+
+```rust
+[package.metadata.vcpkg]
+dependencies = ["ffmpeg[x264,vpx]:x64-windows-static-md"]
+git = "https://github.com/microsoft/vcpkg"
+rev = "4a600e9"
+```
+
+The features may vary depending on your application, in our case to build the demo we need x264. 
+
+Setup the environment: 
+
+```bash
+# *nix (the path of the folder named after the triplet may change)
+export FFMPEG_PKG_CONFIG_PATH=${PWD}/target/vcpkg/installed/x64-linux/lib/pkgconfig
+# Windows
+set FFMPEG_PKG_CONFIG_PATH=%CD%\target\vcpkg\installed\x64-windows-static-md\lib\pkgconfig
+```
+
+Run the vcpkg build:
+```bash
+cargo vcpkg --verbose build
+```
+The `--verbose` option is not mandatory but may help to recognize any error in case the build fails.
+
+After those steps you are able to build and run your project. A full working example with the demo code presented in the next section is available at https://github.com/aegroto/rsmpeg-vcpkg-demo.
+
+
 ### Rsmpeg demo
 
 Ensure that you have compiled the FFmpeg.
