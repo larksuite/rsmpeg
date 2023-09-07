@@ -52,7 +52,7 @@ zsh utils/mac_ffmpeg.rs release/5.0
 
 Using [vcpkg](https://github.com/microsoft/vcpkg) to manage ffmpeg dependencies may be easier as all the configuration is included in your `Cargo.toml`. 
 This is especially handy for users who download your project as they can build all necessary dependencies by running a single command.
-Care that by using this method building ffmpeg may take a lot of time, although after the first time the generated libraries files may be cached. 
+Care that by using this method building ffmpeg may take a lot of time, although after the first time the generated library files may be cached. 
 
 To begin, install the [cargo-vcpkg](https://github.com/mcgoo/cargo-vcpkg) tool:
 
@@ -90,7 +90,10 @@ The features may vary depending on your application, in our case to build the de
 Setup the environment: 
 
 ```bash
+# *nix (the path of the folder named after the triplet may change)
 export FFMPEG_PKG_CONFIG_PATH=${PWD}/target/vcpkg/installed/x64-linux/lib/pkgconfig
+# Windows
+set FFMPEG_PKG_CONFIG_PATH=%CD%\target\vcpkg\installed\x64-windows-static-md\lib\pkgconfig
 ```
 
 Run the vcpkg build:
