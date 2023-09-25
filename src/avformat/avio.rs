@@ -49,44 +49,44 @@ impl Drop for AVIOContextURL {
 }
 
 /// Custom [`AVIOContext`], used for custom IO.
-pub struct AVIOContextCustom {
+pub struct AVIOContextCustom<'a> {
     inner: AVIOContext,
-    _opaque: Box<Opaque>,
+    _opaque: Box<Opaque<'a>>,
 }
 
-impl Deref for AVIOContextCustom {
+impl<'a> Deref for AVIOContextCustom<'a> {
     type Target = AVIOContext;
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl std::ops::DerefMut for AVIOContextCustom {
+impl<'a> std::ops::DerefMut for AVIOContextCustom<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
 }
 
-pub type ReadPacketCallback = Box<dyn FnMut(&mut Vec<u8>, &mut [u8]) -> i32 + Send + 'static>;
-pub type WritePacketCallback = Box<dyn FnMut(&mut Vec<u8>, &[u8]) -> i32 + Send + 'static>;
-pub type SeekCallback = Box<dyn FnMut(&mut Vec<u8>, i64, i32) -> i64 + Send + 'static>;
+pub type ReadPacketCallback<'a> = Box<dyn FnMut(&mut Vec<u8>, &mut [u8]) -> i32 + Send + 'a>;
+pub type WritePacketCallback<'a> = Box<dyn FnMut(&mut Vec<u8>, &[u8]) -> i32 + Send + 'a>;
+pub type SeekCallback<'a> = Box<dyn FnMut(&mut Vec<u8>, i64, i32) -> i64 + Send + 'a>;
 
-pub struct Opaque {
+pub struct Opaque<'a> {
     data: Vec<u8>,
-    read_packet: Option<ReadPacketCallback>,
-    write_packet: Option<WritePacketCallback>,
-    seek: Option<SeekCallback>,
+    read_packet: Option<ReadPacketCallback<'a>>,
+    write_packet: Option<WritePacketCallback<'a>>,
+    seek: Option<SeekCallback<'a>>,
 }
 
-impl AVIOContextCustom {
+impl<'a> AVIOContextCustom<'a> {
     /// `write_flag` - set to `false` on read, set to `true` on write.
     pub fn alloc_context(
         mut buffer: AVMem,
         write_flag: bool,
         data: Vec<u8>,
-        read_packet: Option<ReadPacketCallback>,
-        write_packet: Option<WritePacketCallback>,
-        seek: Option<SeekCallback>,
+        read_packet: Option<ReadPacketCallback<'a>>,
+        write_packet: Option<WritePacketCallback<'a>>,
+        seek: Option<SeekCallback<'a>>,
     ) -> Self {
         // According to the documentation of `avio_alloc_context`:
         //
@@ -130,7 +130,7 @@ impl AVIOContextCustom {
 
         // After reading the implementation, avio_alloc_context only fails on no
         // memory.
-        let context = unsafe {
+        let context = NonNull::new(unsafe {
             ffi::avio_alloc_context(
                 buffer.as_mut_ptr(),
                 buffer.len as _,
@@ -140,8 +140,7 @@ impl AVIOContextCustom {
                 write_packet_c,
                 seek_c,
             )
-        }
-        .upgrade()
+        })
         .unwrap();
 
         // If `AVIOContext` allocation successes, buffer is transferred to
@@ -156,7 +155,7 @@ impl AVIOContextCustom {
     }
 }
 
-impl Drop for AVIOContextCustom {
+impl<'a> Drop for AVIOContextCustom<'a> {
     fn drop(&mut self) {
         // Recover the `AVMem` fom the buffer and drop it. We don't attach the
         // AVMem to this type because according to the documentation, the buffer

@@ -77,11 +77,11 @@ fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFo
 /// Accepts a output filename, attach `encode_context` to the corresponding
 /// `decode_context` and wrap them into a `stream_context`. `stream_context` is
 /// None when the given `decode_context` in the same index is None.
-fn open_output_file(
+fn open_output_file<'a>(
     filename: &CStr,
     decode_contexts: Vec<Option<AVCodecContext>>,
     dict: &mut Option<AVDictionary>,
-) -> Result<(Vec<Option<StreamContext>>, AVFormatContextOutput)> {
+) -> Result<(Vec<Option<StreamContext>>, AVFormatContextOutput<'a>)> {
     let mut output_format_context = AVFormatContextOutput::create(filename, None)?;
     let mut stream_contexts = vec![];
 
