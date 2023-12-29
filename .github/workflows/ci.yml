@@ -137,7 +137,7 @@ jobs:
       - name: Install valgrind dependencies
         run: |
           sudo apt-get -y install libc6-dbg
-          cargo install cargo-valgrind --version 1.3.0
+          cargo install cargo-valgrind --version 2.0.2
 
       - name: Cache valgrind
         id: cache
@@ -181,7 +181,7 @@ jobs:
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
           if [ '${{ matrix.should_test }}' == 'true' ]; then
             if [ '${{ matrix.valgrind }}' == 'valgrind' ]; then
-              cargo valgrind -- test ${{ matrix.cargo-features }} -vv
+              cargo valgrind test ${{ matrix.cargo-features }} -vv
             else
               cargo test ${{ matrix.cargo-features }} -vv
             fi
