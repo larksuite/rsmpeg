@@ -181,7 +181,7 @@ jobs:
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
           if [ '${{ matrix.should_test }}' == 'true' ]; then
             if [ '${{ matrix.valgrind }}' == 'valgrind' ]; then
-              cargo valgrind test ${{ matrix.cargo-features }} -vv
+              cargo valgrind -- test ${{ matrix.cargo-features }} -vv
             else
               cargo test ${{ matrix.cargo-features }} -vv
             fi
