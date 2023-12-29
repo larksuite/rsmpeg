@@ -16,7 +16,7 @@ Supported FFmpeg versions are:
 - `5.*`(Enabled by feature `ffmpeg5`)
 - `6.*`(Enabled by feature `ffmpeg6`).
 
-Minimum Supported Rust Version is 1.65.0(Stable channel).
+Minimum Supported Rust Version is 1.70.0(Stable channel).
 
 ## Getting started
 

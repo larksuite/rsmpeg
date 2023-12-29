@@ -107,7 +107,7 @@ jobs:
     strategy:
       matrix:
         ffmpeg-version: ["release/4.3", "release/5.0", "release/6.0"]
-        rust: ["nightly", "1.65.0"]
+        rust: ["nightly", "1.70.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
           - ffmpeg-version: "release/5.0"
@@ -123,7 +123,7 @@ jobs:
           - valgrind: "valgrind"
             ffmpeg-version: "release/4.3"
           - valgrind: "valgrind"
-            rust: "1.65.0"
+            rust: "1.70.0"
       fail-fast: false
 
     steps:
@@ -250,7 +250,7 @@ jobs:
   build_dynamic_and_test_windows:
     strategy:
       matrix:
-        rust: ["nightly", "1.65.0"]
+        rust: ["nightly", "1.70.0"]
       fail-fast: false
     runs-on: windows-latest
     needs: build_dynamic_and_test_windows_pre
