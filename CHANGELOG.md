@@ -1,3 +1,19 @@
+## 0.14.2
+
+- Bump MSRV to "1.70.0"
+
+- Bump `rusty_ffmpeg` to "0.13.2"
+
+- Add `AVInputFomat::find`
+
+- Add fmt and options parameter for `AVFormatContextInput::open`
+
+## 0.14.1
+
+- Drop support for FFmpeg <4.3
+
+- Bump `rusty_ffmpeg` to "0.13.1"
+
 ## 0.14.0
 
 - Feature `ffmpeg5` and `ffmpeg6` are added to support FFmpeg `4.*/5.*/6.*` in parallel
