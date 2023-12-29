@@ -99,20 +99,19 @@ jobs:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
           LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
           LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
-        # Since vcpkg doesn't support FFmpeg 6.0 currently
-        run: cargo clippy --features ffmpeg5 -- -D warnings
+        run: cargo clippy --features ffmpeg6 -- -D warnings
 
   build_static_and_test_ubuntu:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ffmpeg-version: ["release/4.3", "release/5.0", "release/6.0"]
+        ffmpeg-version: ["release/4.3", "release/5.0", "release/6.1"]
         rust: ["nightly", "1.70.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
           - ffmpeg-version: "release/5.0"
             cargo-features: --features ffmpeg5
-          - ffmpeg-version: "release/6.0"
+          - ffmpeg-version: "release/6.1"
             cargo-features: --features ffmpeg6
           - rust: "nightly"
             should_test: "true"
