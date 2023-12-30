@@ -92,7 +92,7 @@ impl AVChannelLayout {
         .upgrade()?;
         // # Safety: after upgrading len is assumed to be positive.
         let len = len as usize;
-        if len as usize > BUF_SIZE {
+        if len > BUF_SIZE {
             buf.resize(len, 0);
             unsafe {
                 ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, len)
@@ -169,8 +169,8 @@ pub struct AVChannelLayoutIter {
     opaque: *mut *mut c_void,
 }
 
-impl AVChannelLayoutIter {
-    pub fn new() -> Self {
+impl Default for AVChannelLayoutIter {
+    fn default() -> Self {
         Self {
             opaque: std::ptr::null_mut(),
         }
