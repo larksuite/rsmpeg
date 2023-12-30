@@ -26,7 +26,7 @@ fn main() -> Result<()> {
 
     let tmp_path = pwd()?.to_string_lossy().to_string();
     let build_path = format!("{}/ffmpeg_build", tmp_path);
-    let branch = std::env::args().nth(1).unwrap_or_else(|| "release/6.0".to_string());
+    let branch = std::env::args().nth(1).unwrap_or_else(|| "release/6.1".to_string());
     let num_job = std::thread::available_parallelism().unwrap().get();
 
     if fs::metadata("ffmpeg").is_err() {
