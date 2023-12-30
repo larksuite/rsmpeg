@@ -182,7 +182,7 @@ impl RsmpegError {
 }
 
 /// Overall result of Rsmpeg functions
-pub type Result<T> = std::result::Result<T, RsmpegError>;
+pub type Result<T, E = RsmpegError> = std::result::Result<T, E>;
 
 /// A wrapper around c_int(return type of many ffmpeg inner libraries functions)
 pub type Ret = std::result::Result<c_int, c_int>;
