@@ -30,6 +30,14 @@ impl Drop for AVChannelLayout {
 }
 
 impl AVChannelLayout {
+    /// Convert self into [`ffi::AVChannelLayout`]`
+    pub fn into_inner(mut self) -> ffi::AVChannelLayout {
+        let layout = self.as_mut_ptr();
+        let layout = *unsafe { Box::from_raw(layout) };
+        std::mem::forget(self);
+        layout
+    }
+
     /// Initialize a native channel layout from a bitmask indicating which channels are present.
     pub fn from_mask(mask: u64) -> Option<Self> {
         let mut layout = MaybeUninit::<ffi::AVChannelLayout>::uninit();
