@@ -1,3 +1,5 @@
+// Due to usage of new channel layout api
+#![cfg(feature = "ffmpeg6")]
 use anyhow::{bail, Context as AnyhowContext, Result};
 use cstr::cstr;
 use once_cell::sync::Lazy as SyncLazy;
@@ -76,7 +78,7 @@ fn init_resampler(
     encode_context: &mut AVCodecContext,
 ) -> Result<SwrContext> {
     let mut resample_context = SwrContext::new(
-            &encode_context.ch_layout,
+        &encode_context.ch_layout,
         encode_context.sample_fmt,
         encode_context.sample_rate,
         &decode_context.ch_layout,
