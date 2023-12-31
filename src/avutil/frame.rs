@@ -16,6 +16,7 @@ settable!(AVFrame {
     nb_samples: i32,
     format: i32,
     channel_layout: u64,
+    ch_layout: ffi::AVChannelLayout,
     sample_rate: i32,
 });
 

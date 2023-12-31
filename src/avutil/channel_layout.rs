@@ -25,7 +25,7 @@ impl Drop for AVChannelLayout {
     fn drop(&mut self) {
         let layout = self.as_mut_ptr();
         unsafe { ffi::av_channel_layout_uninit(layout) };
-        unsafe { Box::from_raw(layout) };
+        let _ = unsafe { Box::from_raw(layout) };
     }
 }
 
