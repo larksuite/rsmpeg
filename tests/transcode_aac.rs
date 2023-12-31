@@ -76,10 +76,10 @@ fn init_resampler(
     encode_context: &mut AVCodecContext,
 ) -> Result<SwrContext> {
     let mut resample_context = SwrContext::new(
-        av_get_default_channel_layout(encode_context.channels),
+            &encode_context.ch_layout,
         encode_context.sample_fmt,
         encode_context.sample_rate,
-        av_get_default_channel_layout(decode_context.channels),
+        &decode_context.ch_layout,
         decode_context.sample_fmt,
         decode_context.sample_rate,
     )
