@@ -181,7 +181,7 @@ impl AVChannelLayout {
 
 /// Iterate over all standard channel layouts.
 pub struct AVChannelLayoutIter {
-    opaque: *mut *mut c_void,
+    opaque: *mut c_void,
 }
 
 impl Default for AVChannelLayoutIter {
@@ -196,8 +196,26 @@ impl Iterator for AVChannelLayoutIter {
     type Item = AVChannelLayoutRef<'static>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        unsafe { ffi::av_channel_layout_standard(self.opaque) }
+        unsafe { ffi::av_channel_layout_standard(&mut self.opaque) }
             .upgrade()
             .map(|ptr| unsafe { AVChannelLayoutRef::from_raw(ptr) })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn channel_layout_iterator_test() {
+        let mut iter = AVChannelLayoutIter::default();
+        let item = iter.next().unwrap();
+        assert_eq!(item.describe().unwrap().to_str().unwrap(), "mono");
+        let mut item = iter.next().unwrap();
+        assert_eq!(item.describe().unwrap().to_str().unwrap(), "stereo");
+        for x in iter {
+            item = x;
+        }
+        assert_eq!(item.describe().unwrap().to_str().unwrap(), "22.2");
     }
 }
