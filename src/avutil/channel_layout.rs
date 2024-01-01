@@ -29,8 +29,23 @@ impl Drop for AVChannelLayout {
     }
 }
 
+impl Clone for AVChannelLayout {
+    fn clone(&self) -> Self {
+        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::uninit();
+        // unwrap: this function only fail on OOM.
+        unsafe { ffi::av_channel_layout_copy(layout.as_mut_ptr(), self.as_ptr()) }
+            .upgrade()
+            .unwrap();
+        let layout = unsafe { layout.assume_init() };
+        unsafe { Self::from_raw(NonNull::new(Box::into_raw(Box::new(layout))).unwrap()) }
+    }
+}
+
 impl AVChannelLayout {
-    /// Convert self into [`ffi::AVChannelLayout`]`
+    /// Convert self into [`ffi::AVChannelLayout`]`.
+    ///
+    /// Be careful when using it. Since this fucntion leaks the raw type,
+    /// you have to manually do `ffi::av_channel_layout_uninit``.
     pub fn into_inner(mut self) -> ffi::AVChannelLayout {
         let layout = self.as_mut_ptr();
         let layout = *unsafe { Box::from_raw(layout) };
@@ -80,11 +95,11 @@ impl AVChannelLayout {
 
     /// Make a copy of a channel layout. This differs from just assigning src to dst
     /// in that it allocates and copies the map for AV_CHANNEL_ORDER_CUSTOM.
-    pub fn copy(&self) -> Result<Self> {
-        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::uninit();
-        unsafe { ffi::av_channel_layout_copy(layout.as_mut_ptr(), self.as_ptr()) }.upgrade()?;
-        let layout = unsafe { layout.assume_init() };
-        Ok(unsafe { Self::from_raw(NonNull::new(Box::into_raw(Box::new(layout))).unwrap()) })
+    pub fn copy(&mut self, src: &Self) {
+        // unwrap: this function only fail on OOM.
+        unsafe { ffi::av_channel_layout_copy(self.as_mut_ptr(), src.as_ptr()) }
+            .upgrade()
+            .unwrap();
     }
 
     /// Get a human-readable string describing the channel layout properties.
