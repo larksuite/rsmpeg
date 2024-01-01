@@ -157,7 +157,6 @@ impl<'dict> AVDictionary {
     }
 
     /// Iterates through all entries in the dictionary by reference.
-    #[cfg(feature = "ffmpeg6")]
     pub fn iter(&'dict self) -> AVDictionaryIter<'dict> {
         AVDictionaryIter {
             dict: self,
@@ -185,7 +184,6 @@ impl Drop for AVDictionary {
     }
 }
 
-#[cfg(feature = "ffmpeg6")]
 impl<'dict> IntoIterator for &'dict AVDictionary {
     type IntoIter = AVDictionaryIter<'dict>;
     type Item = AVDictionaryEntryRef<'dict>;
@@ -195,14 +193,12 @@ impl<'dict> IntoIterator for &'dict AVDictionary {
 }
 
 /// Iterator over [`AVDictionary`] by reference.
-#[cfg(feature = "ffmpeg6")]
 pub struct AVDictionaryIter<'dict> {
     dict: &'dict AVDictionary,
     ptr: *const ffi::AVDictionaryEntry,
     _phantom: std::marker::PhantomData<&'dict ()>,
 }
 
-#[cfg(feature = "ffmpeg6")]
 impl<'dict> Iterator for AVDictionaryIter<'dict> {
     type Item = AVDictionaryEntryRef<'dict>;
     fn next(&mut self) -> Option<Self::Item> {
