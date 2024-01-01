@@ -49,6 +49,21 @@ impl AVFilterContext {
         Ok(())
     }
 
+    /// Set property of a [`AVFilterContext`].
+    pub fn opt_set(&mut self, key: &CStr, value: &CStr) -> Result<()> {
+        unsafe {
+            ffi::av_opt_set(
+                self.as_mut_ptr().cast(),
+                key.as_ptr(),
+                value.as_ptr(),
+                ffi::AV_OPT_SEARCH_CHILDREN as i32,
+            )
+        }
+        .upgrade()
+        .map_err(RsmpegError::SetPropertyError)?;
+        Ok(())
+    }
+
     /// Add a frame to the buffer source.
     pub fn buffersrc_add_frame(
         &mut self,
