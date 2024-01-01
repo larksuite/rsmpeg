@@ -34,7 +34,7 @@ wrap_mut!(AVFilterContext: ffi::AVFilterContext);
 
 impl AVFilterContext {
     /// Set property of a [`AVFilterContext`].
-    pub fn set_property<U>(&mut self, key: &CStr, value: &U) -> Result<()> {
+    pub fn opt_set_bin<U>(&mut self, key: &CStr, value: &U) -> Result<()> {
         unsafe {
             ffi::av_opt_set_bin(
                 self.as_mut_ptr().cast(),
