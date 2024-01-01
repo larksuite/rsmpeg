@@ -100,21 +100,25 @@ impl AVChannelLayout {
     pub fn describe(&self) -> Result<CString> {
         const BUF_SIZE: usize = 32;
         let mut buf = vec![0u8; BUF_SIZE];
+
+        // Note: content_len doesn't include the trailing zero
+        //
         // # Safety: after upgrading len is assumed to be positive.
-        let len = unsafe {
+        let content_len = unsafe {
             ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, BUF_SIZE)
         }
         .upgrade()? as usize;
-        let len = if len > BUF_SIZE {
-            buf.resize(len, 0);
+
+        let content_len = if content_len >= BUF_SIZE {
+            buf.resize(content_len + 1, 0);
             unsafe {
-                ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, len)
+                ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, content_len + 1)
             }
             .upgrade()? as usize
         } else {
-            len
+            content_len
         };
-        Ok(CString::new(&buf[..len]).unwrap())
+        Ok(CString::new(&buf[..content_len]).unwrap())
     }
 
     /// Get the channel with the given index in a channel layout.
@@ -215,6 +219,7 @@ mod tests {
         assert_eq!(item.describe().unwrap().to_str().unwrap(), "stereo");
         for x in iter {
             item = x;
+            assert!(!item.describe().unwrap().to_str().unwrap().is_empty())
         }
         assert_eq!(item.describe().unwrap().to_str().unwrap(), "22.2");
     }
