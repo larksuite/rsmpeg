@@ -8,7 +8,7 @@ use std::{
 
 use crate::{
     avcodec::{AVCodecID, AVCodecParameters, AVPacket},
-    avutil::{AVDictionary, AVFrame, AVPixelFormat, AVRational},
+    avutil::{AVChannelLayoutRef, AVDictionary, AVFrame, AVPixelFormat, AVRational},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -317,6 +317,12 @@ impl AVCodecContext {
             .upgrade()
             .unwrap();
         parameters
+    }
+
+    /// Get channel layout
+    pub fn ch_layout(&self) -> AVChannelLayoutRef {
+        let inner = NonNull::new(&self.ch_layout as *const _ as *mut _).unwrap();
+        unsafe { AVChannelLayoutRef::from_raw(inner) }
     }
 
     /// Is hardware accelaration enabled in this codec context.
