@@ -1,5 +1,4 @@
 // Due to usage of new channel layout api
-#![cfg(feature = "ffmpeg6")]
 use anyhow::{bail, Context as AnyhowContext, Result};
 use cstr::cstr;
 use once_cell::sync::Lazy as SyncLazy;
