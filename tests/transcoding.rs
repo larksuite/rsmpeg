@@ -5,10 +5,7 @@ use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avfilter::{AVFilter, AVFilterContextMut, AVFilterGraph, AVFilterInOut},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
-    avutil::{
-        av_get_channel_layout_nb_channels, av_get_default_channel_layout, av_inv_q, av_mul_q,
-        get_sample_fmt_name, ra, AVDictionary, AVFrame,
-    },
+    avutil::{av_inv_q, av_mul_q, get_sample_fmt_name, ra, AVChannelLayout, AVDictionary, AVFrame},
     error::RsmpegError,
     ffi,
 };
@@ -106,10 +103,8 @@ fn open_output_file(
                 )));
             } else if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
                 new_encode_context.set_sample_rate(decode_context.sample_rate);
-                new_encode_context.set_channel_layout(decode_context.channel_layout);
-                new_encode_context.set_channels(av_get_channel_layout_nb_channels(
-                    decode_context.channel_layout,
-                ));
+                new_encode_context.set_ch_layout(decode_context.ch_layout().clone().into_inner());
+                new_encode_context.set_channels(decode_context.ch_layout.nb_channels);
                 new_encode_context.set_sample_fmt(encoder.sample_fmts().unwrap()[0]);
                 new_encode_context.set_time_base(ra(1, decode_context.sample_rate));
             } else {
@@ -181,20 +176,22 @@ fn init_filter<'graph>(
 
             let mut buffer_sink_context =
                 filter_graph.create_filter_context(&buffer_sink, cstr!("out"), None)?;
-            buffer_sink_context.set_property(cstr!("pix_fmts"), &encode_context.pix_fmt)?;
+            buffer_sink_context.opt_set_bin(cstr!("pix_fmts"), &encode_context.pix_fmt)?;
 
             (buffer_src_context, buffer_sink_context)
         } else if decode_context.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
             let buffer_src = AVFilter::get_by_name(cstr!("abuffer")).unwrap();
             let buffer_sink = AVFilter::get_by_name(cstr!("abuffersink")).unwrap();
 
-            if decode_context.channel_layout == 0 {
-                let channel_layout = av_get_default_channel_layout(decode_context.channels);
-                decode_context.set_channel_layout(channel_layout);
+            if decode_context.ch_layout.order == ffi::AVChannelOrder_AV_CHANNEL_ORDER_UNSPEC {
+                decode_context.set_ch_layout(
+                    AVChannelLayout::from_nb_channels(decode_context.ch_layout.nb_channels)
+                        .into_inner(),
+                );
             }
 
             let args = format!(
-                "time_base={}/{}:sample_rate={}:sample_fmt={}:channel_layout=0x{}",
+                "time_base={}/{}:sample_rate={}:sample_fmt={}:channel_layout={}",
                 decode_context.time_base.num,
                 decode_context.time_base.den,
                 decode_context.sample_rate,
@@ -203,7 +200,11 @@ fn init_filter<'graph>(
                 get_sample_fmt_name(decode_context.sample_fmt)
                     .unwrap()
                     .to_string_lossy(),
-                decode_context.channel_layout,
+                decode_context
+                    .ch_layout()
+                    .describe()
+                    .unwrap()
+                    .to_string_lossy(),
             );
             let args = &CString::new(args).unwrap();
 
@@ -212,10 +213,12 @@ fn init_filter<'graph>(
 
             let mut buffer_sink_context =
                 filter_graph.create_filter_context(&buffer_sink, cstr!("out"), None)?;
-            buffer_sink_context.set_property(cstr!("sample_fmts"), &encode_context.sample_fmt)?;
-            buffer_sink_context
-                .set_property(cstr!("channel_layouts"), &encode_context.channel_layout)?;
-            buffer_sink_context.set_property(cstr!("sample_rates"), &encode_context.sample_rate)?;
+            buffer_sink_context.opt_set_bin(cstr!("sample_fmts"), &encode_context.sample_fmt)?;
+            buffer_sink_context.opt_set(
+                cstr!("ch_layouts"),
+                &encode_context.ch_layout().describe().unwrap(),
+            )?;
+            buffer_sink_context.opt_set_bin(cstr!("sample_rates"), &encode_context.sample_rate)?;
 
             (buffer_src_context, buffer_sink_context)
         } else {

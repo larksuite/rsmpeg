@@ -1,9 +1,15 @@
-use crate::{avcodec::AVCodecContext, avutil::AVMediaType, ffi, shared::*};
+use crate::{
+    avcodec::AVCodecContext,
+    avutil::{AVChannelLayoutRef, AVMediaType},
+    ffi,
+    shared::*,
+};
 use std::{
     clone::Clone,
     default::Default,
     fmt,
     ops::{Deref, Drop},
+    ptr::NonNull,
 };
 
 wrap_ref_mut!(AVCodecParameters: ffi::AVCodecParameters);
@@ -43,6 +49,12 @@ impl AVCodecParameters {
     /// Get the codec type.
     pub fn codec_type(&self) -> AVMediaType {
         AVMediaType(self.codec_type)
+    }
+
+    /// Get channel layout
+    pub fn ch_layout(&self) -> AVChannelLayoutRef {
+        let inner = NonNull::new(&self.ch_layout as *const _ as *mut _).unwrap();
+        unsafe { AVChannelLayoutRef::from_raw(inner) }
     }
 }
 

@@ -34,13 +34,28 @@ wrap_mut!(AVFilterContext: ffi::AVFilterContext);
 
 impl AVFilterContext {
     /// Set property of a [`AVFilterContext`].
-    pub fn set_property<U>(&mut self, key: &CStr, value: &U) -> Result<()> {
+    pub fn opt_set_bin<U>(&mut self, key: &CStr, value: &U) -> Result<()> {
         unsafe {
             ffi::av_opt_set_bin(
                 self.as_mut_ptr().cast(),
                 key.as_ptr(),
                 value as *const _ as *const u8,
                 size_of::<U>() as i32,
+                ffi::AV_OPT_SEARCH_CHILDREN as i32,
+            )
+        }
+        .upgrade()
+        .map_err(RsmpegError::SetPropertyError)?;
+        Ok(())
+    }
+
+    /// Set property of a [`AVFilterContext`].
+    pub fn opt_set(&mut self, key: &CStr, value: &CStr) -> Result<()> {
+        unsafe {
+            ffi::av_opt_set(
+                self.as_mut_ptr().cast(),
+                key.as_ptr(),
+                value.as_ptr(),
                 ffi::AV_OPT_SEARCH_CHILDREN as i32,
             )
         }

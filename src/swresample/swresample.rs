@@ -4,7 +4,10 @@ use crate::{
     ffi,
     shared::*,
 };
-use std::{ops::Drop, ptr};
+use std::{
+    ops::Drop,
+    ptr::{self, NonNull},
+};
 
 wrap!(SwrContext: ffi::SwrContext);
 
@@ -30,29 +33,30 @@ impl SwrContext {
     ///
     /// Returns None on invalid parameters or insufficient parameters.
     pub fn new(
-        out_ch_layout: u64,
+        out_ch_layout: &ffi::AVChannelLayout,
         out_sample_fmt: ffi::AVSampleFormat,
         out_sample_rate: i32,
-        in_ch_layout: u64,
+        in_ch_layout: &ffi::AVChannelLayout,
         in_sample_fmt: ffi::AVSampleFormat,
         in_sample_rate: i32,
-    ) -> Option<Self> {
+    ) -> Result<Self> {
+        let mut context = ptr::null_mut();
         unsafe {
             // u64 to i64, safe
-            ffi::swr_alloc_set_opts(
-                ptr::null_mut(),
-                out_ch_layout as i64,
+            ffi::swr_alloc_set_opts2(
+                &mut context,
+                out_ch_layout,
                 out_sample_fmt,
                 out_sample_rate,
-                in_ch_layout as i64,
+                in_ch_layout,
                 in_sample_fmt,
                 in_sample_rate,
                 0,
                 ptr::null_mut(),
             )
         }
-        .upgrade()
-        .map(|x| unsafe { Self::from_raw(x) })
+        .upgrade()?;
+        Ok(unsafe { Self::from_raw(NonNull::new(context).unwrap()) })
     }
 
     /// Initialize context after user parameters have been set.

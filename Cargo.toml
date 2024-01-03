@@ -14,7 +14,7 @@ exclude = ["tests/*", "examples/*", "utils/*"]
 rust-version = "1.70.0"
 
 [dependencies]
-rusty_ffmpeg = "0.13.2"
+rusty_ffmpeg = { version = "0.13.3", features = ["ffmpeg6"] }
 libc = "0.2"
 paste = "1.0"
 thiserror = "1.0"

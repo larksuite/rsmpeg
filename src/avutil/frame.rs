@@ -1,11 +1,11 @@
 use crate::{
-    avutil::{av_image_fill_arrays, AVImage, AVMotionVector, AVPixelFormat},
+    avutil::{av_image_fill_arrays, AVChannelLayoutRef, AVImage, AVMotionVector, AVPixelFormat},
     error::*,
     ffi,
     shared::*,
 };
 
-use std::{fmt, mem::size_of, ops::Drop, slice};
+use std::{fmt, mem::size_of, ops::Drop, ptr::NonNull, slice};
 
 wrap!(AVFrame: ffi::AVFrame);
 settable!(AVFrame {
@@ -15,7 +15,7 @@ settable!(AVFrame {
     pict_type: ffi::AVPictureType,
     nb_samples: i32,
     format: i32,
-    channel_layout: u64,
+    ch_layout: ffi::AVChannelLayout,
     sample_rate: i32,
 });
 
@@ -28,7 +28,7 @@ impl fmt::Debug for AVFrame {
             .field("pict_type", &self.pict_type)
             .field("nb_samples", &self.nb_samples)
             .field("format", &self.format)
-            .field("channel_layout", &self.channel_layout)
+            .field("ch_layout", &self.ch_layout().describe())
             .field("sample_rate", &self.sample_rate)
             .finish()
     }
@@ -79,6 +79,12 @@ impl AVFrame {
 
     pub fn linesize_mut(&mut self) -> &mut [libc::c_int; 8] {
         unsafe { &mut self.deref_mut().linesize }
+    }
+
+    /// Get channel layout
+    pub fn ch_layout(&self) -> AVChannelLayoutRef {
+        let inner = NonNull::new(&self.ch_layout as *const _ as *mut _).unwrap();
+        unsafe { AVChannelLayoutRef::from_raw(inner) }
     }
 
     /// Setup the data pointers and linesizes based on the specified image
@@ -238,14 +244,15 @@ impl<'frame> AVFrameSideDataRef<'frame> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{avcodec::AVCodec, avutil::av_get_default_channel_layout};
+    use crate::avcodec::AVCodec;
+    use crate::avutil::AVChannelLayout;
 
     #[test]
     fn test_get_buffer() {
         let encoder = AVCodec::find_encoder(ffi::AVCodecID_AV_CODEC_ID_AAC).unwrap();
         let mut frame = AVFrame::new();
         frame.set_nb_samples(2);
-        frame.set_channel_layout(av_get_default_channel_layout(2));
+        frame.set_ch_layout(AVChannelLayout::from_nb_channels(2).into_inner());
         frame.set_format(encoder.sample_fmts().unwrap()[0]);
         assert!(frame.alloc_buffer().is_ok());
     }
@@ -264,7 +271,7 @@ mod test {
         let encoder = AVCodec::find_encoder(ffi::AVCodecID_AV_CODEC_ID_AAC).unwrap();
         let mut frame = AVFrame::new();
         frame.set_nb_samples(2);
-        frame.set_channel_layout(av_get_default_channel_layout(2));
+        frame.set_ch_layout(AVChannelLayout::from_nb_channels(2).into_inner());
         frame.set_format(encoder.sample_fmts().unwrap()[0]);
         frame.alloc_buffer().unwrap();
         assert!(matches!(

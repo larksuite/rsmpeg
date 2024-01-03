@@ -109,7 +109,11 @@ jobs:
         rust: ["nightly", "1.70.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
+          # Only run tests on nightly rust + latest FFmpeg
+          # This is caused by specific bug of FFmpeg 6.0
+          # https://github.com/FFmpeg/FFmpeg/commit/c4f35ba8084f254afe1fb05202abfdcfff63b854
           - rust: "nightly"
+            ffmpeg-version: "release/6.1"
             should_test: "true"
         exclude:
           # Only run valgrind with latest FFmpeg and nightly rust to reduce resource consumption.
@@ -174,12 +178,12 @@ jobs:
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
           if [ '${{ matrix.should_test }}' == 'true' ]; then
             if [ '${{ matrix.valgrind }}' == 'valgrind' ]; then
-              cargo valgrind test ${{ matrix.cargo-features }} -vv
+              cargo valgrind test -vv
             else
-              cargo test ${{ matrix.cargo-features }} -vv
+              cargo test -vv
             fi
           else
-            cargo test ${{ matrix.cargo-features }} --no-run -vv
+            cargo test --no-run -vv
           fi
 
   # Cross build on Ubuntu, then send it to Windows machine for CI.

@@ -1,10 +1,11 @@
+// Due to usage of new channel layout api
 use anyhow::{bail, Context as AnyhowContext, Result};
 use cstr::cstr;
 use once_cell::sync::Lazy as SyncLazy;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
-    avutil::{av_get_default_channel_layout, ra, AVAudioFifo, AVFrame, AVSamples},
+    avutil::{ra, AVAudioFifo, AVChannelLayout, AVFrame, AVSamples},
     error::RsmpegError,
     ffi,
     swresample::SwrContext,
@@ -49,7 +50,7 @@ fn open_output_file(
     // Set the basic encoder parameters.
     // The input file's sample rate is used to avoid a sample rate conversion.
     encode_context.set_channels(OUTPUT_CHANNELS);
-    encode_context.set_channel_layout(av_get_default_channel_layout(OUTPUT_CHANNELS));
+    encode_context.set_ch_layout(AVChannelLayout::from_nb_channels(OUTPUT_CHANNELS).into_inner());
     encode_context.set_sample_rate(decode_context.sample_rate);
     encode_context.set_sample_fmt(encode_codec.sample_fmts().unwrap()[0]);
     encode_context.set_bit_rate(OUTPUT_BIT_RATE);
@@ -76,10 +77,10 @@ fn init_resampler(
     encode_context: &mut AVCodecContext,
 ) -> Result<SwrContext> {
     let mut resample_context = SwrContext::new(
-        av_get_default_channel_layout(encode_context.channels),
+        &encode_context.ch_layout,
         encode_context.sample_fmt,
         encode_context.sample_rate,
-        av_get_default_channel_layout(decode_context.channels),
+        &decode_context.ch_layout,
         decode_context.sample_fmt,
         decode_context.sample_rate,
     )
@@ -102,13 +103,13 @@ fn add_samples_to_fifo(
 
 fn create_output_frame(
     nb_samples: i32,
-    channel_layout: u64,
+    ch_layout: ffi::AVChannelLayout,
     sample_fmt: i32,
     sample_rate: i32,
 ) -> AVFrame {
     let mut frame = AVFrame::new();
     frame.set_nb_samples(nb_samples);
-    frame.set_channel_layout(channel_layout);
+    frame.set_ch_layout(ch_layout);
     frame.set_format(sample_fmt);
     frame.set_sample_rate(sample_rate);
 
@@ -154,7 +155,7 @@ fn load_encode_and_write(
     let nb_samples = fifo.size().min(encode_context.frame_size);
     let mut frame = create_output_frame(
         nb_samples,
-        encode_context.channel_layout,
+        encode_context.ch_layout().clone().into_inner(),
         encode_context.sample_fmt,
         encode_context.sample_rate,
     );
