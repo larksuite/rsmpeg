@@ -101,24 +101,22 @@ impl AVChannelLayout {
         const BUF_SIZE: usize = 32;
         let mut buf = vec![0u8; BUF_SIZE];
 
-        // Note: content_len doesn't include the trailing zero
-        //
-        // # Safety: after upgrading len is assumed to be positive.
-        let content_len = unsafe {
+        // # Safety: `as usize` after upgrading, len is assumed to be positive.
+        let len = unsafe {
             ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, BUF_SIZE)
         }
         .upgrade()? as usize;
 
-        let content_len = if content_len >= BUF_SIZE {
-            buf.resize(content_len + 1, 0);
+        let len = if len > BUF_SIZE {
+            buf.resize(len, 0);
             unsafe {
-                ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, content_len + 1)
+                ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, len)
             }
             .upgrade()? as usize
         } else {
-            content_len
+            len
         };
-        Ok(CString::new(&buf[..content_len]).unwrap())
+        Ok(CString::new(&buf[..len - 1]).unwrap())
     }
 
     /// Get the channel with the given index in a channel layout.
