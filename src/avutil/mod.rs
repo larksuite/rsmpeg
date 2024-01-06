@@ -12,6 +12,7 @@ mod pixdesc;
 mod pixfmt;
 mod rational;
 mod samplefmt;
+mod timestamp;
 
 pub use audio_fifo::*;
 pub use channel_layout::*;
@@ -26,3 +27,4 @@ pub use pixdesc::*;
 pub use pixfmt::*;
 pub use rational::*;
 pub use samplefmt::*;
+pub use timestamp::*;
