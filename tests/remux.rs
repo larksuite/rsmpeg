@@ -1,7 +1,25 @@
+//! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/remux.c
 use anyhow::{Context, Result};
 use cstr::cstr;
+use rsmpeg::avcodec::AVPacket;
 use rsmpeg::avformat::{AVFormatContextInput, AVFormatContextOutput};
+use rsmpeg::avutil::{ts2str, ts2timestr};
+use rsmpeg::ffi::AVRational;
 use std::ffi::CStr;
+
+fn log_packet(time_base: AVRational, pkt: &AVPacket, tag: &str) {
+    println!(
+        "{}: pts:{} pts_time:{} dts:{} dts_time:{} duration:{} duration_time:{} stream_index:{}",
+        tag,
+        ts2str(pkt.pts),
+        ts2timestr(pkt.pts, time_base),
+        ts2str(pkt.dts),
+        ts2timestr(pkt.dts, time_base),
+        ts2str(pkt.duration),
+        ts2timestr(pkt.duration, time_base),
+        pkt.stream_index
+    );
+}
 
 fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
     let mut input_format_context = AVFormatContextInput::open(input_path, None, &mut None)
@@ -11,22 +29,24 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
         .context("Dump input format context failed.")?;
     let mut output_format_context = AVFormatContextOutput::create(output_path, None)
         .context("Create output format context failed.")?;
-    let stream_mapping = {
-        let mut stream_mapping = vec![None; input_format_context.nb_streams as usize];
-        let mut stream_index = 0;
-        for (i, stream) in input_format_context.streams().into_iter().enumerate() {
-            let codec_type = stream.codecpar().codec_type();
-            if !codec_type.is_video() && !codec_type.is_audio() && !codec_type.is_subtitle() {
-                stream_mapping[i] = None;
-                continue;
-            }
-            stream_mapping[i] = Some(stream_index);
-            stream_index += 1;
-
-            let mut new_stream = output_format_context.new_stream();
-            new_stream.set_codecpar(stream.codecpar().clone());
-        }
-        stream_mapping
+    let stream_mapping: Vec<_> = {
+        let mut stream_index = 0usize;
+        input_format_context
+            .streams()
+            .into_iter()
+            .map(|stream| {
+                let codec_type = stream.codecpar().codec_type();
+                if !codec_type.is_video() && !codec_type.is_audio() && !codec_type.is_subtitle() {
+                    None
+                } else {
+                    output_format_context
+                        .new_stream()
+                        .set_codecpar(stream.codecpar().clone());
+                    stream_index += 1;
+                    Some(stream_index - 1)
+                }
+            })
+            .collect()
     };
     output_format_context
         .dump(0, output_path)
@@ -41,11 +61,9 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
         .context("Read packet failed.")?
     {
         let input_stream_index = packet.stream_index as usize;
-        let output_stream_index = match stream_mapping[input_stream_index] {
-            Some(x) => x,
-            None => continue,
+        let Some(output_stream_index) = stream_mapping[input_stream_index] else {
+            continue;
         };
-        let output_stream_index = output_stream_index as usize;
         {
             let input_stream = input_format_context
                 .streams()
@@ -55,19 +73,19 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
                 .streams()
                 .get(output_stream_index)
                 .unwrap();
+            log_packet(input_stream.time_base, &packet, "in");
             packet.rescale_ts(input_stream.time_base, output_stream.time_base);
             packet.set_stream_index(output_stream_index as i32);
             packet.set_pos(-1);
+            log_packet(output_stream.time_base, &packet, "out");
         }
         output_format_context
             .interleaved_write_frame(&mut packet)
             .context("Interleaved write frame failed.")?;
     }
-
     output_format_context
         .write_trailer()
-        .context("Write trailer failed.")?;
-    Ok(())
+        .context("Write trailer failed.")
 }
 
 /// Remux MP4 to MOV, with h.264 codec.
