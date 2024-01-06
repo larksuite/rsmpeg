@@ -1,6 +1,9 @@
 //! Errors of the rsmpeg.
 use libc::c_int;
-use std::cmp::{Eq, PartialEq};
+use std::{
+    cmp::{Eq, PartialEq},
+    num::TryFromIntError,
+};
 use thiserror::Error;
 
 use crate::{ffi, shared::AVERROR_EAGAIN};
@@ -122,6 +125,9 @@ pub enum RsmpegError {
     #[error("Failed to fill data to image buffer. ({0})")]
     AVImageFillArrayError(c_int),
 
+    #[error("{0}")]
+    TryFromIntError(TryFromIntError),
+
     // Non exhaustive
     #[error("Unknown error, contact ldm0 when you see this.")]
     Unknown,
@@ -130,53 +136,57 @@ pub enum RsmpegError {
 impl RsmpegError {
     pub fn raw_error(&self) -> Option<c_int> {
         match self {
-            RsmpegError::AVError(err) => Some(*err),
-            RsmpegError::CustomError(_) => None,
-            RsmpegError::OpenInputError(err) => Some(*err),
-            RsmpegError::OpenOutputError(err) => Some(*err),
-            RsmpegError::FindStreamInfoError(err) => Some(*err),
-            RsmpegError::WriteHeaderError(err) => Some(*err),
-            RsmpegError::WriteTrailerError(err) => Some(*err),
-            RsmpegError::CodecOpenError(err) => Some(*err),
-            RsmpegError::CodecSetParameterError(err) => Some(*err),
-            RsmpegError::FilterNotFound => None,
-            RsmpegError::CreateFilterError(err) => Some(*err),
-            RsmpegError::SetPropertyError(err) => Some(*err),
-            RsmpegError::SendPacketError(err) => Some(*err),
-            RsmpegError::DecoderFullError => Some(AVERROR_EAGAIN),
-            RsmpegError::ReceiveFrameError(err) => Some(*err),
-            RsmpegError::DecoderDrainError => Some(AVERROR_EAGAIN),
-            RsmpegError::DecoderFlushedError => Some(ffi::AVERROR_EOF),
-            RsmpegError::SendFrameError(err) => Some(*err),
-            RsmpegError::SendFrameAgainError => Some(AVERROR_EAGAIN),
-            RsmpegError::ReceivePacketError(err) => Some(*err),
-            RsmpegError::EncoderDrainError => Some(AVERROR_EAGAIN),
-            RsmpegError::EncoderFlushedError => Some(ffi::AVERROR_EOF),
-            RsmpegError::BitstreamFullError => Some(AVERROR_EAGAIN),
-            RsmpegError::BitstreamDrainError => Some(AVERROR_EAGAIN),
-            RsmpegError::BitstreamFlushedError => Some(ffi::AVERROR_EOF),
-            RsmpegError::BitstreamSendPacketError(err) => Some(*err),
-            RsmpegError::BitstreamReceivePacketError(err) => Some(*err),
-            RsmpegError::BitstreamInitializationError(err) => Some(*err),
-            RsmpegError::ReadFrameError(err) => Some(*err),
-            RsmpegError::WriteFrameError(err) => Some(*err),
-            RsmpegError::InterleavedWriteFrameError(err) => Some(*err),
-            RsmpegError::BufferSrcAddFrameError(err) => Some(*err),
-            RsmpegError::BufferSinkGetFrameError(err) => Some(*err),
-            RsmpegError::BufferSinkDrainError => Some(AVERROR_EAGAIN),
-            RsmpegError::BufferSinkEofError => Some(ffi::AVERROR_EOF),
-            RsmpegError::DictionaryParseError(err) => Some(*err),
-            RsmpegError::DictionaryGetStringError(err) => Some(*err),
-            RsmpegError::AVIOOpenError(err) => Some(*err),
-            RsmpegError::SwrContextInitError(err) => Some(*err),
-            RsmpegError::SwrConvertError(err) => Some(*err),
-            RsmpegError::SwsScaleError(err) => Some(*err),
-            RsmpegError::AudioFifoWriteError(err) => Some(*err),
-            RsmpegError::AudioFifoReadError(err) => Some(*err),
-            RsmpegError::AVFrameDoubleAllocatingError => None,
-            RsmpegError::AVFrameInvalidAllocatingError(err) => Some(*err),
-            RsmpegError::AVImageFillArrayError(err) => Some(*err),
-            RsmpegError::Unknown => None,
+            Self::AVError(err)
+            | Self::OpenInputError(err)
+            | Self::OpenOutputError(err)
+            | Self::FindStreamInfoError(err)
+            | Self::WriteHeaderError(err)
+            | Self::WriteTrailerError(err)
+            | Self::CodecOpenError(err)
+            | Self::CodecSetParameterError(err)
+            | Self::CreateFilterError(err)
+            | Self::SetPropertyError(err)
+            | Self::SendPacketError(err)
+            | Self::ReceiveFrameError(err)
+            | Self::SendFrameError(err)
+            | Self::ReceivePacketError(err)
+            | Self::BitstreamSendPacketError(err)
+            | Self::BitstreamReceivePacketError(err)
+            | Self::BitstreamInitializationError(err)
+            | Self::ReadFrameError(err)
+            | Self::WriteFrameError(err)
+            | Self::InterleavedWriteFrameError(err)
+            | Self::BufferSrcAddFrameError(err)
+            | Self::BufferSinkGetFrameError(err)
+            | Self::DictionaryParseError(err)
+            | Self::DictionaryGetStringError(err)
+            | Self::AVIOOpenError(err)
+            | Self::SwrContextInitError(err)
+            | Self::SwrConvertError(err)
+            | Self::SwsScaleError(err)
+            | Self::AudioFifoWriteError(err)
+            | Self::AudioFifoReadError(err)
+            | Self::AVFrameInvalidAllocatingError(err)
+            | Self::AVImageFillArrayError(err) => Some(*err),
+
+            Self::DecoderFullError
+            | Self::BufferSinkDrainError
+            | Self::DecoderDrainError
+            | Self::SendFrameAgainError
+            | Self::BitstreamFullError
+            | Self::BitstreamDrainError
+            | Self::EncoderDrainError => Some(AVERROR_EAGAIN),
+
+            Self::BufferSinkEofError
+            | Self::DecoderFlushedError
+            | Self::EncoderFlushedError
+            | Self::BitstreamFlushedError => Some(ffi::AVERROR_EOF),
+
+            Self::AVFrameDoubleAllocatingError
+            | Self::FilterNotFound
+            | Self::CustomError(_)
+            | Self::TryFromIntError(_)
+            | Self::Unknown => None,
         }
     }
 }
@@ -189,6 +199,12 @@ pub type Ret = std::result::Result<c_int, c_int>;
 
 impl From<c_int> for RsmpegError {
     fn from(err: c_int) -> Self {
-        RsmpegError::AVError(err)
+        Self::AVError(err)
+    }
+}
+
+impl From<TryFromIntError> for RsmpegError {
+    fn from(err: TryFromIntError) -> Self {
+        Self::TryFromIntError(err)
     }
 }
