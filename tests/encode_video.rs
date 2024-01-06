@@ -1,8 +1,9 @@
-use anyhow::{Context, Result};
+//! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/encode_video.c
+use anyhow::{anyhow, Context, Result};
 use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
-    avutil::{ra, AVFrame},
+    avutil::{opt_set, ra, AVFrame},
     error::RsmpegError,
     ffi::{self},
 };
@@ -45,19 +46,27 @@ fn encode_video(codec_name: &CStr, file_name: &str) -> Result<()> {
     encode_context.set_gop_size(10);
     encode_context.set_max_b_frames(1);
     encode_context.set_pix_fmt(ffi::AVPixelFormat_AV_PIX_FMT_YUV420P);
-    encode_context.open(None)?;
+    if encoder.id == ffi::AVCodecID_AV_CODEC_ID_H264 {
+        unsafe { opt_set(encode_context.priv_data, cstr!("preset"), cstr!("slow"), 0) }
+            .context("Set preset failed.")?;
+    }
+    encode_context.open(None).context("Could not open codec")?;
 
     let mut frame = AVFrame::new();
     frame.set_format(encode_context.pix_fmt);
     frame.set_width(encode_context.width);
     frame.set_height(encode_context.height);
+    frame
+        .alloc_buffer()
+        .context("Could not allocate the video frame data")?;
 
-    frame.alloc_buffer()?;
-
-    let file = File::create(file_name)?;
+    let file = File::create(file_name).with_context(|| anyhow!("Could not open: {}", file_name))?;
     let mut writer = BufWriter::new(file);
 
     for i in 0..25 {
+        frame
+            .make_writable()
+            .context("Failed to make frame writable")?;
         // prepare colorful frame
         {
             let data = frame.data;
@@ -86,10 +95,15 @@ fn encode_video(codec_name: &CStr, file_name: &str) -> Result<()> {
         }
 
         frame.set_pts(i as i64);
+
         encode(&mut encode_context, Some(&frame), &mut writer)?;
     }
     encode(&mut encode_context, None, &mut writer)?;
-    Ok(())
+
+    let endcode: [u8; 4] = [0, 0, 1, 0xb7];
+    writer.write_all(&endcode).context("Write endcode failed")?;
+
+    writer.flush().context("Flush file failed.")
 }
 
 #[test]
