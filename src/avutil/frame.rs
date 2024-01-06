@@ -122,9 +122,7 @@ impl AVFrame {
     /// Do nothing if the frame is writable, allocate new buffers and copy the
     /// data if it is not.
     pub fn make_writable(&mut self) -> Result<()> {
-        unsafe { ffi::av_frame_make_writable(self.as_mut_ptr()) }
-            .upgrade()
-            .map_err(RsmpegError::AVError)?;
+        unsafe { ffi::av_frame_make_writable(self.as_mut_ptr()) }.upgrade()?;
         Ok(())
     }
 
