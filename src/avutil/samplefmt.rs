@@ -105,7 +105,7 @@ pub fn get_bytes_per_sample(sample_fmt: AVSampleFormat) -> Option<usize> {
 /// Check if the sample format is planar.
 ///
 /// Returns 1 if the sample format is planar, 0 if it is interleaved
-pub fn is_planar(sample_fmt: AVSampleFormat) -> bool {
+pub fn sample_fmt_is_planar(sample_fmt: AVSampleFormat) -> bool {
     unsafe { ffi::av_sample_fmt_is_planar(sample_fmt) == 1 }
 }
 
@@ -185,7 +185,7 @@ impl AVSamples {
             AVSamples::get_buffer_size(nb_channels, nb_samples, sample_fmt, align)?;
         let linear = vec![0u8; buffer_size as usize];
 
-        let nb_planes = if is_planar(sample_fmt) {
+        let nb_planes = if sample_fmt_is_planar(sample_fmt) {
             nb_channels
         } else {
             1

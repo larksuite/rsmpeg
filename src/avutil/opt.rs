@@ -79,7 +79,7 @@ pub unsafe fn opt_set_q(
     Ok(())
 }
 
-/// Note: if `val.len()` extends [`i32::MAX`], this function returns [`RsmpegError::TryFromIntError`].
+/// Note: if `val.len()` exceeds [`i32::MAX`], this function returns [`RsmpegError::TryFromIntError`].
 ///
 /// # Safety
 ///
