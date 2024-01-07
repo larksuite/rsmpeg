@@ -2,6 +2,7 @@
 mod audio_fifo;
 mod channel_layout;
 mod dict;
+mod error;
 mod file;
 mod frame;
 mod imgutils;
@@ -18,6 +19,7 @@ mod timestamp;
 pub use audio_fifo::*;
 pub use channel_layout::*;
 pub use dict::*;
+pub use error::*;
 pub use file::*;
 pub use frame::*;
 pub use imgutils::*;
