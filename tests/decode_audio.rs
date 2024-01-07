@@ -1,3 +1,4 @@
+//! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/decode_audio.c
 use anyhow::{anyhow, Context, Result};
 use rsmpeg::{
     avcodec::{AVCodecContext, AVCodecParserContext, AVPacket},
