@@ -1,10 +1,12 @@
 //! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/remux.c
 use anyhow::{Context, Result};
 use cstr::cstr;
-use rsmpeg::avcodec::AVPacket;
-use rsmpeg::avformat::{AVFormatContextInput, AVFormatContextOutput};
-use rsmpeg::avutil::{ts2str, ts2timestr};
-use rsmpeg::ffi::AVRational;
+use rsmpeg::{
+    avcodec::AVPacket,
+    avformat::{AVFormatContextInput, AVFormatContextOutput},
+    avutil::{ts2str, ts2timestr},
+    ffi::AVRational,
+};
 use std::ffi::CStr;
 
 fn log_packet(time_base: AVRational, pkt: &AVPacket, tag: &str) {

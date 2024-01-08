@@ -1,9 +1,9 @@
-use crate::error::Result;
-use crate::ffi;
-use crate::ffi::AVPixelFormat;
-use crate::ffi::AVRational;
-use crate::ffi::AVSampleFormat;
-use crate::shared::RetUpgrade;
+use crate::{
+    error::Result,
+    ffi,
+    ffi::{AVPixelFormat, AVRational, AVSampleFormat},
+    shared::RetUpgrade,
+};
 use std::ffi::{c_double, c_int, c_void, CStr};
 
 /// - `name`: the name of the field to set

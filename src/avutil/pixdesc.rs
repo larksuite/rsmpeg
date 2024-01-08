@@ -1,9 +1,6 @@
-use crate::ffi;
-use crate::shared::PointerUpgrade;
+use crate::{ffi, shared::PointerUpgrade};
 
-use std::ffi::CStr;
-use std::ops::Deref;
-use std::ptr::NonNull;
+use std::{ffi::CStr, ops::Deref, ptr::NonNull};
 
 pub use ffi::AVComponentDescriptor;
 
