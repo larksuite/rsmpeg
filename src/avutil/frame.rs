@@ -242,8 +242,7 @@ impl<'frame> AVFrameSideDataRef<'frame> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::avcodec::AVCodec;
-    use crate::avutil::AVChannelLayout;
+    use crate::{avcodec::AVCodec, avutil::AVChannelLayout};
 
     #[test]
     fn test_get_buffer() {

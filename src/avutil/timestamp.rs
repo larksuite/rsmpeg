@@ -1,6 +1,4 @@
-use crate::ffi::av_q2d;
-use crate::ffi::AVRational;
-use crate::ffi::AV_NOPTS_VALUE;
+use crate::ffi::{av_q2d, AVRational, AV_NOPTS_VALUE};
 use std::ffi::c_double;
 
 /// Get a string containing a timestamp representation.

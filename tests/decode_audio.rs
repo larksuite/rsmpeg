@@ -11,11 +11,13 @@ use rsmpeg::{
     ffi,
 };
 use rusty_ffmpeg::ffi::AV_INPUT_BUFFER_PADDING_SIZE;
-use std::fs::{self, File};
-use std::io::Write;
-use std::path::Path;
-use std::slice::from_raw_parts;
-use std::{ffi::CString, io::Read};
+use std::{
+    ffi::CString,
+    fs::{self, File},
+    io::{Read, Write},
+    path::Path,
+    slice::from_raw_parts,
+};
 
 fn get_format_from_sample_fmt(sample_fmt: AVSampleFormat) -> Option<&'static str> {
     let sample_fmt_entries = [
