@@ -4,9 +4,11 @@
 /// Wrapping with XXX -> XXX mapping.
 macro_rules! wrap_pure {
     (
+        $(#[$meta:meta])*
         ($wrapped_type: ident): $ffi_type: ty
         $(,$attach: ident: $attach_type: ty = $attach_default: expr)*
     ) => {
+        $(#[$meta])*
         pub struct $wrapped_type {
             something_should_not_be_touched_directly: std::ptr::NonNull<$ffi_type>,
             // Publicize the attachment, can be directly changed without deref_mut()
@@ -72,6 +74,7 @@ macro_rules! wrap_pure {
 macro_rules! wrap_ref_pure {
     (($wrapped_type: ident, $wrapped_ref: ident): $ffi_type: ty) => {
         // This is needed for wrapping reference owned value from ffi
+        #[repr(transparent)]
         pub struct $wrapped_ref<'a> {
             inner: std::mem::ManuallyDrop<$wrapped_type>,
             _marker: std::marker::PhantomData<&'a $wrapped_type>,
@@ -109,6 +112,7 @@ macro_rules! wrap_ref_pure {
 macro_rules! wrap_mut_pure {
     (($wrapped_type: ident, $wrapped_mut: ident): $ffi_type: ty) => {
         // This is needed for wrapping mutable reference owned value from ffi
+        #[repr(transparent)]
         pub struct $wrapped_mut<'a> {
             inner: std::mem::ManuallyDrop<$wrapped_type>,
             _marker: std::marker::PhantomData<&'a $wrapped_type>,
@@ -151,11 +155,12 @@ macro_rules! wrap_mut_pure {
 /// Wrapping with XXXRef, XXXMut, XXX -> XXX.
 macro_rules! wrap_ref_mut {
     (
+        $(#[$meta:meta])*
         $name: ident: $ffi_type: ty
         $(,$attach: ident: $attach_type: ty = $attach_default: expr)* $(,)?
     ) => {
         paste::paste! {
-            wrap_pure!(($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
+            wrap_pure!($(#[$meta])* ($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
             wrap_ref_pure!(($name, [<$name Ref>]): $ffi_type);
             wrap_mut_pure!(($name, [<$name Mut>]): $ffi_type);
         }
@@ -165,11 +170,12 @@ macro_rules! wrap_ref_mut {
 /// Wrapping with XXXRef, XXX -> XXX.
 macro_rules! wrap_ref {
     (
+        $(#[$meta:meta])*
         $name: ident: $ffi_type: ty
         $(,$attach: ident: $attach_type: ty = $attach_default: expr)* $(,)?
     ) => {
         paste::paste! {
-            wrap_pure!(($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
+            wrap_pure!($(#[$meta])* ($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
             wrap_ref_pure!(($name, [<$name Ref>]): $ffi_type);
         }
     };
@@ -178,11 +184,12 @@ macro_rules! wrap_ref {
 /// Wrapping with XXXMut, XXX -> XXX.
 macro_rules! wrap_mut {
     (
+        $(#[$meta:meta])*
         $name: ident: $ffi_type: ty
         $(,$attach: ident: $attach_type: ty = $attach_default: expr)* $(,)?
     ) => {
         paste::paste! {
-            wrap_pure!(($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
+            wrap_pure!($(#[$meta])* ($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
             wrap_mut_pure!(($name, [<$name Mut>]): $ffi_type);
         }
     };
