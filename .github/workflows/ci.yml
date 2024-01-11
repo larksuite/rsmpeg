@@ -132,6 +132,7 @@ jobs:
           override: true
 
       - name: Install valgrind dependencies
+        # On Debian and Ubuntu, libc6-dbg is required for valgrind
         run: |
           sudo apt-get -y install libc6-dbg
           cargo install cargo-valgrind --version 2.0.2
