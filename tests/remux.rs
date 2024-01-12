@@ -67,14 +67,8 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
             continue;
         };
         {
-            let input_stream = input_format_context
-                .streams()
-                .get(input_stream_index)
-                .unwrap();
-            let output_stream = output_format_context
-                .streams()
-                .get(output_stream_index)
-                .unwrap();
+            let input_stream = &input_format_context.streams()[input_stream_index];
+            let output_stream = &output_format_context.streams()[output_stream_index];
             log_packet(input_stream.time_base, &packet, "in");
             packet.rescale_ts(input_stream.time_base, output_stream.time_base);
             packet.set_stream_index(output_stream_index as i32);

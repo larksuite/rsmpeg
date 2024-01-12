@@ -1,6 +1,5 @@
 use std::{
     ffi::CStr,
-    marker::PhantomData,
     ops::Drop,
     ptr::{self, NonNull},
 };
@@ -182,13 +181,31 @@ impl AVFormatContextInput {
 }
 
 impl<'stream> AVFormatContextInput {
-    /// Get Iterator of all [`AVStream`]s in the [`ffi::AVFormatContext`].
-    pub fn streams(&'stream self) -> AVStreamRefs<'stream> {
-        AVStreamRefs {
-            stream_head: NonNull::new(self.streams as *mut _).unwrap(),
-            len: self.nb_streams,
-            _marker: PhantomData,
+    /// Return slice of [`AVStreamRef`].
+    pub fn streams(&'stream self) -> &'stream [AVStreamRef<'stream>] {
+        // #define `<->` as "has the same layout due to repr(transparent)"
+        // ```
+        // NonNull<ffi::AVStream> <-> *const ffi::AVStream
+        // AVStream <-> NonNull<ffi::AVStream>
+        // AVStreamRef <-> AVStream
+        // ```
+        // indicates: AVStreamRef <-> *const ffi::AVStream
+        let streams = self.streams as *const *const ffi::AVStream as *const AVStreamRef<'stream>;
+        // u32 to usize, safe
+        let len = self.nb_streams as usize;
+
+        // I trust that FFmpeg won't give me null pointers :-(
+        #[cfg(debug_assertions)]
+        {
+            let arr = unsafe {
+                std::slice::from_raw_parts(self.streams as *const *const ffi::AVStream, len)
+            };
+            for ptr in arr {
+                assert!(!ptr.is_null());
+            }
         }
+
+        unsafe { std::slice::from_raw_parts(streams, len) }
     }
 
     /// Get [`AVInputFormatRef`] in the [`AVFormatContextInput`].
@@ -344,13 +361,31 @@ impl AVFormatContextOutput {
 }
 
 impl<'stream> AVFormatContextOutput {
-    /// Return Iterator of [`AVStreamRef`].
-    pub fn streams(&'stream self) -> AVStreamRefs<'stream> {
-        AVStreamRefs {
-            stream_head: NonNull::new(self.streams as *mut _).unwrap(),
-            len: self.nb_streams,
-            _marker: PhantomData,
+    /// Return slice of [`AVStreamRef`].
+    pub fn streams(&'stream self) -> &'stream [AVStreamRef<'stream>] {
+        // #define `<->` as "has the same layout due to repr(transparent)"
+        // ```
+        // NonNull<ffi::AVStream> <-> *const ffi::AVStream
+        // AVStream <-> NonNull<ffi::AVStream>
+        // AVStreamRef <-> AVStream
+        // ```
+        // indicates: AVStreamRef <-> *const ffi::AVStream
+        let streams = self.streams as *const *const ffi::AVStream as *const AVStreamRef<'stream>;
+        // u32 to usize, safe
+        let len = self.nb_streams as usize;
+
+        // I trust that FFmpeg won't give me null pointers :-(
+        #[cfg(debug_assertions)]
+        {
+            let arr = unsafe {
+                std::slice::from_raw_parts(self.streams as *const *const ffi::AVStream, len)
+            };
+            for ptr in arr {
+                assert!(!ptr.is_null());
+            }
         }
+
+        unsafe { std::slice::from_raw_parts(streams, len) }
     }
 
     /// Get [`AVOutputFormat`] from the [`AVFormatContextOutput`].
@@ -429,7 +464,7 @@ impl AVOutputFormat {
     }
 }
 
-wrap_ref_mut!(AVStream: ffi::AVStream);
+wrap_ref_mut!(#[repr(transparent)] AVStream: ffi::AVStream);
 settable!(AVStream {
     time_base: AVRational,
 });
@@ -502,69 +537,6 @@ impl<'stream> AVStream {
                 .map(|x| x.into_raw().as_ptr())
                 .unwrap_or(ptr::null_mut());
         }
-    }
-}
-
-/// Iterator on reference to raw AVStream `satellite` array.
-pub struct AVStreamRefsIter<'stream> {
-    ptr: NonNull<NonNull<ffi::AVStream>>,
-    end: NonNull<NonNull<ffi::AVStream>>,
-    _marker: PhantomData<&'stream ffi::AVStream>,
-}
-
-impl<'stream> std::iter::Iterator for AVStreamRefsIter<'stream> {
-    type Item = AVStreamRef<'stream>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.ptr == self.end {
-            None
-        } else {
-            let old = self.ptr;
-            unsafe {
-                self.ptr = NonNull::new_unchecked(self.ptr.as_ptr().offset(1));
-            }
-            Some(unsafe { AVStreamRef::from_raw(*old.as_ref()) })
-        }
-    }
-}
-
-// ATTENTION Consider add macro for this when similar pattern occurs again.
-/// A reference to raw AVStream `satellite` array, cannot be directly constructed. Using
-/// this for safety concerns.
-pub struct AVStreamRefs<'stream> {
-    stream_head: NonNull<NonNull<ffi::AVStream>>,
-    len: u32,
-    _marker: PhantomData<&'stream ffi::AVStream>,
-}
-
-impl<'stream> std::iter::IntoIterator for AVStreamRefs<'stream> {
-    type Item = AVStreamRef<'stream>;
-    type IntoIter = AVStreamRefsIter<'stream>;
-    fn into_iter(self) -> Self::IntoIter {
-        let end =
-            NonNull::new(unsafe { self.stream_head.as_ptr().add(self.len as usize) }).unwrap();
-        AVStreamRefsIter {
-            ptr: self.stream_head,
-            end,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<'stream> AVStreamRefs<'stream> {
-    /// Get `streams[`index`]`.
-    pub fn get(&self, index: usize) -> Option<AVStreamRef<'stream>> {
-        if index < self.num() {
-            let stream_ptr = unsafe { *self.stream_head.as_ptr().add(index) };
-            Some(unsafe { AVStreamRef::from_raw(stream_ptr) })
-        } else {
-            None
-        }
-    }
-
-    /// Get `streams.len()`.
-    pub fn num(&self) -> usize {
-        // From u32 to usize, safe.
-        self.len as usize
     }
 }
 

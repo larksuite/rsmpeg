@@ -309,11 +309,7 @@ fn encode_write_frame(
         packet.set_stream_index(out_stream_index as i32);
         packet.rescale_ts(
             encode_context.time_base,
-            output_format_context
-                .streams()
-                .get(out_stream_index)
-                .unwrap()
-                .time_base,
+            output_format_context.streams()[out_stream_index].time_base,
         );
 
         match output_format_context.interleaved_write_frame(&mut packet) {
