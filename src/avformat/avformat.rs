@@ -17,17 +17,17 @@ use crate::{
 };
 
 /// Container of all kinds of AVIOContexts.
-pub enum AVIOContextContainer {
+pub enum AVIOContextContainer<'a> {
     Url(AVIOContextURL),
-    Custom(AVIOContextCustom),
+    Custom(AVIOContextCustom<'a>),
 }
 
 wrap! {
-    AVFormatContextInput: ffi::AVFormatContext,
-    io_context: Option<AVIOContextContainer> = None,
+    AVFormatContextInput<'a>: ffi::AVFormatContext,
+    io_context: Option<AVIOContextContainer<'a>> = None,
 }
 
-impl AVFormatContextInput {
+impl<'a> AVFormatContextInput<'a> {
     /// Create a [`AVFormatContextInput`] instance of a file, and find info of
     /// all streams.
     ///
@@ -80,7 +80,7 @@ impl AVFormatContextInput {
 
     /// Create a [`AVFormatContextInput`] instance from an [`AVIOContext`], and find info of
     /// all streams.
-    pub fn from_io_context(mut io_context: AVIOContextContainer) -> Result<Self> {
+    pub fn from_io_context(mut io_context: AVIOContextContainer<'a>) -> Result<Self> {
         let input_format_context = {
             // Only fails on no memory, so unwrap().
             // `avformat_open_input`'s documentation:
@@ -181,7 +181,7 @@ impl AVFormatContextInput {
     }
 }
 
-impl<'stream> AVFormatContextInput {
+impl<'stream, 'a> AVFormatContextInput<'a> {
     /// Get Iterator of all [`AVStream`]s in the [`ffi::AVFormatContext`].
     pub fn streams(&'stream self) -> AVStreamRefs<'stream> {
         AVStreamRefs {
@@ -209,7 +209,7 @@ impl<'stream> AVFormatContextInput {
     }
 }
 
-impl Drop for AVFormatContextInput {
+impl<'a> Drop for AVFormatContextInput<'a> {
     fn drop(&mut self) {
         let mut context = self.as_mut_ptr();
         unsafe { ffi::avformat_close_input(&mut context) }
@@ -217,14 +217,14 @@ impl Drop for AVFormatContextInput {
 }
 
 wrap! {
-    AVFormatContextOutput: ffi::AVFormatContext,
-    io_context: Option<AVIOContextContainer> = None,
+    AVFormatContextOutput<'a>: ffi::AVFormatContext,
+    io_context: Option<AVIOContextContainer<'a>> = None,
 }
 
-impl AVFormatContextOutput {
+impl<'a> AVFormatContextOutput<'a> {
     /// Open a file and create a [`AVFormatContextOutput`] instance of that
     /// file. Give it an [`AVIOContext`] if you want custom IO.
-    pub fn create(filename: &CStr, io_context: Option<AVIOContextContainer>) -> Result<Self> {
+    pub fn create(filename: &CStr, io_context: Option<AVIOContextContainer<'a>>) -> Result<Self> {
         let mut output_format_context = ptr::null_mut();
 
         // Alloc the context
@@ -343,7 +343,7 @@ impl AVFormatContextOutput {
     }
 }
 
-impl<'stream> AVFormatContextOutput {
+impl<'stream, 'a> AVFormatContextOutput<'a> {
     /// Return Iterator of [`AVStreamRef`].
     pub fn streams(&'stream self) -> AVStreamRefs<'stream> {
         AVStreamRefs {
@@ -381,7 +381,7 @@ impl<'stream> AVFormatContextOutput {
     }
 }
 
-impl Drop for AVFormatContextOutput {
+impl<'a> Drop for AVFormatContextOutput<'a> {
     fn drop(&mut self) {
         // Here we drop the io context, which won't be touched by
         // avformat_free_context, so let it dangling is safe.

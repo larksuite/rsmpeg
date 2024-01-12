@@ -31,10 +31,10 @@ fn open_input_file(input_file: &CStr) -> Result<(AVFormatContextInput, AVCodecCo
     Ok((input_format_context, decode_context, audio_index))
 }
 
-fn open_output_file(
+fn open_output_file<'a>(
     output_file: &CStr,
     decode_context: &AVCodecContext,
-) -> Result<(AVFormatContextOutput, AVCodecContext)> {
+) -> Result<(AVFormatContextOutput<'a>, AVCodecContext)> {
     // Create a new format context for the output container format.
     let mut output_format_context =
         AVFormatContextOutput::create(output_file, None).context("Failed to open output file.")?;

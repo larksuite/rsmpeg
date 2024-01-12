@@ -4,16 +4,16 @@
 /// Wrapping with XXX -> XXX mapping.
 macro_rules! wrap_pure {
     (
-        ($wrapped_type: ident): $ffi_type: ty
+        ($wrapped_type: ident)$(<$lt:lifetime>)?: $ffi_type: ty
         $(,$attach: ident: $attach_type: ty = $attach_default: expr)*
     ) => {
-        pub struct $wrapped_type {
+        pub struct $wrapped_type$(<$lt>)? {
             something_should_not_be_touched_directly: std::ptr::NonNull<$ffi_type>,
             // Publicize the attachment, can be directly changed without deref_mut()
             $(pub $attach: $attach_type,)*
         }
 
-        impl $wrapped_type {
+        impl$(<$lt>)? $wrapped_type$(<$lt>)? {
             pub fn as_ptr(&self) -> *const $ffi_type {
                 self.something_should_not_be_touched_directly.as_ptr() as *const _
             }
@@ -50,7 +50,7 @@ macro_rules! wrap_pure {
             }
         }
 
-        impl std::ops::Deref for $wrapped_type {
+        impl$(<$lt>)? std::ops::Deref for $wrapped_type$(<$lt>)? {
             type Target = $ffi_type;
 
             fn deref(&self) -> &Self::Target {
@@ -58,13 +58,13 @@ macro_rules! wrap_pure {
             }
         }
 
-        impl crate::shared::UnsafeDerefMut for $wrapped_type {
+        impl$(<$lt>)? crate::shared::UnsafeDerefMut for $wrapped_type$(<$lt>)? {
             unsafe fn deref_mut(&mut self) -> &mut Self::Target {
                 unsafe { self.something_should_not_be_touched_directly.as_mut() }
             }
         }
 
-        unsafe impl Send for $wrapped_type {}
+        unsafe impl$(<$lt>)? Send for $wrapped_type$(<$lt>)? {}
     };
 }
 
@@ -191,11 +191,11 @@ macro_rules! wrap_mut {
 /// Wrapping with XXX, XXX -> XXX.
 macro_rules! wrap {
     (
-        $name: ident: $ffi_type: ty
+        $name: ident$(<$lt:lifetime>)?: $ffi_type: ty
         $(,$attach: ident: $attach_type: ty = $attach_default: expr)* $(,)?
     ) => {
         paste::paste! {
-            wrap_pure!(($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
+            wrap_pure!(($name)$(<$lt>)?: $ffi_type $(,$attach: $attach_type = $attach_default)*);
         }
     };
 }

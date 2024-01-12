@@ -45,10 +45,10 @@ fn open_input_file(filename: &CStr) -> Result<(usize, AVFormatContextInput, AVCo
 }
 
 /// Return output_format_context and encode_context
-fn open_output_file(
+fn open_output_file<'a>(
     filename: &CStr,
     decode_context: &AVCodecContext,
-) -> Result<(AVFormatContextOutput, AVCodecContext)> {
+) -> Result<(AVFormatContextOutput<'a>, AVCodecContext)> {
     let buffer = Arc::new(Mutex::new(File::create(filename.to_str()?)?));
     let buffer1 = buffer.clone();
 
