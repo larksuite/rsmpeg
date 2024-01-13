@@ -161,12 +161,6 @@ impl<'frame> AVFrame {
             .upgrade()
             .map(|side_data_ptr| unsafe { AVFrameSideDataRef::from_raw(side_data_ptr) })
     }
-
-    pub fn get_motion_vectors(&'frame self) -> Option<&'frame [AVMotionVector]> {
-        let side_data =
-            self.get_side_data(ffi::AVFrameSideDataType_AV_FRAME_DATA_MOTION_VECTORS)?;
-        Some(unsafe { side_data.as_motion_vectors() })
-    }
 }
 
 impl Drop for AVFrame {
@@ -229,7 +223,7 @@ impl AVFrameWithImage {
 wrap_ref!(AVFrameSideData: ffi::AVFrameSideData);
 
 impl<'frame> AVFrameSideDataRef<'frame> {
-    unsafe fn as_motion_vectors(&self) -> &'frame [AVMotionVector] {
+    pub unsafe fn as_motion_vectors(&self) -> &'frame [AVMotionVector] {
         unsafe {
             slice::from_raw_parts(
                 self.data as *const _ as *const ffi::AVMotionVector,
