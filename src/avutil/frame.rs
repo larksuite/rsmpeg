@@ -223,6 +223,9 @@ impl AVFrameWithImage {
 wrap_ref!(AVFrameSideData: ffi::AVFrameSideData);
 
 impl<'frame> AVFrameSideDataRef<'frame> {
+    /// # Safety
+    ///
+    /// You should only call this function when you ensure side data is motion vector.
     pub unsafe fn as_motion_vectors(&self) -> &'frame [AVMotionVector] {
         unsafe {
             slice::from_raw_parts(
