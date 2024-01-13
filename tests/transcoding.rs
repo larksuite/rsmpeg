@@ -404,7 +404,7 @@ pub fn transcoding(
             buffer_sink_context,
         }) = transcoding_contexts[in_stream_index].as_mut()
         {
-            let input_stream = input_format_context.streams().get(in_stream_index).unwrap();
+            let input_stream = &input_format_context.streams()[in_stream_index];
             packet.rescale_ts(input_stream.time_base, encode_context.time_base);
 
             decode_context.send_packet(Some(&packet)).unwrap();

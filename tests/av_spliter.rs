@@ -35,7 +35,7 @@ fn av_spliter(file_path: &CStr, out_video: &str, out_audio: &CStr) -> Result<()>
 
     let mut bsf_context = {
         let mut bsf_context = AVBSFContextUninit::new(&bsf);
-        let video_stream = input_format_context.streams().get(video_index).unwrap();
+        let video_stream = &input_format_context.streams()[video_index];
         bsf_context.set_par_in(&video_stream.codecpar());
         bsf_context.set_time_base_in(video_stream.time_base);
         bsf_context.init()?
@@ -44,7 +44,7 @@ fn av_spliter(file_path: &CStr, out_video: &str, out_audio: &CStr) -> Result<()>
     let mut out_audio_format_context = AVFormatContextOutput::create(out_audio, None)?;
     {
         let mut new_audio_stream = out_audio_format_context.new_stream();
-        let audio_stream = input_format_context.streams().get(audio_index).unwrap();
+        let audio_stream = &input_format_context.streams()[audio_index];
         new_audio_stream.set_codecpar(audio_stream.codecpar().clone());
         new_audio_stream.set_time_base(audio_stream.time_base);
     }
