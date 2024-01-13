@@ -23,7 +23,7 @@ fn thumbnail(
             .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_VIDEO)?
             .context("Failed to find the best stream")?;
 
-        let stream = input_format_context.streams().get(stream_index).unwrap();
+        let stream = &input_format_context.streams()[stream_index];
 
         let mut decode_context = AVCodecContext::new(&decoder);
         decode_context.apply_codecpar(&stream.codecpar())?;

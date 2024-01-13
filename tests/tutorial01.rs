@@ -55,10 +55,7 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
         .position(|stream| stream.codecpar().codec_type().is_video())
         .context("No video stream")?;
     let mut decode_context = {
-        let video_stream = input_format_context
-            .streams()
-            .get(video_stream_index)
-            .unwrap();
+        let video_stream = &input_format_context.streams()[video_stream_index];
         let decoder = AVCodec::find_decoder(video_stream.codecpar().codec_id)
             .context("Cannot find the decoder for video stream")?;
         let mut decode_context = AVCodecContext::new(&decoder);

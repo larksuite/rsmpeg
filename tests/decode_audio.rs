@@ -85,13 +85,7 @@ fn decode_audio(audio_path: &str, out_file_path: &str) -> Result<()> {
             .context("Cannot find audio stream in this file.")?;
         let mut decode_context = AVCodecContext::new(&decoder);
         decode_context
-            .apply_codecpar(
-                &input_format_context
-                    .streams()
-                    .get(stream_index)
-                    .unwrap()
-                    .codecpar(),
-            )
+            .apply_codecpar(&input_format_context.streams()[stream_index].codecpar())
             .context("Apply codecpar failed.")?;
         decode_context.open(None).context("Could not open codec")?;
         input_format_context.dump(stream_index, &audio_path)?;

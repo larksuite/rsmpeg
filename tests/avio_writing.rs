@@ -30,7 +30,7 @@ fn open_input_file(filename: &CStr) -> Result<(usize, AVFormatContextInput, AVCo
         .context("No video stream")?;
 
     let decode_context = {
-        let input_stream = input_format_context.streams().get(video_index).unwrap();
+        let input_stream = &input_format_context.streams()[video_index];
 
         let mut decode_context = AVCodecContext::new(&decoder);
         decode_context.apply_codecpar(&input_stream.codecpar())?;
@@ -198,11 +198,7 @@ pub fn transcoding(input_file: &CStr, output_file: &CStr) -> Result<()> {
         }
 
         packet.rescale_ts(
-            input_format_context
-                .streams()
-                .get(video_stream_index)
-                .unwrap()
-                .time_base,
+            input_format_context.streams()[video_stream_index].time_base,
             encode_context.time_base,
         );
 

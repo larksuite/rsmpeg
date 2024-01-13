@@ -30,10 +30,7 @@ fn metadata(file: &str) -> Result<Vec<(String, String)>> {
             .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_VIDEO)?
             .context("Failed to find video stream")?;
 
-        let video_stream = input_format_context
-            .streams()
-            .get(video_stream_index)
-            .unwrap();
+        let video_stream = &input_format_context.streams()[video_stream_index];
 
         result.push((
             "frame_rate".into(),

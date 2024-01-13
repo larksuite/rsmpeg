@@ -20,13 +20,7 @@ fn open_input_file(input_file: &CStr) -> Result<(AVFormatContextInput, AVCodecCo
         .context("Failed to find audio stream")?;
 
     let mut decode_context = AVCodecContext::new(&decoder);
-    decode_context.apply_codecpar(
-        &input_format_context
-            .streams()
-            .get(audio_index)
-            .unwrap()
-            .codecpar(),
-    )?;
+    decode_context.apply_codecpar(&input_format_context.streams()[audio_index].codecpar())?;
     decode_context.open(None)?;
     Ok((input_format_context, decode_context, audio_index))
 }
