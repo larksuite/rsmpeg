@@ -80,10 +80,6 @@ pub enum RsmpegError {
     #[error("Failed to initialize bitstream filter context. ({0})")]
     BitstreamInitializationError(c_int),
 
-    #[error("Read frame to an input format context failed. ({0})")]
-    ReadFrameError(c_int),
-    #[error("Write frame to an output format context failed. ({0})")]
-    WriteFrameError(c_int),
     #[error("Interleaved write frame to an output format context failed. ({0})")]
     InterleavedWriteFrameError(c_int),
 
@@ -104,18 +100,8 @@ pub enum RsmpegError {
     #[error("AVIO Open failure. ({0})")]
     AVIOOpenError(c_int),
 
-    #[error("SwrContext init failed. ({0})")]
-    SwrContextInitError(c_int),
-    #[error("SwrContext converting data failed. ({0})")]
-    SwrConvertError(c_int),
-
     #[error("SwsContext scale failed. ({0})")]
     SwsScaleError(c_int),
-
-    #[error("AudioFifo write failed. ({0})")]
-    AudioFifoWriteError(c_int),
-    #[error("AudioFifo read failed. ({0})")]
-    AudioFifoReadError(c_int),
 
     #[error("AVFrame buffer double allocating.")]
     AVFrameDoubleAllocatingError,
@@ -153,19 +139,13 @@ impl RsmpegError {
             | Self::BitstreamSendPacketError(err)
             | Self::BitstreamReceivePacketError(err)
             | Self::BitstreamInitializationError(err)
-            | Self::ReadFrameError(err)
-            | Self::WriteFrameError(err)
             | Self::InterleavedWriteFrameError(err)
             | Self::BufferSrcAddFrameError(err)
             | Self::BufferSinkGetFrameError(err)
             | Self::DictionaryParseError(err)
             | Self::DictionaryGetStringError(err)
             | Self::AVIOOpenError(err)
-            | Self::SwrContextInitError(err)
-            | Self::SwrConvertError(err)
             | Self::SwsScaleError(err)
-            | Self::AudioFifoWriteError(err)
-            | Self::AudioFifoReadError(err)
             | Self::AVFrameInvalidAllocatingError(err)
             | Self::AVImageFillArrayError(err) => Some(*err),
 

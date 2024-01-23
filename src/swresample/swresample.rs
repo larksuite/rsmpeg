@@ -1,9 +1,4 @@
-use crate::{
-    avutil::{AVFrame, AVSamples},
-    error::*,
-    ffi,
-    shared::*,
-};
+use crate::{avutil::AVFrame, error::*, ffi, shared::*};
 use std::{
     ops::Drop,
     ptr::{self, NonNull},
@@ -42,7 +37,6 @@ impl SwrContext {
     ) -> Result<Self> {
         let mut context = ptr::null_mut();
         unsafe {
-            // u64 to i64, safe
             ffi::swr_alloc_set_opts2(
                 &mut context,
                 out_ch_layout,
@@ -61,9 +55,7 @@ impl SwrContext {
 
     /// Initialize context after user parameters have been set.
     pub fn init(&mut self) -> Result<()> {
-        unsafe { ffi::swr_init(self.as_mut_ptr()) }
-            .upgrade()
-            .map_err(RsmpegError::SwrContextInitError)?;
+        unsafe { ffi::swr_init(self.as_mut_ptr()) }.upgrade()?;
         Ok(())
     }
 
@@ -108,40 +100,6 @@ impl SwrContext {
             .unwrap()
     }
 
-    /// Convert audio to a given [`AVSamples`] buffer.
-    ///
-    /// `in_buffer` and `in_count` can be set to 0 to flush the last few samples
-    /// out at the end.  If more input is provided than output space, then the
-    /// input will be buffered. You can avoid this buffering by using
-    /// [`SwrContext::get_out_samples`] to retrieve an upper bound on the
-    /// required number of output samples for the given number of input samples.
-    /// Conversion will run directly without copying whenever possible.
-    ///
-    /// `out_buffer`    output buffers, only the first one need be set in case of packed audio
-    /// `in`            input buffers, only the first one need to be set in case of packed audio
-    /// `in_count`      number of input samples available in one channel
-    ///
-    /// Returns number of samples output per channel.
-    ///
-    /// # Safety
-    ///
-    /// Only safe when the `in_buffer` is valid.
-    pub unsafe fn convert(
-        &self,
-        out_buffer: &mut AVSamples,
-        in_buffer: *const *const u8,
-        in_count: i32,
-    ) -> Result<i32> {
-        unsafe {
-            self.convert_raw(
-                out_buffer.audio_data.as_mut_ptr(),
-                out_buffer.nb_samples,
-                in_buffer,
-                in_count,
-            )
-        }
-    }
-
     /// Convert audio.
     ///
     /// `in_buffer` and `in_count` can be set to 0 to flush the last few samples
@@ -161,8 +119,8 @@ impl SwrContext {
     /// # Safety
     ///
     /// Only safe when the `in_buffer` is valid.
-    pub unsafe fn convert_raw(
-        &self,
+    pub unsafe fn convert(
+        &mut self,
         out_buffer: *mut *mut u8,
         out_count: i32,
         in_buffer: *const *const u8,
@@ -175,17 +133,17 @@ impl SwrContext {
         // The swr_convert's documentation states: out_count is the amount of
         // space available for output in samples per channel, rather than being
         // the number of the output samples per channel.
-        unsafe {
+        let ret = unsafe {
             ffi::swr_convert(
-                self.as_ptr() as *mut _,
+                self.as_mut_ptr(),
                 out_buffer,
                 out_count,
                 in_buffer as *mut _,
                 in_count,
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::SwrConvertError)
+        .upgrade()?;
+        Ok(ret)
     }
 
     /// Convert the samples in the input `AVFrame` and write them to the output
@@ -217,8 +175,7 @@ impl SwrContext {
                 input.map(|x| x.as_ptr()).unwrap_or_else(ptr::null),
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::SwrConvertError)?;
+        .upgrade()?;
         Ok(())
     }
 }

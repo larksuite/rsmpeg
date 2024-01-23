@@ -198,11 +198,12 @@ macro_rules! wrap_mut {
 /// Wrapping with XXX, XXX -> XXX.
 macro_rules! wrap {
     (
+        $(#[$meta:meta])*
         $name: ident: $ffi_type: ty
         $(,$attach: ident: $attach_type: ty = $attach_default: expr)* $(,)?
     ) => {
         paste::paste! {
-            wrap_pure!(($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
+            wrap_pure!($(#[$meta])* ($name): $ffi_type $(,$attach: $attach_type = $attach_default)*);
         }
     };
 }

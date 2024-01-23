@@ -120,11 +120,11 @@ pub fn sample_fmt_is_planar(sample_fmt: AVSampleFormat) -> bool {
 // > but for planar audio with more channels that can fit in data,
 // > extended_data must be used in order to access all channels.
 //
-// This is the reason why `AVSamples` has a vector of channels for containing
+// This is the reason why `AVSamples` has a vector of channels for holding
 // audio data.
 wrap! {
-    AVSamples: Vec<u8>,
-    audio_data: Vec<*mut u8> = Vec::new(),
+    AVSamples: Box<[u8]>,
+    audio_data: Box<[*mut u8]> = Vec::new().into_boxed_slice(),
     linesize: i32 = 0,
     nb_channels: i32 = 0,
     nb_samples: i32 = 0,
@@ -183,14 +183,14 @@ impl AVSamples {
         // Implementation inspired by `av_samples_alloc_array_and_samples` and `av_samples_alloc`.
         let (_, buffer_size) =
             AVSamples::get_buffer_size(nb_channels, nb_samples, sample_fmt, align)?;
-        let linear = vec![0u8; buffer_size as usize];
+        let buffer = vec![0u8; buffer_size as usize].into_boxed_slice();
 
         let nb_planes = if sample_fmt_is_planar(sample_fmt) {
             nb_channels
         } else {
             1
         };
-        let mut audio_data = vec![ptr::null_mut(); nb_planes as usize];
+        let mut audio_data = vec![ptr::null_mut(); nb_planes as usize].into_boxed_slice();
         let mut linesize = 0;
         // From the documentation, this function only error on no memory, so
         // unwrap.
@@ -198,7 +198,7 @@ impl AVSamples {
             ffi::av_samples_fill_arrays(
                 audio_data.as_mut_ptr(),
                 &mut linesize,
-                linear.as_ptr(),
+                buffer.as_ptr(),
                 nb_channels,
                 nb_samples,
                 sample_fmt,
@@ -209,9 +209,9 @@ impl AVSamples {
         .unwrap();
 
         // Leaks a Vec.
-        let linear = Box::leak(Box::new(linear));
+        let buffer = Box::leak(Box::new(buffer));
 
-        let mut samples = unsafe { AVSamples::from_raw(NonNull::new(linear).unwrap()) };
+        let mut samples = unsafe { AVSamples::from_raw(NonNull::new(buffer).unwrap()) };
         samples.audio_data = audio_data;
         samples.linesize = linesize;
         samples.nb_channels = nb_channels;
