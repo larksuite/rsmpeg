@@ -147,7 +147,7 @@ impl AVFormatContextInput {
         match unsafe { ffi::av_read_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }.upgrade() {
             Ok(_) => Ok(Some(packet)),
             Err(ffi::AVERROR_EOF) => Ok(None),
-            Err(x) => Err(RsmpegError::ReadFrameError(x)),
+            Err(x) => Err(x)?,
         }
     }
 
@@ -340,9 +340,7 @@ impl AVFormatContextOutput {
     /// libavformat to handle the interleaving should call
     /// [`Self::interleaved_write_frame()`] instead of this function.
     pub fn write_frame(&mut self, packet: &mut AVPacket) -> Result<()> {
-        unsafe { ffi::av_write_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }
-            .upgrade()
-            .map_err(RsmpegError::WriteFrameError)?;
+        unsafe { ffi::av_write_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }.upgrade()?;
         Ok(())
     }
 
