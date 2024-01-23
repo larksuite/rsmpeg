@@ -73,6 +73,21 @@ impl AVFrame {
         Ok(())
     }
 
+    /// Allocate new buffer(s) for audio or video data.
+    ///
+    /// The following fields must be set on frame before calling this function:
+    /// - format (pixel format for video, sample format for audio)
+    /// - width and height for video
+    /// - nb_samples and ch_layout for audio
+    ///
+    /// This function will fill AVFrame.data and AVFrame.buf arrays and, if
+    /// necessary, allocate and fill AVFrame.extended_data and AVFrame.extended_buf.
+    /// For planar formats, one buffer will be allocated for each plane.
+    pub fn get_buffer(&mut self, align: i32) -> Result<()> {
+        unsafe { ffi::av_frame_get_buffer(self.as_mut_ptr(), align) }.upgrade()?;
+        Ok(())
+    }
+
     pub fn data_mut(&mut self) -> &mut [*mut u8; 8] {
         unsafe { &mut self.deref_mut().data }
     }
