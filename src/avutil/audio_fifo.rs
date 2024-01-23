@@ -33,16 +33,14 @@ impl AVAudioFifo {
     /// The AVAudioFifo will be reallocated automatically if the available space
     /// is less than nb_samples.
     ///
-    /// This functions returns number of samples actually written.
-    /// If successful, the number of samples actually written will always be nb_samples.
-    ///
     /// # Safety
     /// Function is safe when the `data` points to valid samples.
-    pub unsafe fn write(&mut self, data: *const *mut u8, nb_samples: i32) -> Result<i32> {
+    pub unsafe fn write(&mut self, data: *const *mut u8, nb_samples: i32) -> Result<()> {
         let ret =
             unsafe { ffi::av_audio_fifo_write(self.as_mut_ptr(), data as *const _, nb_samples) }
                 .upgrade()?;
-        Ok(ret)
+        debug_assert_eq!(ret, nb_samples);
+        Ok(())
     }
 
     /// Peek data from an AVAudioFifo.
