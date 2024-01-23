@@ -37,7 +37,7 @@ impl AVAudioFifo {
     /// Function is safe when the `data` points to valid samples.
     pub unsafe fn write(&mut self, data: *const *mut u8, nb_samples: i32) -> Result<()> {
         let ret =
-            unsafe { ffi::av_audio_fifo_write(self.as_mut_ptr(), data as *const _, nb_samples) }
+            unsafe { ffi::av_audio_fifo_write(self.as_mut_ptr(), data as _, nb_samples) }
                 .upgrade()?;
         debug_assert_eq!(ret, nb_samples);
         Ok(())
@@ -49,7 +49,7 @@ impl AVAudioFifo {
     /// Function is safe when the `data` points to valid sample buffer.
     pub unsafe fn peek(&mut self, data: *const *mut u8, nb_samples: i32) -> Result<i32> {
         let ret =
-            unsafe { ffi::av_audio_fifo_peek(self.as_mut_ptr(), data as *const _, nb_samples) }
+            unsafe { ffi::av_audio_fifo_peek(self.as_mut_ptr(), data as _, nb_samples) }
                 .upgrade()?;
         Ok(ret)
     }
@@ -65,7 +65,7 @@ impl AVAudioFifo {
         offset: i32,
     ) -> Result<i32> {
         let ret = unsafe {
-            ffi::av_audio_fifo_peek_at(self.as_mut_ptr(), data as *const _, nb_samples, offset)
+            ffi::av_audio_fifo_peek_at(self.as_mut_ptr(), data as _, nb_samples, offset)
         }
         .upgrade()?;
         Ok(ret)
@@ -79,7 +79,7 @@ impl AVAudioFifo {
     /// Function is safe when the `data` points to valid array such as AVFrame::data.
     pub unsafe fn read(&mut self, data: *const *mut u8, nb_samples: i32) -> Result<i32> {
         let ret =
-            unsafe { ffi::av_audio_fifo_read(self.as_mut_ptr(), data as *const _, nb_samples) }
+            unsafe { ffi::av_audio_fifo_read(self.as_mut_ptr(), data as _, nb_samples) }
                 .upgrade()?;
         Ok(ret)
     }
