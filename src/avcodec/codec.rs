@@ -127,6 +127,7 @@ settable!(AVCodecContext {
     sample_aspect_ratio: AVRational,
     pix_fmt: i32,
     time_base: AVRational,
+    pkt_timebase: AVRational,
     sample_rate: i32,
     channels: i32,
     sample_fmt: i32,
