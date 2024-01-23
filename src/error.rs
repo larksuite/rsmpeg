@@ -112,11 +112,6 @@ pub enum RsmpegError {
     #[error("SwsContext scale failed. ({0})")]
     SwsScaleError(c_int),
 
-    #[error("AudioFifo write failed. ({0})")]
-    AudioFifoWriteError(c_int),
-    #[error("AudioFifo read failed. ({0})")]
-    AudioFifoReadError(c_int),
-
     #[error("AVFrame buffer double allocating.")]
     AVFrameDoubleAllocatingError,
     #[error("AVFrame buffer allocating with incorrect parameters. ({0})")]
@@ -164,8 +159,6 @@ impl RsmpegError {
             | Self::SwrContextInitError(err)
             | Self::SwrConvertError(err)
             | Self::SwsScaleError(err)
-            | Self::AudioFifoWriteError(err)
-            | Self::AudioFifoReadError(err)
             | Self::AVFrameInvalidAllocatingError(err)
             | Self::AVImageFillArrayError(err) => Some(*err),
 
