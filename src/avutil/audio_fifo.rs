@@ -44,6 +44,9 @@ impl AVAudioFifo {
     }
 
     /// Peek data from an AVAudioFifo.
+    ///
+    /// # Safety
+    /// Function is safe when the `data` points to valid sample buffer.
     pub unsafe fn peek(&mut self, data: *const *mut u8, nb_samples: i32) -> Result<i32> {
         let ret =
             unsafe { ffi::av_audio_fifo_peek(self.as_mut_ptr(), data as *const _, nb_samples) }
@@ -52,6 +55,9 @@ impl AVAudioFifo {
     }
 
     /// Peek data from an AVAudioFifo.
+    ///
+    /// # Safety
+    /// Function is safe when the `data` points to valid sample buffer.
     pub unsafe fn peek_at(
         &mut self,
         data: *const *mut u8,
