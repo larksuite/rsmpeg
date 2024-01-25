@@ -17,27 +17,20 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: stable
-          override: true
           components: rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+      - run: cargo fmt --all -- --check
 
   rust_clippy_check_ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: stable
-          override: true
           components: clippy
 
       # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
@@ -62,12 +55,11 @@ jobs:
   rust_clippy_check_windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: stable
-          override: true
+          components: clippy
 
       # Using this since it's used by clang-sys's CI
       - name: Install LLVM and Clang
@@ -78,7 +70,7 @@ jobs:
 
       - name: Cache vcpkg
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/vcpkg
@@ -124,12 +116,10 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
 
       - name: Install valgrind dependencies
         # On Debian and Ubuntu, libc6-dbg is required for valgrind
@@ -140,7 +130,7 @@ jobs:
 
       - name: Cache valgrind
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/valgrind
@@ -192,7 +182,7 @@ jobs:
   build_dynamic_and_test_windows_pre:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
       - name: Install FFmpegBuildTools
@@ -241,7 +231,7 @@ jobs:
             -static-libstdc++
 
       - name: Upload Cross Compiled FFmpeg for Windows
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: cross_ffmpeg
           path: tmp/ffmpeg_build/
@@ -254,17 +244,14 @@ jobs:
     runs-on: windows-latest
     needs: build_dynamic_and_test_windows_pre
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
           target: i686-pc-windows-msvc
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
 
       - name: Download Cross Compiled FFmpeg for Windows
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: cross_ffmpeg
           path: ${{ github.workspace }}/ffmpeg_prebuilt_cross
@@ -290,12 +277,10 @@ jobs:
   docs_rs_check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: stable
-          override: true
 
       # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
       - name: Install FFmpegBuildTools
