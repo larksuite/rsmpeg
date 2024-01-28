@@ -12,6 +12,7 @@ settable!(AVFrame {
     width: i32,
     height: i32,
     pts: i64,
+    time_base: ffi::AVRational,
     pict_type: ffi::AVPictureType,
     nb_samples: i32,
     format: i32,

@@ -1,12 +1,12 @@
 use std::{
     ffi::CStr,
-    mem::size_of,
+    mem::{size_of, MaybeUninit},
     ops::Drop,
     ptr::{self, NonNull},
 };
 
 use crate::{
-    avutil::AVFrame,
+    avutil::{AVChannelLayout, AVFrame},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -99,6 +99,51 @@ impl AVFilterContext {
             Err(ffi::AVERROR_EOF) => Err(RsmpegError::BufferSinkEofError),
             Err(err) => Err(RsmpegError::BufferSinkGetFrameError(err)),
         }
+    }
+
+    pub fn get_type(&self) -> i32 {
+        unsafe { ffi::av_buffersink_get_type(self.as_ptr()) }
+    }
+
+    pub fn get_time_base(&self) -> ffi::AVRational {
+        unsafe { ffi::av_buffersink_get_time_base(self.as_ptr()) }
+    }
+
+    pub fn get_format(&self) -> i32 {
+        unsafe { ffi::av_buffersink_get_format(self.as_ptr()) }
+    }
+
+    pub fn get_frame_rate(&self) -> ffi::AVRational {
+        unsafe { ffi::av_buffersink_get_frame_rate(self.as_ptr()) }
+    }
+
+    pub fn get_w(&self) -> i32 {
+        unsafe { ffi::av_buffersink_get_w(self.as_ptr()) }
+    }
+
+    pub fn get_h(&self) -> i32 {
+        unsafe { ffi::av_buffersink_get_h(self.as_ptr()) }
+    }
+
+    pub fn get_sample_aspect_ratio(&self) -> ffi::AVRational {
+        unsafe { ffi::av_buffersink_get_sample_aspect_ratio(self.as_ptr()) }
+    }
+
+    pub fn get_channels(&self) -> i32 {
+        unsafe { ffi::av_buffersink_get_channels(self.as_ptr()) }
+    }
+
+    pub fn get_ch_layout(&self) -> AVChannelLayout {
+        let mut ch_layout = MaybeUninit::<ffi::AVChannelLayout>::uninit();
+        unsafe { ffi::av_buffersink_get_ch_layout(self.as_ptr(), ch_layout.as_mut_ptr()) }
+            .upgrade()
+            .unwrap();
+        let ch_layout = Box::leak(Box::new(unsafe { ch_layout.assume_init() }));
+        unsafe { AVChannelLayout::from_raw(NonNull::new(ch_layout).unwrap()) }
+    }
+
+    pub fn get_sample_rate(&self) -> i32 {
+        unsafe { ffi::av_buffersink_get_sample_rate(self.as_ptr()) }
     }
 }
 
