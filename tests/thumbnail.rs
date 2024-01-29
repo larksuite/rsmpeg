@@ -83,6 +83,9 @@ fn thumbnail(
             encode_context.height,
             encode_context.pix_fmt,
             ffi::SWS_FAST_BILINEAR | ffi::SWS_PRINT_INFO,
+            None,
+            None,
+            None,
         )
         .context("Invalid swscontext parameter.")?;
 

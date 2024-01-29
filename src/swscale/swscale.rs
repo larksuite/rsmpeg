@@ -8,8 +8,12 @@ use std::ptr;
 wrap!(SwsContext: ffi::SwsContext);
 
 impl SwsContext {
-    /// Return None when input is invalid. Parameter `flags` can be
+    /// Allocate and return an [`SwsContext`]. You need it to perform
+    /// scaling/conversion operations using [`Self::scale()`].
+    ///
+    /// Return `None` when input is invalid. Parameter `flags` can be set to
     /// `rsmpeg::ffi::SWS_FAST_BILINEAR` etc.
+    #[allow(clippy::too_many_arguments)]
     pub fn get_context(
         src_w: i32,
         src_h: i32,
@@ -18,9 +22,10 @@ impl SwsContext {
         dst_h: i32,
         dst_format: AVPixelFormat,
         flags: u32,
+        src_filter: Option<&ffi::SwsFilter>,
+        dst_filter: Option<&ffi::SwsFilter>,
+        param: Option<&[f64; 2]>,
     ) -> Option<Self> {
-        // TODO: no src_filter and dst_filter and param filter, implement them
-        // after wrapping SwsFilter.
         let context = unsafe {
             ffi::sws_getContext(
                 src_w,
@@ -30,13 +35,66 @@ impl SwsContext {
                 dst_h,
                 dst_format,
                 flags as i32,
-                ptr::null_mut(),
-                ptr::null_mut(),
-                ptr::null(),
+                src_filter
+                    .map(|x| x as *const _ as *mut _)
+                    .unwrap_or_else(ptr::null_mut),
+                dst_filter
+                    .map(|x| x as *const _ as *mut _)
+                    .unwrap_or_else(ptr::null_mut),
+                param.map(|x| x.as_ptr()).unwrap_or_else(ptr::null),
             )
         }
         .upgrade()?;
         unsafe { Some(Self::from_raw(context)) }
+    }
+
+    /// Check if context can be reused, otherwise reallocate a new one.
+    ///
+    /// Checks if the parameters are the ones already
+    /// saved in context. If that is the case, returns the current
+    /// context. Otherwise, frees context and gets a new context with
+    /// the new parameters.
+    ///
+    /// Be warned that `src_filter` and `dst_filter` are not checked, they
+    /// are assumed to remain the same.
+    ///
+    /// Returns `None` when context allocation or initiation failed.
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_cached_context(
+        self,
+        src_w: i32,
+        src_h: i32,
+        src_format: AVPixelFormat,
+        dst_w: i32,
+        dst_h: i32,
+        dst_format: AVPixelFormat,
+        flags: u32,
+        src_filter: Option<&ffi::SwsFilter>,
+        dst_filter: Option<&ffi::SwsFilter>,
+        param: Option<&[f64; 2]>,
+    ) -> Option<Self> {
+        // Note that if sws_getCachedContext fails, context is freed, so we use into_raw here.
+        let context = unsafe {
+            ffi::sws_getCachedContext(
+                self.into_raw().as_ptr(),
+                src_w,
+                src_h,
+                src_format,
+                dst_w,
+                dst_h,
+                dst_format,
+                flags as i32,
+                src_filter
+                    .map(|x| x as *const _ as *mut _)
+                    .unwrap_or_else(ptr::null_mut),
+                dst_filter
+                    .map(|x| x as *const _ as *mut _)
+                    .unwrap_or_else(ptr::null_mut),
+                param.map(|x| x.as_ptr()).unwrap_or_else(ptr::null),
+            )
+        }
+        .upgrade()?;
+        Some(unsafe { Self::from_raw(context) })
     }
 
     /// Scale the image slice in `src_slice` and put the resulting scaled
@@ -102,5 +160,47 @@ impl SwsContext {
 impl Drop for SwsContext {
     fn drop(&mut self) {
         unsafe { ffi::sws_freeContext(self.as_mut_ptr()) }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ffi::{
+        AVPixelFormat_AV_PIX_FMT_RGB24, SWS_BICUBIC, SWS_FULL_CHR_H_INT, SWS_PARAM_DEFAULT,
+    };
+
+    #[test]
+    fn test_cached_sws_context() {
+        let context = SwsContext::get_context(
+            10,
+            10,
+            AVPixelFormat_AV_PIX_FMT_RGB24,
+            10,
+            10,
+            AVPixelFormat_AV_PIX_FMT_RGB24,
+            SWS_FULL_CHR_H_INT | SWS_BICUBIC,
+            None,
+            None,
+            Some(&[SWS_PARAM_DEFAULT as f64, SWS_PARAM_DEFAULT as f64]),
+        )
+        .unwrap();
+        let old_ptr = context.as_ptr();
+        let context = context
+            .get_cached_context(
+                10,
+                10,
+                AVPixelFormat_AV_PIX_FMT_RGB24,
+                10,
+                10,
+                AVPixelFormat_AV_PIX_FMT_RGB24,
+                SWS_FULL_CHR_H_INT | SWS_BICUBIC,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+        let new_ptr = context.as_ptr();
+        assert_eq!(old_ptr, new_ptr);
     }
 }
