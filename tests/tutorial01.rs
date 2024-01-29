@@ -82,6 +82,9 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
         decode_context.height,
         ffi::AVPixelFormat_AV_PIX_FMT_RGB24,
         ffi::SWS_BILINEAR,
+        None,
+        None,
+        None,
     )
     .context("Failed to create a swscale context.")?;
 
