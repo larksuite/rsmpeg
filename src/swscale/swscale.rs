@@ -13,6 +13,7 @@ impl SwsContext {
     ///
     /// Return `None` when input is invalid. Parameter `flags` can be set to
     /// `rsmpeg::ffi::SWS_FAST_BILINEAR` etc.
+    #[allow(clippy::too_many_arguments)]
     pub fn get_context(
         src_w: i32,
         src_h: i32,
@@ -36,11 +37,11 @@ impl SwsContext {
                 flags as i32,
                 src_filter
                     .map(|x| x as *const _ as *mut _)
-                    .unwrap_or_else(|| ptr::null_mut()),
+                    .unwrap_or_else(ptr::null_mut),
                 dst_filter
                     .map(|x| x as *const _ as *mut _)
-                    .unwrap_or_else(|| ptr::null_mut()),
-                param.map(|x| x.as_ptr()).unwrap_or_else(|| ptr::null()),
+                    .unwrap_or_else(ptr::null_mut),
+                param.map(|x| x.as_ptr()).unwrap_or_else(ptr::null),
             )
         }
         .upgrade()?;
@@ -58,6 +59,7 @@ impl SwsContext {
     /// are assumed to remain the same.
     ///
     /// Returns `None` when context allocation or initiation failed.
+    #[allow(clippy::too_many_arguments)]
     pub fn get_cached_context(
         self,
         src_w: i32,
@@ -84,11 +86,11 @@ impl SwsContext {
                 flags as i32,
                 src_filter
                     .map(|x| x as *const _ as *mut _)
-                    .unwrap_or_else(|| ptr::null_mut()),
+                    .unwrap_or_else(ptr::null_mut),
                 dst_filter
                     .map(|x| x as *const _ as *mut _)
-                    .unwrap_or_else(|| ptr::null_mut()),
-                param.map(|x| x.as_ptr()).unwrap_or_else(|| ptr::null()),
+                    .unwrap_or_else(ptr::null_mut),
+                param.map(|x| x.as_ptr()).unwrap_or_else(ptr::null),
             )
         }
         .upgrade()?;

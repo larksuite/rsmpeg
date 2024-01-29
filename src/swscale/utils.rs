@@ -11,23 +11,22 @@ impl Drop for SwsFilter {
 }
 
 impl SwsFilter {
-    #[allow(non_snake_case)]
     pub fn get_default(
-        lumaGBlur: f32,
-        chromaGBlur: f32,
-        lumaSharpen: f32,
-        chromaSharpen: f32,
-        chromaHShift: f32,
-        chromaVShift: f32,
+        luma_g_blur: f32,
+        chroma_g_blur: f32,
+        luma_sharpen: f32,
+        chroma_sharpen: f32,
+        chroma_h_shift: f32,
+        chroma_v_shift: f32,
     ) -> Option<Self> {
         let filter = unsafe {
             ffi::sws_getDefaultFilter(
-                lumaGBlur,
-                chromaGBlur,
-                lumaSharpen,
-                chromaSharpen,
-                chromaHShift,
-                chromaVShift,
+                luma_g_blur,
+                chroma_g_blur,
+                luma_sharpen,
+                chroma_sharpen,
+                chroma_h_shift,
+                chroma_v_shift,
                 0,
             )
         }
