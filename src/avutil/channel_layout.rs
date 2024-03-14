@@ -103,14 +103,22 @@ impl AVChannelLayout {
 
         // # Safety: `as usize` after upgrading, len is assumed to be positive.
         let len = unsafe {
-            ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, BUF_SIZE)
+            ffi::av_channel_layout_describe(
+                self.as_ptr(),
+                buf.as_mut_ptr() as *mut std::ffi::c_char,
+                BUF_SIZE,
+            )
         }
         .upgrade()? as usize;
 
         let len = if len > BUF_SIZE {
             buf.resize(len, 0);
             unsafe {
-                ffi::av_channel_layout_describe(self.as_ptr(), buf.as_mut_ptr() as *mut i8, len)
+                ffi::av_channel_layout_describe(
+                    self.as_ptr(),
+                    buf.as_mut_ptr() as *mut std::ffi::c_char,
+                    len,
+                )
             }
             .upgrade()? as usize
         } else {
