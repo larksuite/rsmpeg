@@ -154,6 +154,12 @@ impl AVIOContextCustom {
             _opaque: opaque,
         }
     }
+
+    // Extract the data passed in `alloc_context`
+    // and set that data inside it to an empty vec.
+    pub fn take_data(&mut self) -> Vec<u8> {
+        std::mem::take(&mut self._opaque.data)
+    }
 }
 
 impl Drop for AVIOContextCustom {
