@@ -1,6 +1,7 @@
 use std::{
     ffi::CStr,
     ops::Drop,
+    os::raw::c_int,
     ptr::{self, NonNull},
 };
 
@@ -464,6 +465,12 @@ impl AVOutputFormat {
 
 wrap_ref_mut!(#[repr(transparent)] AVStream: ffi::AVStream);
 settable!(AVStream {
+    avg_frame_rate: AVRational,
+    discard: i32,
+    disposition: c_int,
+    duration: i64,
+    event_flags: c_int,
+    sample_aspect_ratio: AVRational,
     time_base: AVRational,
 });
 
