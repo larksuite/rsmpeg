@@ -81,3 +81,72 @@ impl Drop for AVBufferRef {
         unsafe { ffi::av_buffer_unref(&mut ptr) }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_av_buffer_alloc() {
+        let buf = AVBufferRef::new(1024);
+        assert_eq!(buf.get_ref_count(), 1);
+        assert!(buf.is_writable());
+        assert_eq!(buf.size, 1024);
+    }
+
+    #[test]
+    fn test_av_buffer_zeroed() {
+        let buf = AVBufferRef::zeroed(1024);
+        assert_eq!(buf.get_ref_count(), 1);
+        assert!(buf.is_writable());
+        assert_eq!(buf.size, 1024);
+
+        let slice = unsafe { std::slice::from_raw_parts(buf.data, buf.size) };
+        for &x in slice {
+            assert_eq!(x, 0)
+        }
+    }
+
+    #[test]
+    fn test_av_buffer_realloc() {
+        let mut buf = AVBufferRef::new(1024);
+        assert_eq!(buf.get_ref_count(), 1);
+        assert!(buf.is_writable());
+        assert_eq!(buf.size, 1024);
+
+        buf.realloc(2048);
+        assert_eq!(buf.get_ref_count(), 1);
+        assert!(buf.is_writable());
+        assert_eq!(buf.size, 2048);
+    }
+
+    #[test]
+    fn test_av_buffer_ref_count() {
+        let mut buf = AVBufferRef::new(1024);
+        assert_eq!(buf.get_ref_count(), 1);
+        assert!(buf.is_writable());
+        assert_eq!(buf.size, 1024);
+
+        {
+            let buf1 = buf.clone();
+            assert_eq!(buf.get_ref_count(), 2);
+            assert_eq!(buf1.get_ref_count(), 2);
+            assert!(!buf.is_writable());
+            assert!(!buf1.is_writable());
+        }
+
+        assert_eq!(buf.get_ref_count(), 1);
+
+        let buf2 = buf.clone();
+        assert_eq!(buf.get_ref_count(), 2);
+        assert_eq!(buf2.get_ref_count(), 2);
+        assert!(!buf.is_writable());
+        assert!(!buf2.is_writable());
+
+        buf.make_writable();
+        assert_eq!(buf.get_ref_count(), 1);
+        assert_eq!(buf2.get_ref_count(), 1);
+        assert!(buf.is_writable());
+        assert!(buf2.is_writable());
+    }
+}
