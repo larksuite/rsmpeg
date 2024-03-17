@@ -1,5 +1,5 @@
 use std::{
-    ffi::CStr,
+    ffi::{c_void, CStr},
     mem,
     ops::Drop,
     ptr::{self, NonNull},
@@ -53,6 +53,26 @@ impl AVCodec {
     /// Get descriptive name for the codec.
     pub fn long_name(&self) -> &CStr {
         unsafe { CStr::from_ptr(self.long_name) }
+    }
+
+    /// Iterate over all registered codecs.
+    pub fn iterate() -> AVCodecIter {
+        AVCodecIter {
+            opaque: std::ptr::null_mut(),
+        }
+    }
+}
+
+pub struct AVCodecIter {
+    opaque: *mut c_void,
+}
+
+impl Iterator for AVCodecIter {
+    type Item = AVCodecRef<'static>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ptr = unsafe { ffi::av_codec_iterate(&mut self.opaque) }.upgrade()?;
+        Some(unsafe { AVCodecRef::from_raw(ptr) })
     }
 }
 
@@ -386,6 +406,34 @@ impl Drop for AVSubtitle {
             ffi::avsubtitle_free(self.as_mut_ptr());
             // Free the subtitle struct.
             let _ = Box::from_raw(self.as_mut_ptr());
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cstr::cstr;
+
+    #[test]
+    fn test_av_codec_iterator() {
+        assert!(AVCodec::iterate().count() > 10);
+
+        let iter = AVCodec::iterate();
+        for codec in iter {
+            if codec.name() == cstr!("h264") {
+                assert_eq!(
+                    codec.long_name(),
+                    cstr!("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10")
+                );
+            }
+            if codec.name() == cstr!("vnull") {
+                assert_eq!(codec.long_name(), cstr!("null video"));
+            }
+            if codec.name() == cstr!("anull") {
+                assert_eq!(codec.long_name(), cstr!("null audio"));
+            }
+            println!("codec: {:?}: {:?}", codec.name(), codec.long_name());
         }
     }
 }
