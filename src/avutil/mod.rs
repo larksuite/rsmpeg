@@ -1,5 +1,6 @@
 //! Everything related to `libavutil`.
 mod audio_fifo;
+mod buffer;
 mod channel_layout;
 mod dict;
 mod error;
@@ -18,6 +19,7 @@ mod timestamp;
 mod utils;
 
 pub use audio_fifo::*;
+pub use buffer::*;
 pub use channel_layout::*;
 pub use dict::*;
 pub use error::*;
