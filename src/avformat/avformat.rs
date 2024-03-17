@@ -209,6 +209,33 @@ impl<'stream> AVFormatContextInput {
         unsafe { std::slice::from_raw_parts(streams, len) }
     }
 
+    /// Return slice of [`AVStreamMut`].
+    pub fn streams_mut(&'stream mut self) -> &'stream mut [AVStreamMut<'stream>] {
+        // #define `<->` as "has the same layout due to repr(transparent)"
+        // ```
+        // NonNull<ffi::AVStream> <-> *const ffi::AVStream
+        // AVStream <-> NonNull<ffi::AVStream>
+        // AVStreamMut <-> AVStream
+        // ```
+        // indicates: AVStreamMut <-> *const ffi::AVStream
+        let streams = self.streams as *mut AVStreamMut<'stream>;
+        // u32 to usize, safe
+        let len = self.nb_streams as usize;
+
+        // I trust that FFmpeg won't give me null pointers :-(
+        #[cfg(debug_assertions)]
+        {
+            let arr = unsafe {
+                std::slice::from_raw_parts(self.streams as *const *const ffi::AVStream, len)
+            };
+            for ptr in arr {
+                assert!(!ptr.is_null());
+            }
+        }
+
+        unsafe { std::slice::from_raw_parts_mut(streams, len) }
+    }
+
     /// Get [`AVInputFormatRef`] in the [`AVFormatContextInput`].
     pub fn iformat(&'stream self) -> AVInputFormatRef<'stream> {
         // From the implementation of FFmpeg's `avformat_open_input`, we can be
