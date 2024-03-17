@@ -88,8 +88,10 @@ Setup the environment:
 ```bash
 # *nix (the path of the folder named after the triplet may change)
 export FFMPEG_PKG_CONFIG_PATH=${PWD}/target/vcpkg/installed/x64-linux/lib/pkgconfig
-# Windows
+# Windows(CMD)
 set FFMPEG_PKG_CONFIG_PATH=%CD%\target\vcpkg\installed\x64-windows-static-md\lib\pkgconfig
+# Windows(PowerShell)
+$env:FFMPEG_PKG_CONFIG_PATH="$(($PWD).path)\target\vcpkg\installed\x64-windows-static-md\lib\pkgconfig"
 ```
 
 Run the vcpkg build:
