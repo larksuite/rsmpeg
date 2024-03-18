@@ -155,10 +155,15 @@ impl AVIOContextCustom {
         }
     }
 
-    // Extract the data passed in `alloc_context`
-    // and set that data inside it to an empty vec.
+    /// Re-take the ownership of the `data` passed in `alloc_context`.
+    /// The `data` inside this will be set to an empty vector.
     pub fn take_data(&mut self) -> Vec<u8> {
         std::mem::take(&mut self._opaque.data)
+    }
+
+    /// Get a mutable reference to the data inside this context.
+    pub fn as_mut_data(&mut self) -> &mut Vec<u8> {
+        &mut self._opaque.data
     }
 }
 
