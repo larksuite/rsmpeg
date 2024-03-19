@@ -7,6 +7,7 @@ use std::ffi::{c_int, CStr};
 /// Return `Some(description)` on success, a negative value if a description for
 /// errnum cannot be found.
 pub fn err2str(errnum: c_int) -> Option<String> {
+    // mimicks `av_err2str()`
     const ERRBUF_SIZE: usize = AV_ERROR_MAX_STRING_SIZE as usize;
     let mut errbuf = [0u8; ERRBUF_SIZE];
     if unsafe { ffi::av_strerror(errnum, errbuf.as_mut_ptr() as _, ERRBUF_SIZE) } == 0 {

@@ -6,13 +6,13 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::{ffi, shared::AVERROR_EAGAIN};
+use crate::{avutil::err2str, ffi, shared::AVERROR_EAGAIN};
 
 /// All the error variants of rsmpeg.
 #[non_exhaustive]
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum RsmpegError {
-    #[error("AVERROR({0})")]
+    #[error("AVERROR({0}): `{}`", err2str(*.0).unwrap_or_else(|| "Unknown error code.".to_string()))]
     AVError(c_int),
     #[error("{0}")]
     CustomError(String),
