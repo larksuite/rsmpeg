@@ -1,6 +1,6 @@
 use std::{
     ffi::CStr,
-    ops::{Deref, Drop},
+    ops::Deref,
     ptr::{self, NonNull},
     slice,
 };

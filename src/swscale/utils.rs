@@ -79,6 +79,7 @@ impl SwsVector {
     /// Allocate and return an uninitialized vector with length coefficients.
     ///
     /// If length is bigger than `INT_MAX / sizeof(double)` or smaller than 0, `None` is returned.
+    #[must_use]
     pub fn new(length: i32) -> Option<Self> {
         unsafe { ffi::sws_allocVec(length) }
             .upgrade()
@@ -87,6 +88,7 @@ impl SwsVector {
 
     /// Return a normalized Gaussian curve used to filter stuff.
     /// quality = 3 is high quality, lower is lower quality.
+    #[must_use]
     pub fn get_gaussian_vec(variance: f64, quality: f64) -> Option<Self> {
         unsafe { ffi::sws_getGaussianVec(variance, quality) }
             .upgrade()
@@ -103,6 +105,7 @@ impl SwsVector {
         unsafe { ffi::sws_normalizeVec(self.as_mut_ptr(), height) };
     }
 
+    #[must_use]
     pub fn coeff(&self) -> &[f64] {
         unsafe { slice::from_raw_parts(self.coeff, self.length.try_into().unwrap()) }
     }

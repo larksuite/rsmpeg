@@ -1,5 +1,4 @@
 use crate::{error::*, ffi, shared::*};
-use std::ops::Drop;
 
 wrap!(
     /// Context for an Audio FIFO Buffer.

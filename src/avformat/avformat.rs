@@ -1,6 +1,5 @@
 use std::{
     ffi::CStr,
-    ops::Drop,
     os::raw::c_int,
     ptr::{self, NonNull},
 };

@@ -26,6 +26,7 @@ impl<T> PointerUpgrade<T> for *mut T {
 /// This is a common pattern in FFmpeg that an api returns Null as an error.
 /// We can set specific error code(Usually FFmpeg error code like
 /// ffi::AVERROR(ffi::ENOMEM)).
+#[allow(dead_code)]
 pub trait RsmpegPointerUpgrade<T>: PointerUpgrade<T> {
     /// Triage the pointer. If null, return RsmpegError::AVError(err) here.
     fn upgrade_or(self, err: c_int) -> Result<NonNull<T>>;

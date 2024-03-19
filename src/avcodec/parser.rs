@@ -1,5 +1,3 @@
-use std::ops::Drop;
-
 use crate::{
     avcodec::{AVCodecContext, AVCodecID, AVPacket},
     error::*,

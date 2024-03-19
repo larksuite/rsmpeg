@@ -2,7 +2,6 @@
 use anyhow::{anyhow, bail, Context, Result};
 use cstr::cstr;
 use rsmpeg::{
-    self,
     avcodec::{AVCodec, AVCodecContext},
     avfilter::{AVFilter, AVFilterContextMut, AVFilterGraph, AVFilterInOut},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
