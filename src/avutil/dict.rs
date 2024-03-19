@@ -6,7 +6,6 @@ use crate::{
 
 use std::{
     ffi::{CStr, CString},
-    ops::Drop,
     ptr::{self, NonNull},
 };
 

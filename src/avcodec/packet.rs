@@ -1,4 +1,4 @@
-use std::{fmt, ops::Drop, ptr::NonNull};
+use std::{fmt, ptr::NonNull};
 
 use crate::{avutil::AVRational, ffi, shared::*};
 

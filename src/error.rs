@@ -120,6 +120,7 @@ pub enum RsmpegError {
 }
 
 impl RsmpegError {
+    #[must_use]
     pub fn raw_error(&self) -> Option<c_int> {
         match self {
             Self::AVError(err)

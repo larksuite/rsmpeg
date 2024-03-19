@@ -142,6 +142,7 @@ macro_rules! wrap_mut_pure {
             /// # Safety
             /// This function should only be called when `raw` is valid and can
             /// be dropped. Please ensure its lifetime when used.
+            #[must_use]
             pub unsafe fn from_raw(raw: std::ptr::NonNull<$ffi_type>) -> Self {
                 Self {
                     inner: std::mem::ManuallyDrop::new(unsafe { $wrapped_type::from_raw(raw) }),

@@ -1,7 +1,6 @@
 use std::{
     ffi::CStr,
     mem::{size_of, MaybeUninit},
-    ops::Drop,
     ptr::{self, NonNull},
 };
 

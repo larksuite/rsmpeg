@@ -4,13 +4,7 @@ use crate::{
     ffi,
     shared::*,
 };
-use std::{
-    clone::Clone,
-    default::Default,
-    fmt,
-    ops::{Deref, Drop},
-    ptr::NonNull,
-};
+use std::{fmt, ops::Deref, ptr::NonNull};
 
 wrap_ref_mut!(AVCodecParameters: ffi::AVCodecParameters);
 

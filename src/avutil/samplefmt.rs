@@ -2,7 +2,6 @@ use crate::{ffi, shared::*};
 use std::{
     ffi::CStr,
     num::NonZeroI32,
-    ops::Drop,
     ptr::{self, NonNull},
 };
 

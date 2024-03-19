@@ -5,7 +5,7 @@ use crate::{
     shared::*,
 };
 
-use std::{fmt, mem::size_of, ops::Drop, ptr::NonNull, slice};
+use std::{fmt, mem::size_of, ptr::NonNull, slice};
 
 wrap!(AVFrame: ffi::AVFrame);
 settable!(AVFrame {

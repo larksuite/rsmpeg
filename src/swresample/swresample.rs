@@ -1,8 +1,5 @@
 use crate::{avutil::AVFrame, error::*, ffi, shared::*};
-use std::{
-    ops::Drop,
-    ptr::{self, NonNull},
-};
+use std::ptr::{self, NonNull};
 
 wrap!(SwrContext: ffi::SwrContext);
 
@@ -68,7 +65,7 @@ impl SwrContext {
     /// number of samples current function returns for the same number of input
     /// samples.
     pub fn get_out_samples(&self, in_samples: i32) -> i32 {
-        unsafe { ffi::swr_get_out_samples(self.as_ptr() as _, in_samples) }
+        unsafe { ffi::swr_get_out_samples(self.as_ptr().cast_mut(), in_samples) }
     }
 
     /// Gets the delay the next input sample will experience relative to the next

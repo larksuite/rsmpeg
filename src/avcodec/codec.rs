@@ -1,7 +1,6 @@
 use std::{
     ffi::{c_void, CStr},
     mem,
-    ops::Drop,
     ptr::{self, NonNull},
     slice,
 };
