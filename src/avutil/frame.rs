@@ -150,6 +150,33 @@ impl AVFrame {
             Err(e) => Err(RsmpegError::AVError(e)),
         }
     }
+
+    /// Copy data to or from a hw surface. At least one of self/src must have an
+    /// AVHWFramesContext attached.
+    ///
+    /// If src has an AVHWFramesContext attached, then the format of dst (if set)
+    /// must use one of the formats returned by av_hwframe_transfer_get_formats(src,
+    /// AV_HWFRAME_TRANSFER_DIRECTION_FROM).
+    /// If dst has an AVHWFramesContext attached, then the format of src must use one
+    /// of the formats returned by av_hwframe_transfer_get_formats(dst,
+    /// AV_HWFRAME_TRANSFER_DIRECTION_TO)
+    ///
+    /// dst may be "clean" (i.e. with data/buf pointers unset), in which case the
+    /// data buffers will be allocated by this function using av_frame_get_buffer().
+    /// If dst->format is set, then this format will be used, otherwise (when
+    /// dst->format is AV_PIX_FMT_NONE) the first acceptable format will be chosen.
+    ///
+    /// The two frames must have matching allocated dimensions (i.e. equal to
+    /// AVHWFramesContext.width/height), since not all device types support
+    /// transferring a sub-rectangle of the whole surface. The display dimensions
+    /// (i.e. AVFrame.width/height) may be smaller than the allocated dimensions, but
+    /// also have to be equal for both frames. When the display dimensions are
+    /// smaller than the allocated dimensions, the content of the padding in the
+    /// destination frame is unspecified.
+    pub fn hwframe_transfer_data(&mut self, src: &AVFrame) -> Result<()> {
+        unsafe { ffi::av_hwframe_transfer_data(self.as_mut_ptr(), src.as_ptr(), 0) }.upgrade()?;
+        Ok(())
+    }
 }
 
 impl Clone for AVFrame {

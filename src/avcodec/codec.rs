@@ -7,7 +7,10 @@ use std::{
 
 use crate::{
     avcodec::{AVCodecID, AVCodecParameters, AVPacket},
-    avutil::{AVChannelLayoutRef, AVDictionary, AVFrame, AVPixelFormat, AVRational},
+    avutil::{
+        AVChannelLayoutRef, AVDictionary, AVFrame, AVHWFramesContext, AVHWFramesContextMut,
+        AVHWFramesContextRef, AVPixelFormat, AVRational,
+    },
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -340,6 +343,20 @@ impl AVCodecContext {
     pub fn ch_layout(&self) -> AVChannelLayoutRef {
         let inner = NonNull::new(&self.ch_layout as *const _ as *mut _).unwrap();
         unsafe { AVChannelLayoutRef::from_raw(inner) }
+    }
+
+    pub fn hw_frames_ctx(&self) -> Option<AVHWFramesContextRef> {
+        let hw_frame_ctx = NonNull::new(self.hw_frames_ctx)?;
+        Some(unsafe { AVHWFramesContextRef::from_raw(hw_frame_ctx) })
+    }
+
+    pub fn hw_frames_ctx_mut(&mut self) -> Option<AVHWFramesContextMut> {
+        let hw_frame_ctx = NonNull::new(self.hw_frames_ctx)?;
+        Some(unsafe { AVHWFramesContextMut::from_raw(hw_frame_ctx) })
+    }
+
+    pub fn set_hw_frames_ctx(&mut self, hw_frames_ctx: AVHWFramesContext) {
+        unsafe { self.deref_mut().hw_frames_ctx = hw_frames_ctx.buffer_ref.into_raw().as_ptr() };
     }
 
     /// Is hardware accelaration enabled in this codec context.
