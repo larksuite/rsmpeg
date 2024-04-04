@@ -31,8 +31,6 @@ pub enum RsmpegError {
     #[error("Cannot write trailer to output file. ({0})")]
     WriteTrailerError(c_int),
 
-    #[error("Failed to open codec. ({0})")]
-    CodecOpenError(c_int),
     #[error("Failed to copy decoder parameters to input decoder context. ({0})")]
     CodecSetParameterError(c_int),
     #[error("Filter not found.")]
@@ -129,7 +127,6 @@ impl RsmpegError {
             | Self::FindStreamInfoError(err)
             | Self::WriteHeaderError(err)
             | Self::WriteTrailerError(err)
-            | Self::CodecOpenError(err)
             | Self::CodecSetParameterError(err)
             | Self::CreateFilterError(err)
             | Self::SetPropertyError(err)

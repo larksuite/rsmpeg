@@ -174,6 +174,8 @@ impl AVCodecContext {
     /// private options.  Function returns a [`AVDictionary`] filled with
     /// options that were not found if given dictionary. It can usually be
     /// ignored.
+    ///
+    /// Note: Always call this function before using decoding routines, such as [`Self::receive_frame()`].
     pub fn open(&mut self, dict: Option<AVDictionary>) -> Result<Option<AVDictionary>> {
         if let Some(mut dict) = dict {
             let dict_ptr = {
@@ -182,8 +184,7 @@ impl AVCodecContext {
                 unsafe {
                     ffi::avcodec_open2(self.as_mut_ptr(), ptr::null_mut(), &mut dict_ptr as *mut _)
                 }
-                .upgrade()
-                .map_err(RsmpegError::CodecOpenError)?;
+                .upgrade()?;
                 dict_ptr
             };
             // If no error, dict's inner pointer is dangling, here we manually drop it by using into_raw().
@@ -193,8 +194,7 @@ impl AVCodecContext {
                 .map(|dict_ptr| unsafe { AVDictionary::from_raw(dict_ptr) }))
         } else {
             unsafe { ffi::avcodec_open2(self.as_mut_ptr(), ptr::null_mut(), ptr::null_mut()) }
-                .upgrade()
-                .map_err(RsmpegError::CodecOpenError)?;
+                .upgrade()?;
             Ok(None)
         }
     }
