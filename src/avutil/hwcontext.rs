@@ -18,7 +18,7 @@ pub struct AVHWDeviceContext {
 
 impl AVHWDeviceContext {
     /// Allocate an [`AVHWDeviceContext`] for a given hardware type.
-    pub fn alloc(r#type: u32) -> Self {
+    pub fn alloc(r#type: ffi::AVHWDeviceType) -> Self {
         let buffer_ref = unsafe { ffi::av_hwdevice_ctx_alloc(r#type) };
         // this only panic on OOM
         let buffer_ref = buffer_ref.upgrade().unwrap();
@@ -47,7 +47,7 @@ impl AVHWDeviceContext {
     /// the created [`AVHWDeviceContext`] are set by this function and should not be
     /// touched by the caller.
     pub fn create(
-        r#type: u32,
+        r#type: ffi::AVHWDeviceType,
         device: Option<&CStr>,
         opts: Option<&AVDictionary>,
         flags: c_int,
@@ -76,7 +76,7 @@ impl AVHWDeviceContext {
     /// device.  If direct derivation to the new type is not implemented, it will
     /// attempt the same derivation from each ancestor of the source device in
     /// turn looking for an implemented derivation method.
-    pub fn create_derived(&self, r#type: u32) -> Result<Self> {
+    pub fn create_derived(&self, r#type: ffi::AVHWDeviceType) -> Result<Self> {
         let mut ptr = ptr::null_mut();
         // `flags` parameter of av_hwdevice_ctx_create_derived is unused and need to be set to 0
         unsafe {
@@ -94,7 +94,11 @@ impl AVHWDeviceContext {
     ///
     /// This function performs the same action as av_hwdevice_ctx_create_derived,
     /// however, it is able to set options for the new device to be derived.
-    pub fn create_derived_opts(&self, r#type: u32, options: Option<&AVDictionary>) -> Result<Self> {
+    pub fn create_derived_opts(
+        &self,
+        r#type: ffi::AVHWDeviceType,
+        options: Option<&AVDictionary>,
+    ) -> Result<Self> {
         let mut ptr = ptr::null_mut();
         let options = options.map(|opts| opts.as_ptr()).unwrap_or_else(ptr::null);
         // `flags` parameter of av_hwdevice_ctx_create_derived is unused and need to be set to 0
