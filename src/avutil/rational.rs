@@ -2,9 +2,8 @@ use crate::ffi;
 
 pub use ffi::AVRational;
 
-#[inline]
 /// return `AVRational: num / den`;
-pub fn ra(num: i32, den: i32) -> AVRational {
+pub const fn ra(num: i32, den: i32) -> AVRational {
     AVRational { num, den }
 }
 
