@@ -55,10 +55,10 @@ impl AVHWDeviceContext {
         let mut ptr = ptr::null_mut();
         let opts = opts
             .map(|opts| opts.as_ptr())
-            .unwrap_or_else(|| ptr::null());
+            .unwrap_or_else(ptr::null);
         let device = device
             .map(|device| device.as_ptr())
-            .unwrap_or_else(|| ptr::null());
+            .unwrap_or_else(ptr::null);
         unsafe { ffi::av_hwdevice_ctx_create(&mut ptr, r#type, device, opts as *mut _, flags) }
             .upgrade()?;
         // this won't panic since av_hwdevice_ctx_create ensures it's non-null if successful.
@@ -100,7 +100,7 @@ impl AVHWDeviceContext {
         let mut ptr = ptr::null_mut();
         let options = options
             .map(|opts| opts.as_ptr())
-            .unwrap_or_else(|| ptr::null());
+            .unwrap_or_else(ptr::null);
         // `flags` parameter of av_hwdevice_ctx_create_derived is unused and need to be set to 0
         unsafe {
             ffi::av_hwdevice_ctx_create_derived_opts(
@@ -194,6 +194,9 @@ impl AVHWFramesContext {
         Ok(())
     }
 
+    /// # Safety
+    ///
+    /// This function is only save when given `raw` points to a valid AVHWFramesContext.
     pub unsafe fn from_raw(raw: NonNull<ffi::AVBufferRef>) -> Self {
         Self {
             buffer_ref: unsafe { AVBufferRef::from_raw(raw) },
