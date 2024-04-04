@@ -67,6 +67,7 @@ fn main() -> Result<()> {
         // .arg("--enable-libvorbis")
         .arg("--enable-libvpx")
         .arg("--enable-libx264")
+        // .arg("--enable-ffnvcodec")
         // .arg("--enable-libx265")
         // To workaround `https://github.com/larksuite/rsmpeg/pull/98#issuecomment-1467511193`
         .arg("--disable-decoder=exr,phm")

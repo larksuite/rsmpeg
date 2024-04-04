@@ -6,3 +6,4 @@ mod qsv_decode;
 mod remux;
 mod transcode;
 mod transcode_aac;
+mod vaapi_encode;
