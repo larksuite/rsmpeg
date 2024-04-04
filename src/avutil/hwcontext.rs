@@ -53,9 +53,7 @@ impl AVHWDeviceContext {
         flags: c_int,
     ) -> Result<Self> {
         let mut ptr = ptr::null_mut();
-        let opts = opts
-            .map(|opts| opts.as_ptr())
-            .unwrap_or_else(ptr::null);
+        let opts = opts.map(|opts| opts.as_ptr()).unwrap_or_else(ptr::null);
         let device = device
             .map(|device| device.as_ptr())
             .unwrap_or_else(ptr::null);
@@ -98,9 +96,7 @@ impl AVHWDeviceContext {
     /// however, it is able to set options for the new device to be derived.
     pub fn create_derived_opts(&self, r#type: u32, options: Option<&AVDictionary>) -> Result<Self> {
         let mut ptr = ptr::null_mut();
-        let options = options
-            .map(|opts| opts.as_ptr())
-            .unwrap_or_else(ptr::null);
+        let options = options.map(|opts| opts.as_ptr()).unwrap_or_else(ptr::null);
         // `flags` parameter of av_hwdevice_ctx_create_derived is unused and need to be set to 0
         unsafe {
             ffi::av_hwdevice_ctx_create_derived_opts(
