@@ -8,8 +8,8 @@ use std::{
 use crate::{
     avcodec::{AVCodecID, AVCodecParameters, AVPacket},
     avutil::{
-        AVBufferRef, AVChannelLayoutRef, AVDictionary, AVFrame, AVHWFramesContext,
-        AVHWFramesContextMut, AVHWFramesContextRef, AVPixelFormat, AVRational,
+        AVChannelLayoutRef, AVDictionary, AVFrame, AVHWFramesContext, AVHWFramesContextMut,
+        AVHWFramesContextRef, AVPixelFormat, AVRational,
     },
     error::{Result, RsmpegError},
     ffi,
