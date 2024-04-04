@@ -151,7 +151,7 @@ fn encode_write_frame(
 
         match output_format_context.interleaved_write_frame(&mut packet) {
             Ok(()) => Ok(()),
-            Err(RsmpegError::InterleavedWriteFrameError(-22)) => Ok(()),
+            Err(RsmpegError::AVError(-22)) => Ok(()),
             Err(e) => Err(e),
         }
         .context("Interleaved write frame failed.")?;

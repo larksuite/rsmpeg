@@ -128,8 +128,7 @@ impl AVFrame {
                 1,
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::AVImageFillArrayError)?;
+        .upgrade()?;
         Ok(())
     }
 

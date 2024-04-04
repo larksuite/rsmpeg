@@ -14,33 +14,14 @@ use crate::{avutil::err2str, ffi, shared::AVERROR_EAGAIN};
 pub enum RsmpegError {
     #[error("AVERROR({0}): `{}`", err2str(*.0).unwrap_or_else(|| "Unknown error code.".to_string()))]
     AVError(c_int),
-    #[error("{0}")]
-    CustomError(String),
 
     // --------- Unstablized error type below ------
 
     // FFmpeg errors
     #[error("Cannot open input file. ({0})")]
     OpenInputError(c_int),
-    #[error("Cannot open output file. ({0})")]
-    OpenOutputError(c_int),
     #[error("Cannot find stream information. ({0})")]
     FindStreamInfoError(c_int),
-    #[error("Cannot write header to output file. ({0})")]
-    WriteHeaderError(c_int),
-    #[error("Cannot write trailer to output file. ({0})")]
-    WriteTrailerError(c_int),
-
-    #[error("Failed to open codec. ({0})")]
-    CodecOpenError(c_int),
-    #[error("Failed to copy decoder parameters to input decoder context. ({0})")]
-    CodecSetParameterError(c_int),
-    #[error("Filter not found.")]
-    FilterNotFound,
-    #[error("Create filter instance in a filter graph failed. ({0})")]
-    CreateFilterError(c_int),
-    #[error("Set property to a filter context failed. ({0})")]
-    SetPropertyError(c_int),
 
     // Decoder errors
     #[error("Send packet to a codec context failed. ({0})")]
@@ -77,14 +58,7 @@ pub enum RsmpegError {
     BitstreamSendPacketError(c_int),
     #[error("Receive packet from a bitstream filter context failed. ({0})")]
     BitstreamReceivePacketError(c_int),
-    #[error("Failed to initialize bitstream filter context. ({0})")]
-    BitstreamInitializationError(c_int),
 
-    #[error("Interleaved write frame to an output format context failed. ({0})")]
-    InterleavedWriteFrameError(c_int),
-
-    #[error("Error while feeding the filtergraph failed. ({0})")]
-    BufferSrcAddFrameError(c_int),
     #[error("Pulling filtered frame from filters failed ({0})")]
     BufferSinkGetFrameError(c_int),
     #[error("No frames are available at this point")]
@@ -92,30 +66,16 @@ pub enum RsmpegError {
     #[error("There will be no more output frames on this sink")]
     BufferSinkEofError,
 
-    #[error("AVDictionary doesn't understand provided string. ({0})")]
-    DictionaryParseError(c_int),
-    #[error("AVDictionary failed to get string. ({0})")]
-    DictionaryGetStringError(c_int),
-
-    #[error("AVIO Open failure. ({0})")]
-    AVIOOpenError(c_int),
-
-    #[error("SwsContext scale failed. ({0})")]
-    SwsScaleError(c_int),
-
     #[error("AVFrame buffer double allocating.")]
     AVFrameDoubleAllocatingError,
     #[error("AVFrame buffer allocating with incorrect parameters. ({0})")]
     AVFrameInvalidAllocatingError(c_int),
 
-    #[error("Failed to fill data to image buffer. ({0})")]
-    AVImageFillArrayError(c_int),
-
     #[error("{0}")]
     TryFromIntError(TryFromIntError),
 
     // Non exhaustive
-    #[error("Unknown error, contact ldm0 when you see this.")]
+    #[error("Unknown error.")]
     Unknown,
 }
 
@@ -125,30 +85,15 @@ impl RsmpegError {
         match self {
             Self::AVError(err)
             | Self::OpenInputError(err)
-            | Self::OpenOutputError(err)
             | Self::FindStreamInfoError(err)
-            | Self::WriteHeaderError(err)
-            | Self::WriteTrailerError(err)
-            | Self::CodecOpenError(err)
-            | Self::CodecSetParameterError(err)
-            | Self::CreateFilterError(err)
-            | Self::SetPropertyError(err)
             | Self::SendPacketError(err)
             | Self::ReceiveFrameError(err)
             | Self::SendFrameError(err)
             | Self::ReceivePacketError(err)
             | Self::BitstreamSendPacketError(err)
             | Self::BitstreamReceivePacketError(err)
-            | Self::BitstreamInitializationError(err)
-            | Self::InterleavedWriteFrameError(err)
-            | Self::BufferSrcAddFrameError(err)
             | Self::BufferSinkGetFrameError(err)
-            | Self::DictionaryParseError(err)
-            | Self::DictionaryGetStringError(err)
-            | Self::AVIOOpenError(err)
-            | Self::SwsScaleError(err)
-            | Self::AVFrameInvalidAllocatingError(err)
-            | Self::AVImageFillArrayError(err) => Some(*err),
+            | Self::AVFrameInvalidAllocatingError(err) => Some(*err),
 
             Self::DecoderFullError
             | Self::BufferSinkDrainError
@@ -163,11 +108,7 @@ impl RsmpegError {
             | Self::EncoderFlushedError
             | Self::BitstreamFlushedError => Some(ffi::AVERROR_EOF),
 
-            Self::AVFrameDoubleAllocatingError
-            | Self::FilterNotFound
-            | Self::CustomError(_)
-            | Self::TryFromIntError(_)
-            | Self::Unknown => None,
+            Self::AVFrameDoubleAllocatingError | Self::TryFromIntError(_) | Self::Unknown => None,
         }
     }
 }

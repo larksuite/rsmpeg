@@ -31,9 +31,7 @@ impl AVIOContextURL {
     /// the [`AVIOContextURL`] can be used only for writing.
     pub fn open(url: &CStr, flags: u32) -> Result<Self> {
         let mut io_context = ptr::null_mut();
-        unsafe { ffi::avio_open(&mut io_context, url.as_ptr(), flags as _) }
-            .upgrade()
-            .map_err(RsmpegError::AVIOOpenError)?;
+        unsafe { ffi::avio_open(&mut io_context, url.as_ptr(), flags as _) }.upgrade()?;
         Ok(Self(unsafe {
             AVIOContext::from_raw(NonNull::new(io_context).unwrap())
         }))

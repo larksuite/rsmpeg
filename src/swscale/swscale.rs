@@ -131,8 +131,7 @@ impl SwsContext {
                 dst_stride,
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::SwsScaleError)?;
+        .upgrade()?;
         Ok(())
     }
 
