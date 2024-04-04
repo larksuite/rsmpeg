@@ -169,12 +169,8 @@ impl AVBSFContextUninit {
     /// but after you set input parameters via
     /// [`AVBSFContextUninit::set_par_in`].
     pub fn init(mut self) -> Result<AVBSFContext> {
-        unsafe {
-            match ffi::av_bsf_init(self.as_mut_ptr()).upgrade() {
-                Ok(_) => Ok(AVBSFContext(self)),
-                Err(x) => Err(RsmpegError::BitstreamInitializationError(x)),
-            }
-        }
+        unsafe { ffi::av_bsf_init(self.as_mut_ptr()) }.upgrade()?;
+        Ok(AVBSFContext(self))
     }
 
     /// Get `filter` field of current [`AVBSFContext`].

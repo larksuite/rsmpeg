@@ -15,11 +15,9 @@ wrap_ref!(AVFilter: ffi::AVFilter);
 
 impl AVFilter {
     /// Get a filter definition matching the given name.
-    pub fn get_by_name(filter_name: &CStr) -> Result<AVFilterRef<'static>> {
-        let filter = unsafe { ffi::avfilter_get_by_name(filter_name.as_ptr()) }
-            .upgrade()
-            .ok_or(RsmpegError::FilterNotFound)?;
-        Ok(unsafe { AVFilterRef::from_raw(filter) })
+    pub fn get_by_name(filter_name: &CStr) -> Option<AVFilterRef<'static>> {
+        let filter = unsafe { ffi::avfilter_get_by_name(filter_name.as_ptr()) }.upgrade()?;
+        Some(unsafe { AVFilterRef::from_raw(filter) })
     }
 }
 
@@ -43,8 +41,7 @@ impl AVFilterContext {
                 ffi::AV_OPT_SEARCH_CHILDREN as i32,
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::SetPropertyError)?;
+        .upgrade()?;
         Ok(())
     }
 
@@ -58,8 +55,7 @@ impl AVFilterContext {
                 ffi::AV_OPT_SEARCH_CHILDREN as i32,
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::SetPropertyError)?;
+        .upgrade()?;
         Ok(())
     }
 
@@ -78,8 +74,7 @@ impl AVFilterContext {
         let flags = flags.unwrap_or(0);
 
         unsafe { ffi::av_buffersrc_add_frame_flags(self.as_mut_ptr(), frame_ptr, flags) }
-            .upgrade()
-            .map_err(RsmpegError::BufferSrcAddFrameError)?;
+            .upgrade()?;
         Ok(())
     }
 
@@ -281,8 +276,7 @@ impl<'graph> AVFilterGraph {
                 self.as_ptr() as *mut _,
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::CreateFilterError)?;
+        .upgrade()?;
 
         let filter_context = NonNull::new(filter_context).unwrap();
 

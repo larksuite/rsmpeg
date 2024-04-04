@@ -5,11 +5,7 @@ use std::{
     slice,
 };
 
-use crate::{
-    error::{Result, RsmpegError},
-    ffi,
-    shared::RetUpgrade,
-};
+use crate::{error::Result, ffi, shared::RetUpgrade};
 
 /// A read-only file buffer, the file is mmaped when available.
 pub struct AVMmap {
@@ -33,8 +29,7 @@ impl AVMmap {
         let mut bufptr = null_mut();
         let mut size = 0;
         unsafe { ffi::av_file_map(filename.as_ptr(), &mut bufptr, &mut size, 0, null_mut()) }
-            .upgrade()
-            .map(RsmpegError::AVError)?;
+            .upgrade()?;
         Ok(Self {
             bufptr: NonNull::new(bufptr).unwrap(),
             size,

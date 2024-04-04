@@ -1,8 +1,4 @@
-use crate::{
-    error::{Result, RsmpegError},
-    ffi,
-    shared::*,
-};
+use crate::{error::Result, ffi, shared::*};
 
 use std::{
     ffi::{CStr, CString},
@@ -98,8 +94,7 @@ impl AVDictionary {
                 flags as i32,
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::DictionaryParseError)?;
+        .upgrade()?;
         unsafe { self.set_ptr(NonNull::new(dict).unwrap()) };
         Ok(self)
     }
@@ -122,8 +117,7 @@ impl AVDictionary {
     pub fn get_string(&self, key_val_sep: u8, pairs_sep: u8) -> Result<CString> {
         let mut s = ptr::null_mut();
         unsafe { ffi::av_dict_get_string(self.as_ptr(), &mut s, key_val_sep as _, pairs_sep as _) }
-            .upgrade()
-            .map_err(RsmpegError::DictionaryGetStringError)?;
+            .upgrade()?;
         let result = unsafe { CStr::from_ptr(s).to_owned() };
         unsafe {
             ffi::av_freep(&mut s as *mut _ as *mut libc::c_void);

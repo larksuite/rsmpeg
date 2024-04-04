@@ -280,8 +280,7 @@ impl AVFormatContextOutput {
                 filename.as_ptr(),
             )
         }
-        .upgrade()
-        .map_err(RsmpegError::OpenOutputError)?;
+        .upgrade()?;
 
         let mut output_format_context =
             unsafe { Self::from_raw(NonNull::new(output_format_context).unwrap()) };
@@ -334,7 +333,7 @@ impl AVFormatContextOutput {
             .upgrade()
             .map(|x| unsafe { AVDictionary::from_raw(x) });
 
-        result.upgrade().map_err(RsmpegError::WriteHeaderError)?;
+        result.upgrade()?;
 
         Ok(())
     }
@@ -342,9 +341,7 @@ impl AVFormatContextOutput {
     /// Write the stream trailer to an output media file and free the file
     /// private data.
     pub fn write_trailer(&mut self) -> Result<()> {
-        unsafe { ffi::av_write_trailer(self.as_mut_ptr()) }
-            .upgrade()
-            .map_err(RsmpegError::WriteTrailerError)?;
+        unsafe { ffi::av_write_trailer(self.as_mut_ptr()) }.upgrade()?;
         Ok(())
     }
 
@@ -379,8 +376,7 @@ impl AVFormatContextOutput {
     /// [`Self::write_frame()`] instead of this function.
     pub fn interleaved_write_frame(&mut self, packet: &mut AVPacket) -> Result<()> {
         unsafe { ffi::av_interleaved_write_frame(self.as_mut_ptr(), packet.as_mut_ptr()) }
-            .upgrade()
-            .map_err(RsmpegError::InterleavedWriteFrameError)?;
+            .upgrade()?;
         Ok(())
     }
 }
