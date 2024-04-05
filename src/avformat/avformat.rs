@@ -508,13 +508,6 @@ impl AVStream {
             ffi::av_guess_frame_rate(ptr::null_mut(), self.as_ptr() as *mut _, ptr::null_mut())
         })
     }
-
-    /// Returns the pts of the last muxed packet + its duration
-    /// the returned value is None when used with a demuxer.
-    pub fn get_end_pts(&self) -> Option<i64> {
-        let result = unsafe { ffi::av_stream_get_end_pts(self.as_ptr()) };
-        (result >= 0).then_some(result)
-    }
 }
 
 impl<'stream> AVStream {

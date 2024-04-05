@@ -126,11 +126,6 @@ impl<'codec> AVCodec {
         // terminates with -1
         Self::build_array(self.sample_fmts, -1)
     }
-
-    pub fn channel_layouts(&'codec self) -> Option<&'codec [u64]> {
-        // terminates with -1
-        Self::build_array(self.channel_layouts, 0)
-    }
 }
 
 impl Drop for AVCodec {
@@ -151,7 +146,6 @@ settable!(AVCodecContext {
     time_base: AVRational,
     pkt_timebase: AVRational,
     sample_rate: i32,
-    channels: i32,
     sample_fmt: i32,
     flags: i32,
     bit_rate: i64,
