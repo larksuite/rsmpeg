@@ -21,11 +21,11 @@ use std::{
 
 fn get_format_from_sample_fmt(sample_fmt: AVSampleFormat) -> Option<&'static str> {
     let sample_fmt_entries = [
-        (ffi::AVSampleFormat_AV_SAMPLE_FMT_U8, "u8"),
-        (ffi::AVSampleFormat_AV_SAMPLE_FMT_S16, "s16le"),
-        (ffi::AVSampleFormat_AV_SAMPLE_FMT_S32, "s32le"),
-        (ffi::AVSampleFormat_AV_SAMPLE_FMT_FLT, "f32le"),
-        (ffi::AVSampleFormat_AV_SAMPLE_FMT_DBL, "f64le"),
+        (ffi::AV_SAMPLE_FMT_U8, "u8"),
+        (ffi::AV_SAMPLE_FMT_S16, "s16le"),
+        (ffi::AV_SAMPLE_FMT_S32, "s32le"),
+        (ffi::AV_SAMPLE_FMT_FLT, "f32le"),
+        (ffi::AV_SAMPLE_FMT_DBL, "f64le"),
     ];
     sample_fmt_entries
         .iter()
@@ -80,7 +80,7 @@ fn decode_audio(audio_path: &str, out_file_path: &str) -> Result<()> {
         let mut input_format_context = AVFormatContextInput::open(&audio_path, None, &mut None)
             .context("Open audio file failed.")?;
         let (stream_index, decoder) = input_format_context
-            .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_AUDIO)
+            .find_best_stream(ffi::AVMEDIA_TYPE_AUDIO)
             .context("Find best stream failed.")?
             .context("Cannot find audio stream in this file.")?;
         let mut decode_context = AVCodecContext::new(&decoder);

@@ -95,14 +95,14 @@ fn open_output_file(
 
         let mut enc_ctx = AVCodecContext::new(&encoder);
 
-        if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
+        if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
             enc_ctx.set_height(dec_ctx.height);
             enc_ctx.set_width(dec_ctx.width);
             enc_ctx.set_sample_aspect_ratio(dec_ctx.sample_aspect_ratio);
             // take first format from list of supported formats
             enc_ctx.set_pix_fmt(encoder.pix_fmts().unwrap()[0]);
             enc_ctx.set_time_base(av_inv_q(dec_ctx.framerate));
-        } else if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
+        } else if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_AUDIO {
             enc_ctx.set_sample_rate(dec_ctx.sample_rate);
             enc_ctx.set_ch_layout(dec_ctx.ch_layout().clone().into_inner());
             // take first format from list of supported formats
@@ -156,7 +156,7 @@ fn init_filter<'graph>(
     filter_spec: &CStr,
 ) -> Result<FilterContext<'graph>> {
     let (mut buffersrc_ctx, mut buffersink_ctx) =
-        if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
+        if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
             let buffersrc = AVFilter::get_by_name(cstr!("buffer")).unwrap();
             let buffersink = AVFilter::get_by_name(cstr!("buffersink")).unwrap();
 
@@ -186,11 +186,11 @@ fn init_filter<'graph>(
                 .context("Cannot set output pixel format")?;
 
             (buffer_src_context, buffer_sink_context)
-        } else if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
+        } else if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_AUDIO {
             let buffersrc = AVFilter::get_by_name(cstr!("abuffer")).unwrap();
             let buffersink = AVFilter::get_by_name(cstr!("abuffersink")).unwrap();
 
-            if dec_ctx.ch_layout.order == ffi::AVChannelOrder_AV_CHANNEL_ORDER_UNSPEC {
+            if dec_ctx.ch_layout.order == ffi::AV_CHANNEL_ORDER_UNSPEC {
                 dec_ctx.set_ch_layout(
                     AVChannelLayout::from_nb_channels(dec_ctx.ch_layout.nb_channels).into_inner(),
                 );
@@ -274,7 +274,7 @@ fn init_filters(
         } = stream_context;
 
         // dummy filter
-        let filter_spec = if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
+        let filter_spec = if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
             cstr!("null")
         } else {
             cstr!("anull")
@@ -359,7 +359,7 @@ fn filter_encode_write_frame(
         };
 
         filtered_frame.set_time_base(buffersink_ctx.get_time_base());
-        filtered_frame.set_pict_type(ffi::AVPictureType_AV_PICTURE_TYPE_NONE);
+        filtered_frame.set_pict_type(ffi::AV_PICTURE_TYPE_NONE);
 
         encode_write_frame(Some(filtered_frame), enc_ctx, ofmt_ctx, stream_index)?;
     }

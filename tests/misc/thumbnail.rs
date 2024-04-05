@@ -20,7 +20,7 @@ fn thumbnail(
 
     let (video_stream_index, mut decode_context) = {
         let (stream_index, decoder) = input_format_context
-            .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_VIDEO)?
+            .find_best_stream(ffi::AVMEDIA_TYPE_VIDEO)?
             .context("Failed to find the best stream")?;
 
         let stream = &input_format_context.streams()[stream_index];
@@ -57,7 +57,7 @@ fn thumbnail(
 
     let mut encode_context = {
         let encoder =
-            AVCodec::find_encoder(ffi::AVCodecID_AV_CODEC_ID_MJPEG).context("Encoder not found")?;
+            AVCodec::find_encoder(ffi::AV_CODEC_ID_MJPEG).context("Encoder not found")?;
         let mut encode_context = AVCodecContext::new(&encoder);
 
         encode_context.set_bit_rate(decode_context.bit_rate);

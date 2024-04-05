@@ -27,7 +27,7 @@ fn metadata(file: &str) -> Result<Vec<(String, String)>> {
     {
         // Get `frame_rate` from `video_stream`
         let (video_stream_index, decoder) = input_format_context
-            .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_VIDEO)?
+            .find_best_stream(ffi::AVMEDIA_TYPE_VIDEO)?
             .context("Failed to find video stream")?;
 
         let video_stream = &input_format_context.streams()[video_stream_index];

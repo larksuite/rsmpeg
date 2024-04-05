@@ -285,7 +285,7 @@ mod test {
 
     #[test]
     fn test_get_buffer() {
-        let encoder = AVCodec::find_encoder(ffi::AVCodecID_AV_CODEC_ID_AAC).unwrap();
+        let encoder = AVCodec::find_encoder(ffi::AV_CODEC_ID_AAC).unwrap();
         let mut frame = AVFrame::new();
         frame.set_nb_samples(2);
         frame.set_ch_layout(AVChannelLayout::from_nb_channels(2).into_inner());
@@ -304,7 +304,7 @@ mod test {
 
     #[test]
     fn test_get_buffer_double_alloc() {
-        let encoder = AVCodec::find_encoder(ffi::AVCodecID_AV_CODEC_ID_AAC).unwrap();
+        let encoder = AVCodec::find_encoder(ffi::AV_CODEC_ID_AAC).unwrap();
         let mut frame = AVFrame::new();
         frame.set_nb_samples(2);
         frame.set_ch_layout(AVChannelLayout::from_nb_channels(2).into_inner());
@@ -318,7 +318,7 @@ mod test {
 
     #[test]
     fn test_frame_with_image_buffer() {
-        let image = AVImage::new(ffi::AVPixelFormat_AV_PIX_FMT_RGB24, 256, 256, 0).unwrap();
+        let image = AVImage::new(ffi::AV_PIX_FMT_RGB24, 256, 256, 0).unwrap();
         let frame = AVFrameWithImage::new(image);
         let _: &Vec<u8> = &frame.image;
     }

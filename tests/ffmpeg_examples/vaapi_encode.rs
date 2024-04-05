@@ -6,9 +6,9 @@ use rsmpeg::{
     avutil::{ra, AVFrame, AVHWDeviceContext},
     error::RsmpegError,
     ffi::{
-        AVHWDeviceType, AVHWDeviceType_AV_HWDEVICE_TYPE_CUDA,
-        AVHWDeviceType_AV_HWDEVICE_TYPE_VAAPI, AVPixelFormat, AVPixelFormat_AV_PIX_FMT_CUDA,
-        AVPixelFormat_AV_PIX_FMT_NV12, AVPixelFormat_AV_PIX_FMT_VAAPI,
+        AVHWDeviceType, AV_HWDEVICE_TYPE_CUDA,
+        AV_HWDEVICE_TYPE_VAAPI, AVPixelFormat, AV_PIX_FMT_CUDA,
+        AV_PIX_FMT_NV12, AV_PIX_FMT_VAAPI,
     },
 };
 use std::{
@@ -157,9 +157,9 @@ fn vaapi_encode_test_vaapi() {
         320,
         180,
         cstr!("h264_vaapi"),
-        AVHWDeviceType_AV_HWDEVICE_TYPE_VAAPI,
-        AVPixelFormat_AV_PIX_FMT_VAAPI,
-        AVPixelFormat_AV_PIX_FMT_NV12,
+        AV_HWDEVICE_TYPE_VAAPI,
+        AV_PIX_FMT_VAAPI,
+        AV_PIX_FMT_NV12,
     )
     .unwrap();
 }
@@ -183,9 +183,9 @@ fn vaapi_encode_test_nvenc() {
         320,
         180,
         cstr!("h264_nvenc"),
-        AVHWDeviceType_AV_HWDEVICE_TYPE_CUDA,
-        AVPixelFormat_AV_PIX_FMT_CUDA,
-        AVPixelFormat_AV_PIX_FMT_NV12,
+        AV_HWDEVICE_TYPE_CUDA,
+        AV_PIX_FMT_CUDA,
+        AV_PIX_FMT_NV12,
     )
     .unwrap();
 }

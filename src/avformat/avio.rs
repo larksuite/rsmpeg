@@ -102,7 +102,14 @@ impl AVIOContextCustom {
                 let opaque = unsafe { (opaque as *mut Opaque).as_mut() }.unwrap();
                 opaque.read_packet.as_mut().unwrap()(&mut opaque.data, buf)
             }
+            #[cfg(not(feature = "ffmpeg7"))]
             unsafe extern "C" fn write_c(opaque: *mut c_void, data: *mut u8, len: i32) -> i32 {
+                let buf = unsafe { slice::from_raw_parts(data, len as usize) };
+                let opaque = unsafe { (opaque as *mut Opaque).as_mut() }.unwrap();
+                opaque.write_packet.as_mut().unwrap()(&mut opaque.data, buf)
+            }
+            #[cfg(feature = "ffmpeg7")]
+            unsafe extern "C" fn write_c(opaque: *mut c_void, data: *const u8, len: i32) -> i32 {
                 let buf = unsafe { slice::from_raw_parts(data, len as usize) };
                 let opaque = unsafe { (opaque as *mut Opaque).as_mut() }.unwrap();
                 opaque.write_packet.as_mut().unwrap()(&mut opaque.data, buf)
