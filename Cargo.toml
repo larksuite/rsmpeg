@@ -27,8 +27,8 @@ tempdir = "0.3.7"
 camino = "1.1.6"
 
 [features]
-# Use FFmpeg 6 by default
-default = ["ffmpeg6"]
+# Use FFmpeg 7 by default
+default = ["ffmpeg7"]
 # linking system ffmpeg as fallback.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
 ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
