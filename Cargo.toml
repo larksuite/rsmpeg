@@ -1,6 +1,6 @@
 [package]
 name = "rsmpeg"
-version = "0.14.2+ffmpeg.6.1"
+version = "0.15.0+ffmpeg.6.1"
 authors = ["liudingming <liudingming@bytedance.com>"]
 edition = "2021"
 license = "MIT"
@@ -27,6 +27,8 @@ tempdir = "0.3.7"
 camino = "1.1.6"
 
 [features]
+# Use FFmpeg 6 by default
+default = ["ffmpeg6"]
 # linking system ffmpeg as fallback.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
 ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]

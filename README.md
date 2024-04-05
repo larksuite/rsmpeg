@@ -40,8 +40,8 @@ bash utils/windows_ffmpeg.rs
 These scripts build latest stable FFmpeg by default. You can build specific FFmpeg version explicitly:
 
 ```bash
-# macOS & FFmpeg 5.0
-zsh utils/mac_ffmpeg.rs release/5.0
+# macOS & FFmpeg 6.1
+zsh utils/mac_ffmpeg.rs release/6.1
 ```
 
 ### Compiling FFmpeg through cargo-vcpkg
@@ -111,7 +111,7 @@ Start by adding `rsmpeg` to your `Cargo.toml` file:
 
 ```rust
 [dependencies]
-rsmpeg = "0.14.1"
+rsmpeg = { version = "0.15.0", default-features = false, features = ["ffmpeg6"] }
 ```
 
 Write your simple media file info dumper:
