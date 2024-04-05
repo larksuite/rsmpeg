@@ -1,3 +1,39 @@
+## 0.15.0
+
+- Add FFmpeg `7.*` support; Remove FFmpeg `4.*` and `5.*` support
+
+- Bump `rusty_ffmpeg` to `0.14.0`(FFmpeg enums are no longer prefixed by enum name)
+
+- Hardware acceleration support (Add `AVHWDeviceContext`, `AVHWFramesContext`)
+
+- Better `RsmpegError`: better error message, less unnecessary error discriminants
+
+- Remove `libc` dependency
+
+- Add `SwsFilter` and `SwsVector`
+
+- Add `AVBufferRef`
+
+- Add `AVCodec::iterate()`
+
+- Add `err2str`, `ts2str` and `ts2timestr`
+
+- Add `opt_set*` methods mirroring `av_opt_set*`
+
+- Add more settable methods for `AVStream`
+
+- Make `AVFormatContext*::streams()` return slice rather than iterator
+
+- Add `AVFormatContextInput::streams_mut()`
+
+- Add `SwsContext::get_cached_context()`
+
+- Add `AVChannelLayout` (mirroring FFmpeg's new channel layout API)
+
+- Add data getter for `AVIOContextCustom`
+
+- Rename `AVFilterContext::set_property` to `opt_set_bin`; Add `AVFilterContext::opt_set`
+
 ## 0.14.2
 
 - Bump MSRV to "1.70.0"

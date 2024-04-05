@@ -10,7 +10,7 @@ homepage = "https://github.com/larksuite/rsmpeg"
 documentation = "https://docs.rs/rsmpeg"
 repository = "https://github.com/larksuite/rsmpeg"
 readme = "README.md"
-exclude = ["tests/*", "examples/*", "utils/*"]
+exclude = ["/.github", "/tests", "/utils"]
 rust-version = "1.70.0"
 
 [dependencies]
