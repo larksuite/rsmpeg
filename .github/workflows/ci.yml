@@ -49,7 +49,7 @@ jobs:
 
       - run: |
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
-          cargo clippy -vv -- -D warnings
+          cargo clippy -- -D warnings
 
   rust_clippy_check_windows:
     runs-on: windows-latest
@@ -90,26 +90,31 @@ jobs:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
           LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
           LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
-        run: cargo clippy -- -D warnings
+        # vcpkg doesn't provide FFmpeg 7 yet (https://github.com/microsoft/vcpkg/issues/37888)
+        run: cargo clippy --no-default-features --features ffmpeg7 -- -D warnings
 
   build_static_and_test_ubuntu:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ffmpeg-version: ["release/6.0", "release/6.1"]
+        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0"]
         rust: ["nightly", "1.70.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
-          # Only run tests on nightly rust + latest FFmpeg
-          # This is caused by specific bug of FFmpeg 6.0
+          # Stop running tests on stable rust or FFmpeg 6.0 (due to specific bug of FFmpeg 6.0)
           # https://github.com/FFmpeg/FFmpeg/commit/c4f35ba8084f254afe1fb05202abfdcfff63b854
           - rust: "nightly"
             ffmpeg-version: "release/6.1"
+            should_test: "true"
+          - rust: "nightly"
+            ffmpeg-version: "release/7.0"
             should_test: "true"
         exclude:
           # Only run valgrind with latest FFmpeg and nightly rust to reduce resource consumption.
           - valgrind: "valgrind"
             ffmpeg-version: "release/6.0"
+          - valgrind: "valgrind"
+            ffmpeg-version: "release/6.1"
           - valgrind: "valgrind"
             rust: "1.70.0"
       fail-fast: false

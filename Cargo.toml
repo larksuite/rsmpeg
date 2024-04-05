@@ -29,7 +29,10 @@ camino = "1.1.6"
 [features]
 # Use FFmpeg 7 by default
 default = ["ffmpeg7"]
+
+# Note that ffmpeg{x} feature is designed to be addable (If it's not, compilation with all-features won't pass)
+ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
+ffmpeg7 = ["ffmpeg6", "rusty_ffmpeg/ffmpeg7"]
+
 # linking system ffmpeg as fallback.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
-ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
-ffmpeg7 = ["rusty_ffmpeg/ffmpeg7"]
