@@ -121,6 +121,7 @@ impl AVIOContextCustom {
 
             (
                 read_packet.is_some().then_some(read_c as _),
+                // Note: If compiler errors here, you might have used wrong feature flag(ffmpeg6|ffmpeg7).
                 write_packet.is_some().then_some(write_c as _),
                 seek.is_some().then_some(seek_c as _),
             )
