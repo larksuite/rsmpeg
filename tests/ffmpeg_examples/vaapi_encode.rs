@@ -6,9 +6,8 @@ use rsmpeg::{
     avutil::{ra, AVFrame, AVHWDeviceContext},
     error::RsmpegError,
     ffi::{
-        AVHWDeviceType, AV_HWDEVICE_TYPE_CUDA,
-        AV_HWDEVICE_TYPE_VAAPI, AVPixelFormat, AV_PIX_FMT_CUDA,
-        AV_PIX_FMT_NV12, AV_PIX_FMT_VAAPI,
+        AVHWDeviceType, AVPixelFormat, AV_HWDEVICE_TYPE_CUDA, AV_HWDEVICE_TYPE_VAAPI,
+        AV_PIX_FMT_CUDA, AV_PIX_FMT_NV12, AV_PIX_FMT_VAAPI,
     },
 };
 use std::{

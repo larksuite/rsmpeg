@@ -78,8 +78,7 @@ fn decode_video(video_path: &str, out_dir: &str) -> Result<()> {
     // set end of buffer to 0 (this ensures that no overreading happens for damaged MPEG streams)
     let mut inbuf = vec![0u8; INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE as usize];
 
-    let decoder =
-        AVCodec::find_decoder(ffi::AV_CODEC_ID_MPEG1VIDEO).context("Codec not found")?;
+    let decoder = AVCodec::find_decoder(ffi::AV_CODEC_ID_MPEG1VIDEO).context("Codec not found")?;
     let mut decode_context = AVCodecContext::new(&decoder);
     decode_context.open(None).context("Could not open codec")?;
 

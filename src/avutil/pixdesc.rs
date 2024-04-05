@@ -64,8 +64,7 @@ mod tests {
     use cstr::cstr;
     #[test]
     fn test_pix_fmt_getter() {
-        let pix_fmt_desc =
-            AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_YUV420P).unwrap();
+        let pix_fmt_desc = AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_YUV420P).unwrap();
         assert_eq!(pix_fmt_desc.name(), cstr!("yuv420p"));
         assert_eq!(pix_fmt_desc.alias(), None);
 
@@ -89,16 +88,14 @@ mod tests {
         assert_eq!(pix_fmt_desc.comp[1].depth, 8);
         assert_eq!(pix_fmt_desc.comp[2].depth, 8);
 
-        let pix_fmt_desc =
-            AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_GRAY9LE).unwrap();
+        let pix_fmt_desc = AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_GRAY9LE).unwrap();
         assert_eq!(pix_fmt_desc.name(), cstr!("gray9le"));
         assert_eq!(pix_fmt_desc.alias(), Some(cstr!("y9le")));
     }
 
     #[test]
     fn test_pix_fmt_desc_next() {
-        let pix_fmt_desc =
-            AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_GRAYF32BE).unwrap();
+        let pix_fmt_desc = AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_GRAYF32BE).unwrap();
         assert_eq!(pix_fmt_desc.name(), cstr!("grayf32be"));
         assert_eq!(pix_fmt_desc.alias(), Some(cstr!("yf32be")));
 

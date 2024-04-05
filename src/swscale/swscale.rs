@@ -165,9 +165,7 @@ impl Drop for SwsContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ffi::{
-        AV_PIX_FMT_RGB24, SWS_BICUBIC, SWS_FULL_CHR_H_INT, SWS_PARAM_DEFAULT,
-    };
+    use crate::ffi::{AV_PIX_FMT_RGB24, SWS_BICUBIC, SWS_FULL_CHR_H_INT, SWS_PARAM_DEFAULT};
 
     #[test]
     fn test_cached_sws_context() {

@@ -45,8 +45,8 @@ fn open_output_file(
         AVFormatContextOutput::create(output_file, None).context("Failed to open output file.")?;
 
     // Find the encoder to be used by its name.
-    let encode_codec = AVCodec::find_encoder(ffi::AV_CODEC_ID_AAC)
-        .context("Failed to find aac encoder")?;
+    let encode_codec =
+        AVCodec::find_encoder(ffi::AV_CODEC_ID_AAC).context("Failed to find aac encoder")?;
 
     let mut encode_context = AVCodecContext::new(&encode_codec);
 

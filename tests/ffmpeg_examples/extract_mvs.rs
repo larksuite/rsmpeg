@@ -28,9 +28,7 @@ fn decode_packet(
 
         *video_frame_count += 1;
 
-        if let Some(side_data) =
-            frame.get_side_data(ffi::AV_FRAME_DATA_MOTION_VECTORS)
-        {
+        if let Some(side_data) = frame.get_side_data(ffi::AV_FRAME_DATA_MOTION_VECTORS) {
             let raw_motion_vectors = unsafe { side_data.as_motion_vectors() };
             for &motion_vector in raw_motion_vectors {
                 println!(
