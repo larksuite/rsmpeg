@@ -1,3 +1,5 @@
+use std::os::raw::c_int;
+
 use crate::ffi;
 
 pub use ffi::AVRational;
@@ -15,7 +17,7 @@ pub use ffi::{av_cmp_q, av_inv_q, av_make_q, av_q2d};
 ///
 /// `d` - double to convert
 /// `max` - Maximum allowed numerator and denominator
-pub fn av_d2q(d: f64, max: libc::c_int) -> AVRational {
+pub fn av_d2q(d: f64, max: c_int) -> AVRational {
     unsafe { ffi::av_d2q(d, max) }
 }
 
@@ -49,7 +51,7 @@ pub fn av_sub_q(b: AVRational, c: AVRational) -> AVRational {
 /// Return `1` if `q1` is nearer to `q` than `q2`.
 /// `-1` if `q2` is nearer to `q` than `q1`.
 /// `0` if they have the same distance.
-pub fn av_nearer_q(q: AVRational, q1: AVRational, q2: AVRational) -> libc::c_int {
+pub fn av_nearer_q(q: AVRational, q1: AVRational, q2: AVRational) -> c_int {
     unsafe { ffi::av_nearer_q(q, q1, q2) }
 }
 
@@ -63,7 +65,7 @@ pub fn av_q2intfloat(q: AVRational) -> u32 {
 #[inline]
 /// Return the best rational so that a and b are multiple of it. If the
 /// resulting denominator is larger than max_den, return def.
-pub fn av_gcd_q(a: AVRational, b: AVRational, max_den: libc::c_int, def: AVRational) -> AVRational {
+pub fn av_gcd_q(a: AVRational, b: AVRational, max_den: c_int, def: AVRational) -> AVRational {
     unsafe { ffi::av_gcd_q(a, b, max_den, def) }
 }
 

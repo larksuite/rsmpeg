@@ -5,7 +5,7 @@ use crate::{
     shared::*,
 };
 
-use std::{fmt, mem::size_of, ptr::NonNull, slice};
+use std::{fmt, mem::size_of, os::raw::c_int, ptr::NonNull, slice};
 
 wrap!(AVFrame: ffi::AVFrame);
 settable!(AVFrame {
@@ -93,7 +93,7 @@ impl AVFrame {
         unsafe { &mut self.deref_mut().data }
     }
 
-    pub fn linesize_mut(&mut self) -> &mut [libc::c_int; 8] {
+    pub fn linesize_mut(&mut self) -> &mut [c_int; 8] {
         unsafe { &mut self.deref_mut().linesize }
     }
 

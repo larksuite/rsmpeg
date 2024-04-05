@@ -2,6 +2,7 @@ use crate::{error::Result, ffi, shared::*};
 
 use std::{
     ffi::{CStr, CString},
+    os::raw::c_void,
     ptr::{self, NonNull},
 };
 
@@ -120,7 +121,7 @@ impl AVDictionary {
             .upgrade()?;
         let result = unsafe { CStr::from_ptr(s).to_owned() };
         unsafe {
-            ffi::av_freep(&mut s as *mut _ as *mut libc::c_void);
+            ffi::av_freep(&mut s as *mut _ as *mut c_void);
         }
         Ok(result)
     }

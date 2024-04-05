@@ -79,26 +79,35 @@ impl Iterator for AVCodecIter {
 }
 
 impl<'codec> AVCodec {
-    /// Convenient function for probing a pointer until met specific memory
-    /// pattern.
-    fn probe_len<T>(mut ptr: *const T, tail: T) -> usize {
+    /// Probing specific memory pattern and return the offset.
+    ///
+    /// # Safety
+    /// ptr needs to be terminated by tail
+    unsafe fn probe_len<T>(mut ptr: *const T, tail: T) -> usize {
         for len in 0.. {
-            if unsafe { libc::memcmp(ptr as _, &tail as *const _ as _, mem::size_of::<T>()) } == 0 {
+            let left = ptr as *const u8;
+            let left = unsafe { slice::from_raw_parts(left, mem::size_of::<T>()) };
+            let right = &tail as *const _ as *const u8;
+            let right = unsafe { slice::from_raw_parts(right, mem::size_of::<T>()) };
+            if left == right {
                 return len;
             }
             unsafe {
                 ptr = ptr.add(1);
             }
         }
-        unreachable!()
+        usize::MAX
     }
 
-    /// Convenient function for building a memory slice.
-    fn build_array<'a, T>(ptr: *const T, tail: T) -> Option<&'a [T]> {
+    /// Building a memory slice ends begin with `ptr` and ends with given `tail`.
+    ///
+    /// # Safety
+    /// ptr needs to be terminated by tail
+    unsafe fn build_array<'a, T>(ptr: *const T, tail: T) -> Option<&'a [T]> {
         if ptr.is_null() {
             None
         } else {
-            let len = Self::probe_len(ptr, tail);
+            let len = unsafe { Self::probe_len(ptr, tail) };
             Some(unsafe { slice::from_raw_parts(ptr, len) })
         }
     }
@@ -106,25 +115,25 @@ impl<'codec> AVCodec {
     /// Return supported framerates of this [`AVCodec`].
     pub fn supported_framerates(&'codec self) -> Option<&'codec [AVRational]> {
         // terminates with AVRational{0, 0}
-        Self::build_array(self.supported_framerates, AVRational { den: 0, num: 0 })
+        unsafe { Self::build_array(self.supported_framerates, AVRational { den: 0, num: 0 }) }
     }
 
     /// Return supported pix_fmts of this [`AVCodec`].
     pub fn pix_fmts(&'codec self) -> Option<&'codec [AVPixelFormat]> {
         // terminates with -1
-        Self::build_array(self.pix_fmts, -1)
+        unsafe { Self::build_array(self.pix_fmts, -1) }
     }
 
     /// Return supported samplerates of this [`AVCodec`].
     pub fn supported_samplerates(&'codec self) -> Option<&'codec [i32]> {
         // terminates with 0
-        Self::build_array(self.supported_samplerates, 0)
+        unsafe { Self::build_array(self.supported_samplerates, 0) }
     }
 
     /// Return supported sample_fmts of this [`AVCodec`].
     pub fn sample_fmts(&'codec self) -> Option<&'codec [ffi::AVSampleFormat]> {
         // terminates with -1
-        Self::build_array(self.sample_fmts, -1)
+        unsafe { Self::build_array(self.sample_fmts, -1) }
     }
 }
 
