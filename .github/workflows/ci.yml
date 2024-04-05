@@ -91,7 +91,7 @@ jobs:
           LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
           LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
         # vcpkg doesn't provide FFmpeg 7 yet (https://github.com/microsoft/vcpkg/issues/37888)
-        run: cargo clippy --no-default-features --features ffmpeg7 -- -D warnings
+        run: cargo clippy --no-default-features --features ffmpeg6 -- -D warnings
 
   build_static_and_test_ubuntu:
     runs-on: ubuntu-latest
