@@ -14,7 +14,7 @@ exclude = ["tests/*", "examples/*", "utils/*"]
 rust-version = "1.70.0"
 
 [dependencies]
-rusty_ffmpeg = { version = "0.13.3", features = ["ffmpeg6"] }
+rusty_ffmpeg = "0.14.0"
 libc = "0.2"
 paste = "1.0"
 thiserror = "1.0"
@@ -29,3 +29,5 @@ camino = "1.1.6"
 [features]
 # linking system ffmpeg as fallback.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
+ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
+ffmpeg7 = ["rusty_ffmpeg/ffmpeg7"]
