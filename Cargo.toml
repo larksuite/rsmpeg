@@ -30,4 +30,3 @@ camino = "1.1.6"
 # linking system ffmpeg as fallback.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
 ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
-ffmpeg7 = ["rusty_ffmpeg/ffmpeg7"]
