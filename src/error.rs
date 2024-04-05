@@ -1,8 +1,8 @@
 //! Errors of the rsmpeg.
-use libc::c_int;
 use std::{
     cmp::{Eq, PartialEq},
     num::TryFromIntError,
+    os::raw::c_int,
 };
 use thiserror::Error;
 

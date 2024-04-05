@@ -3,10 +3,10 @@ use crate::{
     ffi,
     shared::{PointerUpgrade, RetUpgrade},
 };
-use libc::c_void;
 use std::{
     ffi::{CStr, CString},
     mem::MaybeUninit,
+    os::raw::c_void,
     ptr::NonNull,
 };
 

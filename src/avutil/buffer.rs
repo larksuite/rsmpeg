@@ -2,7 +2,7 @@ use crate::{
     ffi,
     shared::{PointerUpgrade, RetUpgrade},
 };
-use libc::c_int;
+use std::os::raw::c_int;
 
 wrap!(AVBufferRef: ffi::AVBufferRef);
 

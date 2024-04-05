@@ -1,8 +1,7 @@
 //! Internal shared convenient things.
 use crate::error::{Result, Ret, RsmpegError};
-use libc::c_int;
 use rusty_ffmpeg::ffi;
-use std::{ops::Deref, ptr::NonNull};
+use std::{ops::Deref, os::raw::c_int, ptr::NonNull};
 
 /// Triage a pointer to Some(non-null) or None
 pub trait PointerUpgrade<T>: Sized {
