@@ -132,7 +132,7 @@ impl AVChannelLayout {
     /// Return `None` if idx is not valid or the channel order is unspecified
     pub fn channel_from_index(&self, idx: u32) -> Option<ffi::AVChannel> {
         let channel = unsafe { ffi::av_channel_layout_channel_from_index(self.as_ptr(), idx) };
-        (channel != ffi::AVChannel_AV_CHAN_NONE).then_some(channel)
+        (channel != ffi::AV_CHAN_NONE).then_some(channel)
     }
 
     /// Get the index of a given channel in a channel layout. In case multiple
@@ -159,7 +159,7 @@ impl AVChannelLayout {
     pub fn channel_from_string(&self, name: &CStr) -> Option<ffi::AVChannel> {
         let channel =
             unsafe { ffi::av_channel_layout_channel_from_string(self.as_ptr(), name.as_ptr()) };
-        (channel != ffi::AVChannel_AV_CHAN_NONE).then_some(channel)
+        (channel != ffi::AV_CHAN_NONE).then_some(channel)
     }
 
     /// Find out what channels from a given set are present in a channel layout,

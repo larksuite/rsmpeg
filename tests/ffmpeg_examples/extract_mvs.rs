@@ -28,9 +28,7 @@ fn decode_packet(
 
         *video_frame_count += 1;
 
-        if let Some(side_data) =
-            frame.get_side_data(ffi::AVFrameSideDataType_AV_FRAME_DATA_MOTION_VECTORS)
-        {
+        if let Some(side_data) = frame.get_side_data(ffi::AV_FRAME_DATA_MOTION_VECTORS) {
             let raw_motion_vectors = unsafe { side_data.as_motion_vectors() };
             for &motion_vector in raw_motion_vectors {
                 println!(
@@ -57,7 +55,7 @@ fn decode_packet(
 /// Extract motion vectors from a video.
 fn extract_mvs(video_path: &CStr) -> Result<()> {
     let mut input_format_context = AVFormatContextInput::open(video_path, None, &mut None)?;
-    let media_type = ffi::AVMediaType_AVMEDIA_TYPE_VIDEO;
+    let media_type = ffi::AVMEDIA_TYPE_VIDEO;
 
     let (stream_index, mut decode_context) = {
         let (stream_index, decoder) = input_format_context

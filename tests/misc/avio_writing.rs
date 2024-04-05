@@ -25,7 +25,7 @@ fn open_input_file(filename: &CStr) -> Result<(usize, AVFormatContextInput, AVCo
     input_format_context.dump(0, filename)?;
 
     let (video_index, decoder) = input_format_context
-        .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_VIDEO)
+        .find_best_stream(ffi::AVMEDIA_TYPE_VIDEO)
         .context("Failed to select a video stream")?
         .context("No video stream")?;
 

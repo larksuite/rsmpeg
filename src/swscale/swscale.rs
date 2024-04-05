@@ -165,19 +165,17 @@ impl Drop for SwsContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ffi::{
-        AVPixelFormat_AV_PIX_FMT_RGB24, SWS_BICUBIC, SWS_FULL_CHR_H_INT, SWS_PARAM_DEFAULT,
-    };
+    use crate::ffi::{AV_PIX_FMT_RGB24, SWS_BICUBIC, SWS_FULL_CHR_H_INT, SWS_PARAM_DEFAULT};
 
     #[test]
     fn test_cached_sws_context() {
         let context = SwsContext::get_context(
             10,
             10,
-            AVPixelFormat_AV_PIX_FMT_RGB24,
+            AV_PIX_FMT_RGB24,
             10,
             10,
-            AVPixelFormat_AV_PIX_FMT_RGB24,
+            AV_PIX_FMT_RGB24,
             SWS_FULL_CHR_H_INT | SWS_BICUBIC,
             None,
             None,
@@ -189,10 +187,10 @@ mod tests {
             .get_cached_context(
                 10,
                 10,
-                AVPixelFormat_AV_PIX_FMT_RGB24,
+                AV_PIX_FMT_RGB24,
                 10,
                 10,
-                AVPixelFormat_AV_PIX_FMT_RGB24,
+                AV_PIX_FMT_RGB24,
                 SWS_FULL_CHR_H_INT | SWS_BICUBIC,
                 None,
                 None,

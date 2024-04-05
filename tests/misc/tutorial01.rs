@@ -65,7 +65,7 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
     };
 
     let image_buffer = AVImage::new(
-        ffi::AVPixelFormat_AV_PIX_FMT_RGB24,
+        ffi::AV_PIX_FMT_RGB24,
         decode_context.width,
         decode_context.height,
         1,
@@ -80,7 +80,7 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
         decode_context.pix_fmt,
         decode_context.width,
         decode_context.height,
-        ffi::AVPixelFormat_AV_PIX_FMT_RGB24,
+        ffi::AV_PIX_FMT_RGB24,
         ffi::SWS_BILINEAR,
         None,
         None,

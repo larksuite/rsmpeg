@@ -95,14 +95,14 @@ fn open_output_file(
 
         let mut enc_ctx = AVCodecContext::new(&encoder);
 
-        if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
+        if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
             enc_ctx.set_height(dec_ctx.height);
             enc_ctx.set_width(dec_ctx.width);
             enc_ctx.set_sample_aspect_ratio(dec_ctx.sample_aspect_ratio);
             // take first format from list of supported formats
             enc_ctx.set_pix_fmt(encoder.pix_fmts().unwrap()[0]);
             enc_ctx.set_time_base(av_inv_q(dec_ctx.framerate));
-        } else if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
+        } else if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_AUDIO {
             enc_ctx.set_sample_rate(dec_ctx.sample_rate);
             enc_ctx.set_ch_layout(dec_ctx.ch_layout().clone().into_inner());
             // take first format from list of supported formats
@@ -155,85 +155,84 @@ fn init_filter<'graph>(
     enc_ctx: &mut AVCodecContext,
     filter_spec: &CStr,
 ) -> Result<FilterContext<'graph>> {
-    let (mut buffersrc_ctx, mut buffersink_ctx) =
-        if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
-            let buffersrc = AVFilter::get_by_name(cstr!("buffer")).unwrap();
-            let buffersink = AVFilter::get_by_name(cstr!("buffersink")).unwrap();
+    let (mut buffersrc_ctx, mut buffersink_ctx) = if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
+        let buffersrc = AVFilter::get_by_name(cstr!("buffer")).unwrap();
+        let buffersink = AVFilter::get_by_name(cstr!("buffersink")).unwrap();
 
-            let args = format!(
-                "video_size={}x{}:pix_fmt={}:time_base={}/{}:pixel_aspect={}/{}",
-                dec_ctx.width,
-                dec_ctx.height,
-                dec_ctx.pix_fmt,
-                dec_ctx.pkt_timebase.num,
-                dec_ctx.pkt_timebase.den,
-                dec_ctx.sample_aspect_ratio.num,
-                dec_ctx.sample_aspect_ratio.den,
+        let args = format!(
+            "video_size={}x{}:pix_fmt={}:time_base={}/{}:pixel_aspect={}/{}",
+            dec_ctx.width,
+            dec_ctx.height,
+            dec_ctx.pix_fmt,
+            dec_ctx.pkt_timebase.num,
+            dec_ctx.pkt_timebase.den,
+            dec_ctx.sample_aspect_ratio.num,
+            dec_ctx.sample_aspect_ratio.den,
+        );
+
+        let args = &CString::new(args).unwrap();
+
+        let buffer_src_context = filter_graph
+            .create_filter_context(&buffersrc, cstr!("in"), Some(args))
+            .context("Cannot create buffer source")?;
+
+        let mut buffer_sink_context = filter_graph
+            .create_filter_context(&buffersink, cstr!("out"), None)
+            .context("Cannot create buffer sink")?;
+
+        buffer_sink_context
+            .opt_set_bin(cstr!("pix_fmts"), &enc_ctx.pix_fmt)
+            .context("Cannot set output pixel format")?;
+
+        (buffer_src_context, buffer_sink_context)
+    } else if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_AUDIO {
+        let buffersrc = AVFilter::get_by_name(cstr!("abuffer")).unwrap();
+        let buffersink = AVFilter::get_by_name(cstr!("abuffersink")).unwrap();
+
+        if dec_ctx.ch_layout.order == ffi::AV_CHANNEL_ORDER_UNSPEC {
+            dec_ctx.set_ch_layout(
+                AVChannelLayout::from_nb_channels(dec_ctx.ch_layout.nb_channels).into_inner(),
             );
+        }
 
-            let args = &CString::new(args).unwrap();
+        let args = format!(
+            "time_base={}/{}:sample_rate={}:sample_fmt={}:channel_layout={}",
+            dec_ctx.pkt_timebase.num,
+            dec_ctx.pkt_timebase.den,
+            dec_ctx.sample_rate,
+            // We can unwrap here, because we are sure that the given
+            // sample_fmt is valid.
+            get_sample_fmt_name(dec_ctx.sample_fmt)
+                .unwrap()
+                .to_string_lossy(),
+            dec_ctx.ch_layout().describe().unwrap().to_string_lossy(),
+        );
+        let args = &CString::new(args).unwrap();
 
-            let buffer_src_context = filter_graph
-                .create_filter_context(&buffersrc, cstr!("in"), Some(args))
-                .context("Cannot create buffer source")?;
+        let buffersrc_ctx = filter_graph
+            .create_filter_context(&buffersrc, cstr!("in"), Some(args))
+            .context("Cannot create audio buffer source")?;
 
-            let mut buffer_sink_context = filter_graph
-                .create_filter_context(&buffersink, cstr!("out"), None)
-                .context("Cannot create buffer sink")?;
+        let mut buffersink_ctx = filter_graph
+            .create_filter_context(&buffersink, cstr!("out"), None)
+            .context("Cannot create audio buffer sink")?;
+        buffersink_ctx
+            .opt_set_bin(cstr!("sample_fmts"), &enc_ctx.sample_fmt)
+            .context("Cannot set output sample format")?;
+        buffersink_ctx
+            .opt_set(
+                cstr!("ch_layouts"),
+                &enc_ctx.ch_layout().describe().unwrap(),
+            )
+            .context("Cannot set output channel layout")?;
+        buffersink_ctx
+            .opt_set_bin(cstr!("sample_rates"), &enc_ctx.sample_rate)
+            .context("Cannot set output sample rate")?;
 
-            buffer_sink_context
-                .opt_set_bin(cstr!("pix_fmts"), &enc_ctx.pix_fmt)
-                .context("Cannot set output pixel format")?;
-
-            (buffer_src_context, buffer_sink_context)
-        } else if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_AUDIO {
-            let buffersrc = AVFilter::get_by_name(cstr!("abuffer")).unwrap();
-            let buffersink = AVFilter::get_by_name(cstr!("abuffersink")).unwrap();
-
-            if dec_ctx.ch_layout.order == ffi::AVChannelOrder_AV_CHANNEL_ORDER_UNSPEC {
-                dec_ctx.set_ch_layout(
-                    AVChannelLayout::from_nb_channels(dec_ctx.ch_layout.nb_channels).into_inner(),
-                );
-            }
-
-            let args = format!(
-                "time_base={}/{}:sample_rate={}:sample_fmt={}:channel_layout={}",
-                dec_ctx.pkt_timebase.num,
-                dec_ctx.pkt_timebase.den,
-                dec_ctx.sample_rate,
-                // We can unwrap here, because we are sure that the given
-                // sample_fmt is valid.
-                get_sample_fmt_name(dec_ctx.sample_fmt)
-                    .unwrap()
-                    .to_string_lossy(),
-                dec_ctx.ch_layout().describe().unwrap().to_string_lossy(),
-            );
-            let args = &CString::new(args).unwrap();
-
-            let buffersrc_ctx = filter_graph
-                .create_filter_context(&buffersrc, cstr!("in"), Some(args))
-                .context("Cannot create audio buffer source")?;
-
-            let mut buffersink_ctx = filter_graph
-                .create_filter_context(&buffersink, cstr!("out"), None)
-                .context("Cannot create audio buffer sink")?;
-            buffersink_ctx
-                .opt_set_bin(cstr!("sample_fmts"), &enc_ctx.sample_fmt)
-                .context("Cannot set output sample format")?;
-            buffersink_ctx
-                .opt_set(
-                    cstr!("ch_layouts"),
-                    &enc_ctx.ch_layout().describe().unwrap(),
-                )
-                .context("Cannot set output channel layout")?;
-            buffersink_ctx
-                .opt_set_bin(cstr!("sample_rates"), &enc_ctx.sample_rate)
-                .context("Cannot set output sample rate")?;
-
-            (buffersrc_ctx, buffersink_ctx)
-        } else {
-            bail!("Only video and audio needs filter initialization")
-        };
+        (buffersrc_ctx, buffersink_ctx)
+    } else {
+        bail!("Only video and audio needs filter initialization")
+    };
 
     // Endpoints for the filter graph
     //
@@ -274,7 +273,7 @@ fn init_filters(
         } = stream_context;
 
         // dummy filter
-        let filter_spec = if dec_ctx.codec_type == ffi::AVMediaType_AVMEDIA_TYPE_VIDEO {
+        let filter_spec = if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
             cstr!("null")
         } else {
             cstr!("anull")
@@ -359,7 +358,7 @@ fn filter_encode_write_frame(
         };
 
         filtered_frame.set_time_base(buffersink_ctx.get_time_base());
-        filtered_frame.set_pict_type(ffi::AVPictureType_AV_PICTURE_TYPE_NONE);
+        filtered_frame.set_pict_type(ffi::AV_PICTURE_TYPE_NONE);
 
         encode_write_frame(Some(filtered_frame), enc_ctx, ofmt_ctx, stream_index)?;
     }

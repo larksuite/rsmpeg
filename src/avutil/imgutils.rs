@@ -9,7 +9,7 @@ wrap! {
     linesizes: [i32; AV_NUM_DATA_POINTERS] = [0; AV_NUM_DATA_POINTERS],
     width: i32 = 0,
     height: i32 = 0,
-    pix_fmt: AVPixelFormat = ffi::AVPixelFormat_AV_PIX_FMT_NONE,
+    pix_fmt: AVPixelFormat = ffi::AV_PIX_FMT_NONE,
 }
 
 impl AVImage {

@@ -23,7 +23,7 @@ fn open_input_file(input_file: &CStr) -> Result<(AVFormatContextInput, AVCodecCo
     let input_format_context = AVFormatContextInput::open(input_file, None, &mut None)
         .context("Could not open input file")?;
     let (audio_index, decoder) = input_format_context
-        .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_AUDIO)?
+        .find_best_stream(ffi::AVMEDIA_TYPE_AUDIO)?
         .context("Failed to find audio stream")?;
 
     let stream = &input_format_context.streams()[audio_index];
@@ -45,8 +45,8 @@ fn open_output_file(
         AVFormatContextOutput::create(output_file, None).context("Failed to open output file.")?;
 
     // Find the encoder to be used by its name.
-    let encode_codec = AVCodec::find_encoder(ffi::AVCodecID_AV_CODEC_ID_AAC)
-        .context("Failed to find aac encoder")?;
+    let encode_codec =
+        AVCodec::find_encoder(ffi::AV_CODEC_ID_AAC).context("Failed to find aac encoder")?;
 
     let mut encode_context = AVCodecContext::new(&encode_codec);
 

@@ -12,12 +12,12 @@ pub type AVSampleFormat = ffi::AVSampleFormat;
 ///
 /// ```rust
 /// # use rsmpeg::avutil::get_sample_fmt_name;
-/// # use rsmpeg::ffi::AVSampleFormat_AV_SAMPLE_FMT_FLT;
+/// # use rsmpeg::ffi::AV_SAMPLE_FMT_FLT;
 /// # use std::ffi::CString;
 /// # fn main() {
 /// assert_eq!(
 ///     CString::new("flt").ok().as_deref(),
-///     get_sample_fmt_name(AVSampleFormat_AV_SAMPLE_FMT_FLT)
+///     get_sample_fmt_name(AV_SAMPLE_FMT_FLT)
 /// );
 /// # }
 /// ```
@@ -33,11 +33,11 @@ pub fn get_sample_fmt_name(sample_fmt: AVSampleFormat) -> Option<&'static CStr> 
 ///
 /// ```rust
 /// # use rsmpeg::avutil::get_sample_fmt;
-/// # use rsmpeg::ffi::AVSampleFormat_AV_SAMPLE_FMT_FLT;
+/// # use rsmpeg::ffi::AV_SAMPLE_FMT_FLT;
 /// # use std::ffi::CString;
 /// # fn main() {
 /// assert_eq!(
-///     Some(AVSampleFormat_AV_SAMPLE_FMT_FLT),
+///     Some(AV_SAMPLE_FMT_FLT),
 ///     get_sample_fmt(&CString::new("flt").unwrap())
 /// );
 /// # }
@@ -45,7 +45,7 @@ pub fn get_sample_fmt_name(sample_fmt: AVSampleFormat) -> Option<&'static CStr> 
 pub fn get_sample_fmt(name: &CStr) -> Option<AVSampleFormat> {
     let sample_fmt = unsafe { ffi::av_get_sample_fmt(name.as_ptr()) };
     match sample_fmt {
-        ffi::AVSampleFormat_AV_SAMPLE_FMT_NONE => None,
+        ffi::AV_SAMPLE_FMT_NONE => None,
         _ => Some(sample_fmt),
     }
 }
@@ -53,21 +53,21 @@ pub fn get_sample_fmt(name: &CStr) -> Option<AVSampleFormat> {
 /// Get the packed alternative form of the given sample format, return `None` on
 /// error.
 ///
-/// i.e. [`AV_SAMPLE_FMT_S16P`](ffi::AVSampleFormat_AV_SAMPLE_FMT_S16P) => [`AV_SAMPLE_FMT_S16`](ffi::AVSampleFormat_AV_SAMPLE_FMT_S16)
+/// i.e. [`AV_SAMPLE_FMT_S16P`](ffi::AV_SAMPLE_FMT_S16P) => [`AV_SAMPLE_FMT_S16`](ffi::AV_SAMPLE_FMT_S16)
 /// ```rust
 /// # use rsmpeg::avutil::get_packed_sample_fmt;
-/// # use rsmpeg::ffi::{AVSampleFormat_AV_SAMPLE_FMT_S16, AVSampleFormat_AV_SAMPLE_FMT_S16P};
+/// # use rsmpeg::ffi::{AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16P};
 /// # fn main() {
 /// assert_eq!(
-///     Some(AVSampleFormat_AV_SAMPLE_FMT_S16),
-///     get_packed_sample_fmt(AVSampleFormat_AV_SAMPLE_FMT_S16P)
+///     Some(AV_SAMPLE_FMT_S16),
+///     get_packed_sample_fmt(AV_SAMPLE_FMT_S16P)
 /// );
 /// # }
 /// ```
 pub fn get_packed_sample_fmt(sample_fmt: AVSampleFormat) -> Option<AVSampleFormat> {
     let sample_fmt = unsafe { ffi::av_get_packed_sample_fmt(sample_fmt) };
     match sample_fmt {
-        ffi::AVSampleFormat_AV_SAMPLE_FMT_NONE => None,
+        ffi::AV_SAMPLE_FMT_NONE => None,
         _ => Some(sample_fmt),
     }
 }
@@ -75,21 +75,21 @@ pub fn get_packed_sample_fmt(sample_fmt: AVSampleFormat) -> Option<AVSampleForma
 /// Get the planar alternative form of the given sample format. return `None` on
 /// error.
 ///
-/// i.e. [`AV_SAMPLE_FMT_S16`](ffi::AVSampleFormat_AV_SAMPLE_FMT_S16) => [`AV_SAMPLE_FMT_S16P`](ffi::AVSampleFormat_AV_SAMPLE_FMT_S16P)
+/// i.e. [`AV_SAMPLE_FMT_S16`](ffi::AV_SAMPLE_FMT_S16) => [`AV_SAMPLE_FMT_S16P`](ffi::AV_SAMPLE_FMT_S16P)
 /// ```rust
 /// # use rsmpeg::avutil::get_planar_sample_fmt;
-/// # use rsmpeg::ffi::{AVSampleFormat_AV_SAMPLE_FMT_S16, AVSampleFormat_AV_SAMPLE_FMT_S16P};
+/// # use rsmpeg::ffi::{AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16P};
 /// # fn main() {
 /// assert_eq!(
-///     Some(AVSampleFormat_AV_SAMPLE_FMT_S16P),
-///     get_planar_sample_fmt(AVSampleFormat_AV_SAMPLE_FMT_S16)
+///     Some(AV_SAMPLE_FMT_S16P),
+///     get_planar_sample_fmt(AV_SAMPLE_FMT_S16)
 /// );
 /// # }
 /// ```
 pub fn get_planar_sample_fmt(sample_fmt: AVSampleFormat) -> Option<AVSampleFormat> {
     let sample_fmt = unsafe { ffi::av_get_planar_sample_fmt(sample_fmt) };
     match sample_fmt {
-        ffi::AVSampleFormat_AV_SAMPLE_FMT_NONE => None,
+        ffi::AV_SAMPLE_FMT_NONE => None,
         _ => Some(sample_fmt),
     }
 }
@@ -127,7 +127,7 @@ wrap! {
     linesize: i32 = 0,
     nb_channels: i32 = 0,
     nb_samples: i32 = 0,
-    sample_fmt: AVSampleFormat = ffi::AVSampleFormat_AV_SAMPLE_FMT_NONE,
+    sample_fmt: AVSampleFormat = ffi::AV_SAMPLE_FMT_NONE,
     align: i32 = 0,
 }
 

@@ -25,7 +25,7 @@ impl AVPixFmtDescriptorRef {
 
     /// Iterate over all pixel format descriptors known to libavutil.
     ///
-    /// You can started with [`ffi::AVPixelFormat_AV_PIX_FMT_YUV420P`]
+    /// You can started with [`ffi::AV_PIX_FMT_YUV420P`]
     ///
     /// Return next descriptor or None after the last descriptor
     pub fn next(&self) -> Option<Self> {
@@ -37,7 +37,7 @@ impl AVPixFmtDescriptorRef {
     }
 
     /// Return an AVPixelFormat id described by desc, or
-    /// [`ffi::AVPixelFormat_AV_PIX_FMT_NONE`] if desc is not a valid pointer to
+    /// [`ffi::AV_PIX_FMT_NONE`] if desc is not a valid pointer to
     /// a pixel format descriptor.
     pub fn get_id(&self) -> i32 {
         unsafe { ffi::av_pix_fmt_desc_get_id(self.0.as_ptr()) }
@@ -64,8 +64,7 @@ mod tests {
     use cstr::cstr;
     #[test]
     fn test_pix_fmt_getter() {
-        let pix_fmt_desc =
-            AVPixFmtDescriptorRef::get(ffi::AVPixelFormat_AV_PIX_FMT_YUV420P).unwrap();
+        let pix_fmt_desc = AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_YUV420P).unwrap();
         assert_eq!(pix_fmt_desc.name(), cstr!("yuv420p"));
         assert_eq!(pix_fmt_desc.alias(), None);
 
@@ -89,16 +88,14 @@ mod tests {
         assert_eq!(pix_fmt_desc.comp[1].depth, 8);
         assert_eq!(pix_fmt_desc.comp[2].depth, 8);
 
-        let pix_fmt_desc =
-            AVPixFmtDescriptorRef::get(ffi::AVPixelFormat_AV_PIX_FMT_GRAY9LE).unwrap();
+        let pix_fmt_desc = AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_GRAY9LE).unwrap();
         assert_eq!(pix_fmt_desc.name(), cstr!("gray9le"));
         assert_eq!(pix_fmt_desc.alias(), Some(cstr!("y9le")));
     }
 
     #[test]
     fn test_pix_fmt_desc_next() {
-        let pix_fmt_desc =
-            AVPixFmtDescriptorRef::get(ffi::AVPixelFormat_AV_PIX_FMT_GRAYF32BE).unwrap();
+        let pix_fmt_desc = AVPixFmtDescriptorRef::get(ffi::AV_PIX_FMT_GRAYF32BE).unwrap();
         assert_eq!(pix_fmt_desc.name(), cstr!("grayf32be"));
         assert_eq!(pix_fmt_desc.alias(), Some(cstr!("yf32be")));
 
@@ -109,7 +106,7 @@ mod tests {
 
     #[test]
     fn test_pix_fmt_get_id() {
-        let pix_fmt = ffi::AVPixelFormat_AV_PIX_FMT_YUVA444P12LE;
+        let pix_fmt = ffi::AV_PIX_FMT_YUVA444P12LE;
         let pix_fmt_desc = AVPixFmtDescriptorRef::get(pix_fmt).unwrap();
         assert_eq!(pix_fmt_desc.get_id(), pix_fmt);
     }

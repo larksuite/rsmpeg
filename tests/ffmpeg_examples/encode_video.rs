@@ -45,8 +45,8 @@ fn encode_video(codec_name: &CStr, file_name: &str) -> Result<()> {
     encode_context.set_framerate(ra(25, 1));
     encode_context.set_gop_size(10);
     encode_context.set_max_b_frames(1);
-    encode_context.set_pix_fmt(ffi::AVPixelFormat_AV_PIX_FMT_YUV420P);
-    if encoder.id == ffi::AVCodecID_AV_CODEC_ID_H264 {
+    encode_context.set_pix_fmt(ffi::AV_PIX_FMT_YUV420P);
+    if encoder.id == ffi::AV_CODEC_ID_H264 {
         unsafe { opt_set(encode_context.priv_data, cstr!("preset"), cstr!("slow"), 0) }
             .context("Set preset failed.")?;
     }
