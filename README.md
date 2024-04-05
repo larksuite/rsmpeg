@@ -40,8 +40,8 @@ bash utils/windows_ffmpeg.rs
 These scripts build latest stable FFmpeg by default. You can build specific FFmpeg version explicitly:
 
 ```bash
-# macOS & FFmpeg 6.1
-zsh utils/mac_ffmpeg.rs release/6.1
+# macOS & FFmpeg 7.0
+zsh utils/mac_ffmpeg.rs release/7.0
 ```
 
 ### Compiling FFmpeg through cargo-vcpkg
