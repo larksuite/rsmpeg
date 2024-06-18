@@ -1,3 +1,7 @@
+## 0.15.1
+
+- `impl Send` for macro generated types.
+
 ## 0.15.0
 
 - Add FFmpeg `7.*` support; Remove FFmpeg `4.*` and `5.*` support

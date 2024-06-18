@@ -112,9 +112,9 @@ Start by adding `rsmpeg` to your `Cargo.toml` file:
 ```toml
 [dependencies]
 # Add this if you are using ffmpeg 6.*
-rsmpeg = { version = "0.15.0", default-features = false, features = ["ffmpeg6"] }
+rsmpeg = { version = "0.15.1", default-features = false, features = ["ffmpeg6"] }
 # Add this if you are using ffmpeg 7.* (feature `ffmpeg7` is enabled by default)
-rsmpeg = "0.15.0"
+rsmpeg = "0.15.1"
 ```
 
 Write your simple media file info dumper:
