@@ -105,6 +105,8 @@ macro_rules! wrap_ref_pure {
                 }
             }
         }
+
+        unsafe impl<'a> Send for $wrapped_ref<'a> {}
     };
 }
 
@@ -150,6 +152,8 @@ macro_rules! wrap_mut_pure {
                 }
             }
         }
+
+        unsafe impl<'a> Send for $wrapped_mut<'a> {}
     };
 }
 
@@ -196,7 +200,7 @@ macro_rules! wrap_mut {
     };
 }
 
-/// Wrapping with XXX, XXX -> XXX.
+/// Wrapping with XXX -> XXX.
 macro_rules! wrap {
     (
         $(#[$meta:meta])*
