@@ -14,7 +14,7 @@ exclude = ["/.github", "/tests", "/utils"]
 rust-version = "1.70.0"
 
 [dependencies]
-rusty_ffmpeg = "0.14.0"
+rusty_ffmpeg = "0.16.1"
 paste = "1.0"
 thiserror = "1.0"
 
@@ -34,5 +34,7 @@ default = ["ffmpeg7"]
 ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
 ffmpeg7 = ["ffmpeg6", "rusty_ffmpeg/ffmpeg7"]
 
-# linking system ffmpeg as fallback.
+# Try linking ffmpeg with pkg-config.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
+# Try linking ffmpeg with vcpkg.
+link_vcpkg_ffmpeg = ["rusty_ffmpeg/link_vcpkg_ffmpeg"]
