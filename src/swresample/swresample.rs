@@ -90,6 +90,7 @@ impl SwrContext {
     /// - if it's the least common multiple of in_sample_rate and
     ///   out_sample_rate then an exact rounding-free delay will be
     ///   returned
+    ///
     /// returns the delay in `1 / base` base units.
     pub fn get_delay(&self, base: usize) -> usize {
         unsafe { ffi::swr_get_delay(self.as_ptr() as *mut _, base.try_into().unwrap()) }
