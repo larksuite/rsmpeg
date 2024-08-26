@@ -31,8 +31,7 @@ impl AVFormatContextInput {
     /// all streams.
     ///
     /// - `url`: url of the stream to open.
-    /// - `format`: input format hint. If `format` is some, this parameter forces
-    /// a specific input format.
+    /// - `format`: input format hint. If `format` is some, this parameter forces a specific input format.
     /// - `options`: A dictionary filled with AVFormatContext and demuxer-private options.
     ///    On return this parameter will be destroyed and replaced with a dict containing
     ///    options that were not found.
