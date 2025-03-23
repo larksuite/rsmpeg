@@ -23,7 +23,6 @@ libc = "0.2"
 anyhow = "1.0.57"
 cstr = "0.2.11"
 once_cell = "1.12.0"
-tempdir = "0.3.7"
 camino = "1.1.6"
 
 [features]
