@@ -1,7 +1,6 @@
 use rsmpeg::{avcodec::*, avformat::*, avutil::*, error::RsmpegError, ffi, swscale::*};
 
 use anyhow::{bail, Context, Result};
-use cstr::cstr;
 use std::{
     ffi::CStr,
     fs::{self, File},
@@ -126,8 +125,8 @@ fn thumbnail_test0() {
     fs::create_dir_all("tests/output/thumbnail").unwrap();
 
     thumbnail(
-        cstr!("tests/assets/vids/bear.mp4"),
-        cstr!("tests/output/thumbnail/bear.jpg"),
+        c"tests/assets/vids/bear.mp4",
+        c"tests/output/thumbnail/bear.jpg",
         Some(192),
         Some(108),
     )
@@ -139,8 +138,8 @@ fn thumbnail_test1() {
     fs::create_dir_all("tests/output/thumbnail").unwrap();
 
     thumbnail(
-        cstr!("tests/assets/vids/video.mp4"),
-        cstr!("tests/output/thumbnail/video.jpg"),
+        c"tests/assets/vids/video.mp4",
+        c"tests/output/thumbnail/video.jpg",
         Some(280),
         Some(240),
     )

@@ -214,11 +214,10 @@ impl Drop for AVBSFContextUninit {
 #[cfg(test)]
 mod test {
     use super::{AVBSFContextUninit, AVBitStreamFilter};
-    use cstr::cstr;
 
     #[test]
     fn test_filter_by_name() {
-        let name = cstr!("null");
+        let name = c"null";
         let filter_ref = AVBitStreamFilter::find_by_name(name).unwrap();
         let ctx = AVBSFContextUninit::new(&filter_ref);
         assert_eq!(name, ctx.filter().name());
@@ -227,7 +226,7 @@ mod test {
     #[test]
     fn test_null_filter() {
         let ctx = AVBSFContextUninit::get_null();
-        assert_eq!(cstr!("null"), ctx.filter().name());
+        assert_eq!(c"null", ctx.filter().name());
     }
 
     #[test]

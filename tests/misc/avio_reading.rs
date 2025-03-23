@@ -1,6 +1,5 @@
 //! Demo of custom IO using `AVIOContextCustom`.
 use anyhow::Result;
-use cstr::cstr;
 use rsmpeg::{
     avformat::{AVFormatContextInput, AVIOContextContainer, AVIOContextCustom},
     avutil::{AVMem, AVMmap},
@@ -39,10 +38,10 @@ fn avio_reading(filename: &CStr) -> Result<()> {
 
 #[test]
 fn test_avio_reading0() {
-    avio_reading(cstr!("tests/assets/vids/bear.mp4")).unwrap();
+    avio_reading(c"tests/assets/vids/bear.mp4").unwrap();
 }
 
 #[test]
 fn test_avio_reading1() {
-    avio_reading(cstr!("tests/assets/vids/centaur.mpg")).unwrap();
+    avio_reading(c"tests/assets/vids/centaur.mpg").unwrap();
 }

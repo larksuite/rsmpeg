@@ -1,6 +1,5 @@
 //! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/remux.c
 use anyhow::{Context, Result};
-use cstr::cstr;
 use rsmpeg::{
     avcodec::AVPacket,
     avformat::{AVFormatContextInput, AVFormatContextOutput},
@@ -89,8 +88,8 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
 fn remux_test0() {
     std::fs::create_dir_all("tests/output/remux/").unwrap();
     remux(
-        cstr!("tests/assets/vids/big_buck_bunny.mp4"),
-        cstr!("tests/output/remux/big_buck_bunny.mov"),
+        c"tests/assets/vids/big_buck_bunny.mp4",
+        c"tests/output/remux/big_buck_bunny.mov",
     )
     .unwrap();
 }

@@ -429,7 +429,6 @@ impl Drop for AVSubtitle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cstr::cstr;
 
     #[test]
     fn test_av_codec_iterator() {
@@ -437,17 +436,17 @@ mod tests {
 
         let iter = AVCodec::iterate();
         for codec in iter {
-            if codec.name() == cstr!("h264") {
+            if codec.name() == c"h264" {
                 assert_eq!(
                     codec.long_name(),
-                    cstr!("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10")
+                    c"H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"
                 );
             }
-            if codec.name() == cstr!("vnull") {
-                assert_eq!(codec.long_name(), cstr!("null video"));
+            if codec.name() == c"vnull" {
+                assert_eq!(codec.long_name(), c"null video");
             }
-            if codec.name() == cstr!("anull") {
-                assert_eq!(codec.long_name(), cstr!("null audio"));
+            if codec.name() == c"anull" {
+                assert_eq!(codec.long_name(), c"null audio");
             }
             println!("codec: {:?}: {:?}", codec.name(), codec.long_name());
         }

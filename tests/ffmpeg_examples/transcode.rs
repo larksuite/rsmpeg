@@ -1,6 +1,5 @@
 //! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/transcode.c
 use anyhow::{anyhow, bail, Context, Result};
-use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avfilter::{AVFilter, AVFilterContextMut, AVFilterGraph, AVFilterInOut},
@@ -156,8 +155,8 @@ fn init_filter<'graph>(
     filter_spec: &CStr,
 ) -> Result<FilterContext<'graph>> {
     let (mut buffersrc_ctx, mut buffersink_ctx) = if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
-        let buffersrc = AVFilter::get_by_name(cstr!("buffer")).unwrap();
-        let buffersink = AVFilter::get_by_name(cstr!("buffersink")).unwrap();
+        let buffersrc = AVFilter::get_by_name(c"buffer").unwrap();
+        let buffersink = AVFilter::get_by_name(c"buffersink").unwrap();
 
         let args = format!(
             "video_size={}x{}:pix_fmt={}:time_base={}/{}:pixel_aspect={}/{}",
@@ -173,21 +172,21 @@ fn init_filter<'graph>(
         let args = &CString::new(args).unwrap();
 
         let buffer_src_context = filter_graph
-            .create_filter_context(&buffersrc, cstr!("in"), Some(args))
+            .create_filter_context(&buffersrc, c"in", Some(args))
             .context("Cannot create buffer source")?;
 
         let mut buffer_sink_context = filter_graph
-            .create_filter_context(&buffersink, cstr!("out"), None)
+            .create_filter_context(&buffersink, c"out", None)
             .context("Cannot create buffer sink")?;
 
         buffer_sink_context
-            .opt_set_bin(cstr!("pix_fmts"), &enc_ctx.pix_fmt)
+            .opt_set_bin(c"pix_fmts", &enc_ctx.pix_fmt)
             .context("Cannot set output pixel format")?;
 
         (buffer_src_context, buffer_sink_context)
     } else if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_AUDIO {
-        let buffersrc = AVFilter::get_by_name(cstr!("abuffer")).unwrap();
-        let buffersink = AVFilter::get_by_name(cstr!("abuffersink")).unwrap();
+        let buffersrc = AVFilter::get_by_name(c"abuffer").unwrap();
+        let buffersink = AVFilter::get_by_name(c"abuffersink").unwrap();
 
         if dec_ctx.ch_layout.order == ffi::AV_CHANNEL_ORDER_UNSPEC {
             dec_ctx.set_ch_layout(
@@ -210,23 +209,20 @@ fn init_filter<'graph>(
         let args = &CString::new(args).unwrap();
 
         let buffersrc_ctx = filter_graph
-            .create_filter_context(&buffersrc, cstr!("in"), Some(args))
+            .create_filter_context(&buffersrc, c"in", Some(args))
             .context("Cannot create audio buffer source")?;
 
         let mut buffersink_ctx = filter_graph
-            .create_filter_context(&buffersink, cstr!("out"), None)
+            .create_filter_context(&buffersink, c"out", None)
             .context("Cannot create audio buffer sink")?;
         buffersink_ctx
-            .opt_set_bin(cstr!("sample_fmts"), &enc_ctx.sample_fmt)
+            .opt_set_bin(c"sample_fmts", &enc_ctx.sample_fmt)
             .context("Cannot set output sample format")?;
         buffersink_ctx
-            .opt_set(
-                cstr!("ch_layouts"),
-                &enc_ctx.ch_layout().describe().unwrap(),
-            )
+            .opt_set(c"ch_layouts", &enc_ctx.ch_layout().describe().unwrap())
             .context("Cannot set output channel layout")?;
         buffersink_ctx
-            .opt_set_bin(cstr!("sample_rates"), &enc_ctx.sample_rate)
+            .opt_set_bin(c"sample_rates", &enc_ctx.sample_rate)
             .context("Cannot set output sample rate")?;
 
         (buffersrc_ctx, buffersink_ctx)
@@ -237,8 +233,8 @@ fn init_filter<'graph>(
     // Endpoints for the filter graph
     //
     // Yes the outputs' name is `in` -_-b
-    let outputs = AVFilterInOut::new(cstr!("in"), &mut buffersrc_ctx, 0);
-    let inputs = AVFilterInOut::new(cstr!("out"), &mut buffersink_ctx, 0);
+    let outputs = AVFilterInOut::new(c"in", &mut buffersrc_ctx, 0);
+    let inputs = AVFilterInOut::new(c"out", &mut buffersink_ctx, 0);
 
     let (_inputs, _outputs) = filter_graph.parse_ptr(filter_spec, Some(inputs), Some(outputs))?;
 
@@ -274,9 +270,9 @@ fn init_filters(
 
         // dummy filter
         let filter_spec = if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
-            cstr!("null")
+            c"null"
         } else {
-            cstr!("anull")
+            c"anull"
         };
 
         let FilterContext {
@@ -467,8 +463,8 @@ pub fn transcode(
 fn transcode_test0() {
     std::fs::create_dir_all("tests/output/transcode/").unwrap();
     transcode(
-        cstr!("tests/assets/vids/mov_sample.mov"),
-        cstr!("tests/output/transcode/mov_sample.mov"),
+        c"tests/assets/vids/mov_sample.mov",
+        c"tests/output/transcode/mov_sample.mov",
         &mut None,
     )
     .unwrap();
@@ -478,8 +474,8 @@ fn transcode_test0() {
 fn transcode_test1() {
     std::fs::create_dir_all("tests/output/transcode/").unwrap();
     transcode(
-        cstr!("tests/assets/vids/centaur.mpg"),
-        cstr!("tests/output/transcode/centaur.mpg"),
+        c"tests/assets/vids/centaur.mpg",
+        c"tests/output/transcode/centaur.mpg",
         &mut None,
     )
     .unwrap();
@@ -489,8 +485,8 @@ fn transcode_test1() {
 fn transcode_test2() {
     std::fs::create_dir_all("tests/output/transcode/").unwrap();
     transcode(
-        cstr!("tests/assets/vids/bear.mp4"),
-        cstr!("tests/output/transcode/bear.mp4"),
+        c"tests/assets/vids/bear.mp4",
+        c"tests/output/transcode/bear.mp4",
         &mut None,
     )
     .unwrap();
@@ -500,8 +496,8 @@ fn transcode_test2() {
 fn transcode_test3() {
     std::fs::create_dir_all("tests/output/transcode/").unwrap();
     transcode(
-        cstr!("tests/assets/vids/vp8.mp4"),
-        cstr!("tests/output/transcode/vp8.webm"),
+        c"tests/assets/vids/vp8.mp4",
+        c"tests/output/transcode/vp8.webm",
         &mut None,
     )
     .unwrap();
@@ -511,8 +507,8 @@ fn transcode_test3() {
 fn transcode_test4() {
     std::fs::create_dir_all("tests/output/transcode/").unwrap();
     transcode(
-        cstr!("tests/assets/vids/big_buck_bunny.mp4"),
-        cstr!("tests/output/transcode/big_buck_bunny.mp4"),
+        c"tests/assets/vids/big_buck_bunny.mp4",
+        c"tests/output/transcode/big_buck_bunny.mp4",
         &mut None,
     )
     .unwrap();
@@ -523,14 +519,14 @@ fn transcode_test5() {
     // Fragmented MP4 transcode.
     std::fs::create_dir_all("tests/output/transcode/").unwrap();
     let mut dict = Some(AVDictionary::new(
-        cstr!("movflags"),
-        cstr!("frag_keyframe+empty_moov"),
+        c"movflags",
+        c"frag_keyframe+empty_moov",
         0,
     ));
 
     transcode(
-        cstr!("tests/assets/vids/big_buck_bunny.mp4"),
-        cstr!("tests/output/transcode/big_buck_bunny.fmp4.mp4"),
+        c"tests/assets/vids/big_buck_bunny.mp4",
+        c"tests/output/transcode/big_buck_bunny.fmp4.mp4",
         &mut dict,
     )
     .unwrap();

@@ -1,6 +1,5 @@
 //! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/transcode_aac.c
 use anyhow::{bail, Context as AnyhowContext, Result};
-use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
@@ -276,8 +275,8 @@ fn transcode_aac(input_file: &CStr, output_file: &CStr) -> Result<()> {
 fn transcode_aac_test0() {
     std::fs::create_dir_all("tests/output/transcode_aac/").unwrap();
     transcode_aac(
-        cstr!("tests/assets/audios/sample1_short.aac"),
-        cstr!("tests/output/transcode_aac/output_short.aac"),
+        c"tests/assets/audios/sample1_short.aac",
+        c"tests/output/transcode_aac/output_short.aac",
     )
     .unwrap();
 }
@@ -286,8 +285,8 @@ fn transcode_aac_test0() {
 fn transcode_aac_test1() {
     std::fs::create_dir_all("tests/output/transcode_aac/").unwrap();
     transcode_aac(
-        cstr!("tests/assets/vids/big_buck_bunny.mp4"),
-        cstr!("tests/output/transcode_aac/big_buck_bunny.aac"),
+        c"tests/assets/vids/big_buck_bunny.mp4",
+        c"tests/output/transcode_aac/big_buck_bunny.aac",
     )
     .unwrap();
 }

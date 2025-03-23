@@ -1,6 +1,5 @@
 //! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/encode_video.c
 use anyhow::{anyhow, Context, Result};
-use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avutil::{opt_set, ra, AVFrame},
@@ -47,7 +46,7 @@ fn encode_video(codec_name: &CStr, file_name: &str) -> Result<()> {
     encode_context.set_max_b_frames(1);
     encode_context.set_pix_fmt(ffi::AV_PIX_FMT_YUV420P);
     if encoder.id == ffi::AV_CODEC_ID_H264 {
-        unsafe { opt_set(encode_context.priv_data, cstr!("preset"), cstr!("slow"), 0) }
+        unsafe { opt_set(encode_context.priv_data, c"preset", c"slow", 0) }
             .context("Set preset failed.")?;
     }
     encode_context.open(None).context("Could not open codec")?;
@@ -109,5 +108,5 @@ fn encode_video(codec_name: &CStr, file_name: &str) -> Result<()> {
 #[test]
 fn encode_video_test() {
     fs::create_dir_all("tests/output/encode_video/").unwrap();
-    encode_video(cstr!("mpeg4"), "tests/output/encode_video/output.mp4").unwrap();
+    encode_video(c"mpeg4", "tests/output/encode_video/output.mp4").unwrap();
 }
