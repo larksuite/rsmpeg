@@ -562,25 +562,24 @@ impl<'stream> AVStream {
 #[cfg(test)]
 mod test {
     use super::*;
-    use cstr::cstr;
 
     #[test]
     fn test_find_input_format() {
-        let name = cstr!("mpeg");
+        let name = c"mpeg";
         let filter_ref = AVInputFormat::find(name).unwrap();
         assert_eq!(
             unsafe { CStr::from_ptr(filter_ref.long_name) },
-            cstr!("MPEG-PS (MPEG-2 Program Stream)")
+            c"MPEG-PS (MPEG-2 Program Stream)"
         );
 
-        let name = cstr!("asf");
+        let name = c"asf";
         let filter_ref = AVInputFormat::find(name).unwrap();
         assert_eq!(
             unsafe { CStr::from_ptr(filter_ref.long_name) },
-            cstr!("ASF (Advanced / Active Streaming Format)")
+            c"ASF (Advanced / Active Streaming Format)"
         );
 
-        let name = cstr!("__random__");
+        let name = c"__random__";
         assert!(AVInputFormat::find(name).is_none());
     }
 }

@@ -1,4 +1,3 @@
-use cstr::cstr;
 use rsmpeg::avformat::*;
 use std::ffi::CStr;
 
@@ -11,11 +10,11 @@ fn image_dump(image_path: &CStr) -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn image_test() {
-    image_dump(cstr!("tests/assets/pics/bear.jpg")).unwrap();
-    image_dump(cstr!("tests/assets/pics/gif.webp")).unwrap();
-    image_dump(cstr!("tests/assets/pics/mail.jpg")).unwrap();
-    image_dump(cstr!("tests/assets/pics/mountain.jpg")).unwrap();
-    image_dump(cstr!("tests/assets/pics/pink.jpg")).unwrap();
-    image_dump(cstr!("tests/assets/pics/redwine.jpg")).unwrap();
-    image_dump(cstr!("tests/assets/pics/sea.jpg")).unwrap();
+    image_dump(c"tests/assets/pics/bear.jpg").unwrap();
+    image_dump(c"tests/assets/pics/gif.webp").unwrap();
+    image_dump(c"tests/assets/pics/mail.jpg").unwrap();
+    image_dump(c"tests/assets/pics/mountain.jpg").unwrap();
+    image_dump(c"tests/assets/pics/pink.jpg").unwrap();
+    image_dump(c"tests/assets/pics/redwine.jpg").unwrap();
+    image_dump(c"tests/assets/pics/sea.jpg").unwrap();
 }

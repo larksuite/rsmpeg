@@ -50,11 +50,11 @@ mod test {
     use std::{ffi::CString, fs::File, io::Write};
 
     use super::*;
-    use tempdir::TempDir;
     #[test]
     fn test_file_mapping() {
-        let tempdir = TempDir::new("tmp").unwrap();
-        let file_path = tempdir.path().join("emm.txt");
+        let tempdir = std::env::temp_dir().join("avutil_test");
+        let _ = std::fs::create_dir_all(&tempdir);
+        let file_path = tempdir.join("emm.txt");
         {
             let mut x = File::create(&file_path).unwrap();
             x.write_all(b"hello? you here?").unwrap();

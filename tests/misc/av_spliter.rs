@@ -1,7 +1,6 @@
 //! A test that split a video(H.264, AAC) file to a AAC file and a H.264
 //! file(Annex B). Showing the usage of `AVBitStream` related APIs.
 use anyhow::{bail, Context, Result};
-use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVBSFContextUninit, AVBitStreamFilter},
     avformat::{AVFormatContextInput, AVFormatContextOutput},
@@ -30,7 +29,7 @@ fn av_spliter(file_path: &CStr, out_video: &str, out_audio: &CStr) -> Result<()>
         .position(|x| x.codecpar().codec_type().is_audio())
         .context("Cannot find audio stream!")?;
 
-    let bsf = AVBitStreamFilter::find_by_name(cstr!("h264_mp4toannexb"))
+    let bsf = AVBitStreamFilter::find_by_name(c"h264_mp4toannexb")
         .context("Failed to find bit stream filter")?;
 
     let mut bsf_context = {
@@ -84,9 +83,9 @@ fn av_spliter(file_path: &CStr, out_video: &str, out_audio: &CStr) -> Result<()>
 fn test_av_spliter0() {
     fs::create_dir_all("tests/output/av_spliter").unwrap();
     av_spliter(
-        cstr!("tests/assets/vids/bunny.flv"),
+        c"tests/assets/vids/bunny.flv",
         "tests/output/av_spliter/out_video_bunny.h264",
-        cstr!("tests/output/av_spliter/out_audio_bunny.aac"),
+        c"tests/output/av_spliter/out_audio_bunny.aac",
     )
     .unwrap();
 }
@@ -95,9 +94,9 @@ fn test_av_spliter0() {
 fn test_av_spliter1() {
     fs::create_dir_all("tests/output/av_spliter").unwrap();
     av_spliter(
-        cstr!("tests/assets/vids/bear.mp4"),
+        c"tests/assets/vids/bear.mp4",
         "tests/output/av_spliter/out_video_bear.h264",
-        cstr!("tests/output/av_spliter/out_audio_bear.aac"),
+        c"tests/output/av_spliter/out_audio_bear.aac",
     )
     .unwrap();
 }

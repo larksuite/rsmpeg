@@ -218,152 +218,119 @@ impl AVDictionaryEntry {
 #[cfg(test)]
 mod test {
     use super::AVDictionary;
-    use cstr::cstr;
 
     #[test]
     fn set() {
-        let _ = AVDictionary::new(cstr!("bob"), cstr!("alice"), 0);
+        let _ = AVDictionary::new(c"bob", c"alice", 0);
 
-        let _ = AVDictionary::new(cstr!("bob"), cstr!("alice"), 0)
-            .set(cstr!("a;dsjfadsfa"), cstr!("asdfjal;sdfj"), 0)
-            .set(cstr!("foo"), cstr!("bar"), 0);
+        let _ = AVDictionary::new(c"bob", c"alice", 0)
+            .set(c"a;dsjfadsfa", c"asdfjal;sdfj", 0)
+            .set(c"foo", c"bar", 0);
 
-        let _ =
-            AVDictionary::new(cstr!("bob"), cstr!("alice"), 0).set(cstr!("bob"), cstr!("alice"), 0);
+        let _ = AVDictionary::new(c"bob", c"alice", 0).set(c"bob", c"alice", 0);
     }
 
     #[test]
     fn set_int() {
-        let dict = AVDictionary::new_int(cstr!("bob"), 2233, 0).set_int(
-            cstr!("foo"),
-            123456789123456789,
-            0,
-        );
+        let dict = AVDictionary::new_int(c"bob", 2233, 0).set_int(c"foo", 123456789123456789, 0);
         assert_eq!(
-            cstr!("123456789123456789").as_ref(),
-            dict.get(cstr!("foo"), None, 0).unwrap().value()
+            c"123456789123456789".as_ref(),
+            dict.get(c"foo", None, 0).unwrap().value()
         );
     }
 
     #[test]
     fn get() {
-        let dict = AVDictionary::new(cstr!("bob"), cstr!("alice"), 0);
+        let dict = AVDictionary::new(c"bob", c"alice", 0);
         assert_eq!(
-            cstr!("alice").as_ref(),
-            dict.get(cstr!("bob"), None, 0).unwrap().value()
+            c"alice".as_ref(),
+            dict.get(c"bob", None, 0).unwrap().value()
         );
 
-        let dict = AVDictionary::new(cstr!("bob"), cstr!("alice"), 0)
-            .set(cstr!("bob"), cstr!("alice"), 0)
-            .set(cstr!("bob"), cstr!("alice"), 0)
-            .set(cstr!("bob"), cstr!("alice"), 0)
-            .set(cstr!("bob"), cstr!("alice"), 0);
+        let dict = AVDictionary::new(c"bob", c"alice", 0)
+            .set(c"bob", c"alice", 0)
+            .set(c"bob", c"alice", 0)
+            .set(c"bob", c"alice", 0)
+            .set(c"bob", c"alice", 0);
         assert_eq!(
-            cstr!("alice").as_ref(),
-            dict.get(cstr!("bob"), None, 0).unwrap().value()
+            c"alice".as_ref(),
+            dict.get(c"bob", None, 0).unwrap().value()
         );
 
-        let dict =
-            AVDictionary::new(cstr!("foo"), cstr!("bar"), 0).set(cstr!("bob"), cstr!("alice"), 0);
+        let dict = AVDictionary::new(c"foo", c"bar", 0).set(c"bob", c"alice", 0);
+        assert_eq!(c"bar".as_ref(), dict.get(c"foo", None, 0).unwrap().value());
         assert_eq!(
-            cstr!("bar").as_ref(),
-            dict.get(cstr!("foo"), None, 0).unwrap().value()
-        );
-        assert_eq!(
-            cstr!("alice").as_ref(),
-            dict.get(cstr!("bob"), None, 0).unwrap().value()
+            c"alice".as_ref(),
+            dict.get(c"bob", None, 0).unwrap().value()
         );
 
         // Find `foo` after after entry of `bob` will fail.
-        let entry = dict.get(cstr!("bob"), None, 0).unwrap();
-        assert_eq!(cstr!("alice").as_ref(), entry.value());
-        assert!(dict.get(cstr!("foo"), Some(entry), 0).is_none());
+        let entry = dict.get(c"bob", None, 0).unwrap();
+        assert_eq!(c"alice".as_ref(), entry.value());
+        assert!(dict.get(c"foo", Some(entry), 0).is_none());
 
         // Shadowing.
-        let dict = AVDictionary::new(cstr!("bob"), cstr!("alice0"), 0)
-            .set(cstr!("bob"), cstr!("alice1"), 0)
-            .set(cstr!("bob"), cstr!("alice2"), 0)
-            .set(cstr!("bob"), cstr!("alice3"), 0)
-            .set(cstr!("bob"), cstr!("alice4"), 0);
+        let dict = AVDictionary::new(c"bob", c"alice0", 0)
+            .set(c"bob", c"alice1", 0)
+            .set(c"bob", c"alice2", 0)
+            .set(c"bob", c"alice3", 0)
+            .set(c"bob", c"alice4", 0);
 
-        let entry = dict.get(cstr!("bob"), None, 0).unwrap();
-        assert_eq!(cstr!("alice4").as_ref(), entry.value());
-        assert_eq!(cstr!("bob").as_ref(), entry.key());
-        assert!(dict.get(cstr!("bob"), Some(entry), 0).is_none());
+        let entry = dict.get(c"bob", None, 0).unwrap();
+        assert_eq!(c"alice4".as_ref(), entry.value());
+        assert_eq!(c"bob".as_ref(), entry.key());
+        assert!(dict.get(c"bob", Some(entry), 0).is_none());
     }
 
     #[test]
     fn copy() {
-        let dicta = AVDictionary::new(cstr!("a"), cstr!("b"), 0).set(cstr!("c"), cstr!("d"), 0);
+        let dicta = AVDictionary::new(c"a", c"b", 0).set(c"c", c"d", 0);
 
         let dictc = dicta.clone();
-        assert_eq!(
-            cstr!("a:b-c:d"),
-            dictc.get_string(b':', b'-').unwrap().as_c_str()
-        );
+        assert_eq!(c"a:b-c:d", dictc.get_string(b':', b'-').unwrap().as_c_str());
 
-        let dictb = AVDictionary::new(cstr!("foo"), cstr!("bar"), 0)
-            .set(cstr!("alice"), cstr!("bob"), 0)
+        let dictb = AVDictionary::new(c"foo", c"bar", 0)
+            .set(c"alice", c"bob", 0)
             .copy(&dictc, 0);
         assert_eq!(
-            cstr!("foo:bar-alice:bob-a:b-c:d"),
+            c"foo:bar-alice:bob-a:b-c:d",
             dictb.get_string(b':', b'-').unwrap().as_c_str(),
         );
 
-        let dicta = dicta.set(cstr!("e"), cstr!("f"), 0);
+        let dicta = dicta.set(c"e", c"f", 0);
 
-        assert_eq!(
-            cstr!("b").as_ref(),
-            dicta.get(cstr!("a"), None, 0).unwrap().value()
-        );
-        assert_eq!(
-            cstr!("d").as_ref(),
-            dicta.get(cstr!("c"), None, 0).unwrap().value()
-        );
-        assert_eq!(
-            cstr!("f").as_ref(),
-            dicta.get(cstr!("e"), None, 0).unwrap().value()
-        );
+        assert_eq!(c"b".as_ref(), dicta.get(c"a", None, 0).unwrap().value());
+        assert_eq!(c"d".as_ref(), dicta.get(c"c", None, 0).unwrap().value());
+        assert_eq!(c"f".as_ref(), dicta.get(c"e", None, 0).unwrap().value());
 
-        assert_eq!(
-            cstr!("b").as_ref(),
-            dictb.get(cstr!("a"), None, 0).unwrap().value()
-        );
-        assert_eq!(
-            cstr!("d").as_ref(),
-            dictb.get(cstr!("c"), None, 0).unwrap().value()
-        );
-        assert!(dictb.get(cstr!("e"), None, 0).is_none());
+        assert_eq!(c"b".as_ref(), dictb.get(c"a", None, 0).unwrap().value());
+        assert_eq!(c"d".as_ref(), dictb.get(c"c", None, 0).unwrap().value());
+        assert!(dictb.get(c"e", None, 0).is_none());
     }
 
     #[test]
     fn serialization() {
-        let dict = AVDictionary::new(cstr!("a"), cstr!("b"), 0)
-            .set(cstr!("c"), cstr!("d"), 0)
-            .set(cstr!("foo"), cstr!("bar"), 0)
-            .set(cstr!("bob"), cstr!("alice"), 0);
+        let dict = AVDictionary::new(c"a", c"b", 0)
+            .set(c"c", c"d", 0)
+            .set(c"foo", c"bar", 0)
+            .set(c"bob", c"alice", 0);
         assert_eq!(
-            cstr!("a:b-c:d-foo:bar-bob:alice"),
+            c"a:b-c:d-foo:bar-bob:alice",
             dict.get_string(b':', b'-').unwrap().as_c_str()
         );
-        let dict = dict.set(cstr!("rust"), cstr!("c"), 0);
+        let dict = dict.set(c"rust", c"c", 0);
         assert_eq!(
-            cstr!("a:b-c:d-foo:bar-bob:alice-rust:c"),
+            c"a:b-c:d-foo:bar-bob:alice-rust:c",
             dict.get_string(b':', b'-').unwrap().as_c_str()
         );
     }
 
     #[test]
     fn deserialization() {
-        let dict = AVDictionary::from_string(
-            cstr!("a:b-c:d-foo:bar-bob:alice-rust:c"),
-            cstr!(":"),
-            cstr!("-"),
-            0,
-        )
-        .unwrap();
+        let dict =
+            AVDictionary::from_string(c"a:b-c:d-foo:bar-bob:alice-rust:c", c":", c"-", 0).unwrap();
         assert_eq!(
-            cstr!("a:b-c:d-foo:bar-bob:alice-rust:c"),
+            c"a:b-c:d-foo:bar-bob:alice-rust:c",
             dict.get_string(b':', b'-').unwrap().as_c_str()
         );
     }

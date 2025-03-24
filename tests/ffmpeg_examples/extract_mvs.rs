@@ -1,6 +1,5 @@
 //! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/extract_mvs.c
 use anyhow::{anyhow, Context, Result};
-use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodecContext, AVPacket},
     avformat::AVFormatContextInput,
@@ -76,7 +75,7 @@ fn extract_mvs(video_path: &CStr) -> Result<()> {
             .apply_codecpar(&stream.codecpar())
             .context("Failed to copy codec parameters to codec context")?;
 
-        let opts = AVDictionary::new(cstr!("flags2"), cstr!("+export_mvs"), 0);
+        let opts = AVDictionary::new(c"flags2", c"+export_mvs", 0);
 
         decode_context.open(Some(opts)).with_context(|| {
             anyhow!(

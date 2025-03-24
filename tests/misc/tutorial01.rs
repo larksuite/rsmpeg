@@ -4,7 +4,6 @@
 //! files.
 
 use anyhow::{Context, Result};
-use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avformat::AVFormatContextInput,
@@ -117,7 +116,7 @@ fn _main(file: &CStr, out_dir: &str) -> Result<()> {
 #[test]
 fn tutorial01_test0() {
     _main(
-        cstr!("tests/assets/vids/centaur.mpg"),
+        c"tests/assets/vids/centaur.mpg",
         "tests/output/tutorial01/centaur",
     )
     .unwrap();
@@ -126,7 +125,7 @@ fn tutorial01_test0() {
 #[test]
 fn tutorial01_test1() {
     _main(
-        cstr!("tests/assets/vids/bear.mp4"),
+        c"tests/assets/vids/bear.mp4",
         "tests/output/tutorial01/bear",
     )
     .unwrap();
@@ -135,7 +134,7 @@ fn tutorial01_test1() {
 #[test]
 fn tutorial01_test2() {
     _main(
-        cstr!("tests/assets/vids/mov_sample.mov"),
+        c"tests/assets/vids/mov_sample.mov",
         "tests/output/tutorial01/mov_sample",
     )
     .unwrap();
@@ -145,7 +144,7 @@ fn tutorial01_test2() {
 #[test]
 fn tutorial01_test3() {
     _main(
-        cstr!("tests/assets/vids/vp8.mp4"),
+        c"tests/assets/vids/vp8.mp4",
         "tests/output/tutorial01/vp8",
     )
     .unwrap();

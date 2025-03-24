@@ -1,6 +1,5 @@
 //! RIIR: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/vaapi_encode.c
 use anyhow::{Context, Result};
-use cstr::cstr;
 use rsmpeg::{
     avcodec::{AVCodec, AVCodecContext},
     avutil::{ra, AVFrame, AVHWDeviceContext},
@@ -155,7 +154,7 @@ fn vaapi_encode_test_vaapi() {
         Path::new("tests/output/vaapi_encode/vaapi_encode_test_vaapi.h264"),
         320,
         180,
-        cstr!("h264_vaapi"),
+        c"h264_vaapi",
         AV_HWDEVICE_TYPE_VAAPI,
         AV_PIX_FMT_VAAPI,
         AV_PIX_FMT_NV12,
@@ -181,7 +180,7 @@ fn vaapi_encode_test_nvenc() {
         Path::new("tests/output/vaapi_encode/vaapi_encode_test_nvenc.h264"),
         320,
         180,
-        cstr!("h264_nvenc"),
+        c"h264_nvenc",
         AV_HWDEVICE_TYPE_CUDA,
         AV_PIX_FMT_CUDA,
         AV_PIX_FMT_NV12,
