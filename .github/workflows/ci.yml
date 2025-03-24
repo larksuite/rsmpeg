@@ -113,13 +113,14 @@ jobs:
           - ffmpeg-version: "release/6.1"
             additional-cargo-flags: "--no-default-features --features ffmpeg6"
         exclude:
-          # Only run valgrind with latest FFmpeg and nightly rust to reduce resource consumption.
+          # Only run valgrind with latest FFmpeg and stable rust toolchain to reduce resource consumption.
+          # valgrind starts to fail on nightly toolchain due to a bug in std: https://github.com/rust-lang/rust/issues/135608
           - valgrind: "valgrind"
             ffmpeg-version: "release/6.0"
           - valgrind: "valgrind"
             ffmpeg-version: "release/6.1"
           - valgrind: "valgrind"
-            rust: "1.77.0"
+            rust: "nightly"
       fail-fast: false
 
     steps:
