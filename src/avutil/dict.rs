@@ -160,7 +160,7 @@ impl<'dict> AVDictionary {
     }
 }
 
-impl std::clone::Clone for AVDictionary {
+impl Clone for AVDictionary {
     /// Similar to `Self::copy()`, while set the copy flag to `0`.
     fn clone(&self) -> Self {
         let mut newer = ptr::null_mut();

@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          toolchain: nightly
           components: rustfmt
       - run: cargo fmt --all -- --check
 
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          toolchain: nightly
           components: clippy
 
       # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          toolchain: nightly
           components: clippy
 
       # Using this since it's used by clang-sys's CI
@@ -97,7 +97,7 @@ jobs:
     strategy:
       matrix:
         ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0"]
-        rust: ["nightly", "1.70.0"]
+        rust: ["nightly", "1.77.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
           # Stop running tests on stable rust or FFmpeg 6.0 (due to specific bug of FFmpeg 6.0)
@@ -113,13 +113,14 @@ jobs:
           - ffmpeg-version: "release/6.1"
             additional-cargo-flags: "--no-default-features --features ffmpeg6"
         exclude:
-          # Only run valgrind with latest FFmpeg and nightly rust to reduce resource consumption.
+          # Only run valgrind with latest FFmpeg and stable rust toolchain to reduce resource consumption.
+          # valgrind starts to fail on nightly toolchain due to a bug in std: https://github.com/rust-lang/rust/issues/135608
           - valgrind: "valgrind"
             ffmpeg-version: "release/6.0"
           - valgrind: "valgrind"
             ffmpeg-version: "release/6.1"
           - valgrind: "valgrind"
-            rust: "1.70.0"
+            rust: "nightly"
       fail-fast: false
 
     steps:
@@ -244,7 +245,7 @@ jobs:
   build_dynamic_and_test_windows:
     strategy:
       matrix:
-        rust: ["nightly", "1.70.0"]
+        rust: ["nightly", "1.77.0"]
       fail-fast: false
     runs-on: windows-latest
     needs: build_dynamic_and_test_windows_pre

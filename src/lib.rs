@@ -1,6 +1,7 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(clippy::module_inception)]
 #![allow(clippy::upper_case_acronyms)]
+#![allow(clippy::doc_overindented_list_items)]
 
 /// Raw and unsafe FFmpeg functions, structs and constants,
 pub use rusty_ffmpeg::ffi;
