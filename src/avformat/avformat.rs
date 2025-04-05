@@ -267,14 +267,20 @@ wrap! {
 impl AVFormatContextOutput {
     /// Open a file and create a [`AVFormatContextOutput`] instance of that
     /// file. Give it an [`AVIOContext`] if you want custom IO.
-    pub fn create(filename: &CStr, io_context: Option<AVIOContextContainer>) -> Result<Self> {
+    pub fn create(
+        filename: &CStr,
+        fmt: Option<&AVOutputFormat>,
+        io_context: Option<AVIOContextContainer>,
+    ) -> Result<Self> {
         let mut output_format_context = ptr::null_mut();
+
+        let fmt = fmt.map(|x| x.as_ptr()).unwrap_or_else(std::ptr::null) as _;
 
         // Alloc the context
         unsafe {
             ffi::avformat_alloc_output_context2(
                 &mut output_format_context,
-                ptr::null_mut(),
+                fmt,
                 ptr::null_mut(),
                 filename.as_ptr(),
             )
