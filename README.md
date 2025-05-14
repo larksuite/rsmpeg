@@ -3,6 +3,7 @@
 [![Doc](https://docs.rs/rsmpeg/badge.svg?style=flat-square)](https://docs.rs/rsmpeg)
 [![Crates.io](https://img.shields.io/crates/v/rsmpeg)](https://crates.io/crates/rsmpeg)
 [![CI](https://github.com/larksuite/rsmpeg/workflows/CI/badge.svg?branch=master&style=flat-square)](https://github.com/larksuite/rsmpeg/actions)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/larksuite/rsmpeg)
 
 `rsmpeg` is a thin&safe layer above the FFmpeg's Rust bindings, it's main goal is safely exposing FFmpeg inner APIs in Rust as much as possible.
 
