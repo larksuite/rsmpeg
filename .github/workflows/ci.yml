@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0"]
+        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.1"]
         rust: ["nightly", "1.77.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
@@ -106,7 +106,7 @@ jobs:
             ffmpeg-version: "release/6.1"
             should_test: "true"
           - rust: "nightly"
-            ffmpeg-version: "release/7.0"
+            ffmpeg-version: "release/7.1"
             should_test: "true"
           - ffmpeg-version: "release/6.0"
             additional-cargo-flags: "--no-default-features --features ffmpeg6"
