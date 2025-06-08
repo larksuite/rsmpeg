@@ -5,7 +5,7 @@ use std::{
     ptr::{self, NonNull},
 };
 
-pub type AVSampleFormat = ffi::AVSampleFormat;
+pub use ffi::AVSampleFormat;
 
 /// Return the name of given sample_fmt, or `None` if sample_fmt is not
 /// recognized.
