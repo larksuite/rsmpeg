@@ -34,35 +34,35 @@ impl SwsFilter {
         Some(unsafe { Self::from_raw(filter) })
     }
 
-    pub fn lum_h(&self) -> SwsVectorRef {
+    pub fn lum_h(&self) -> SwsVectorRef<'_> {
         unsafe { SwsVectorRef::from_raw(NonNull::new(self.lumH).unwrap()) }
     }
 
-    pub fn lum_v(&self) -> SwsVectorRef {
+    pub fn lum_v(&self) -> SwsVectorRef<'_> {
         unsafe { SwsVectorRef::from_raw(NonNull::new(self.lumV).unwrap()) }
     }
 
-    pub fn chr_h(&self) -> SwsVectorRef {
+    pub fn chr_h(&self) -> SwsVectorRef<'_> {
         unsafe { SwsVectorRef::from_raw(NonNull::new(self.chrH).unwrap()) }
     }
 
-    pub fn chr_v(&self) -> SwsVectorRef {
+    pub fn chr_v(&self) -> SwsVectorRef<'_> {
         unsafe { SwsVectorRef::from_raw(NonNull::new(self.chrV).unwrap()) }
     }
 
-    pub fn lum_h_mut(&mut self) -> SwsVectorMut {
+    pub fn lum_h_mut(&mut self) -> SwsVectorMut<'_> {
         unsafe { SwsVectorMut::from_raw(NonNull::new(self.lumH).unwrap()) }
     }
 
-    pub fn lum_v_mut(&mut self) -> SwsVectorMut {
+    pub fn lum_v_mut(&mut self) -> SwsVectorMut<'_> {
         unsafe { SwsVectorMut::from_raw(NonNull::new(self.lumV).unwrap()) }
     }
 
-    pub fn chr_h_mut(&mut self) -> SwsVectorMut {
+    pub fn chr_h_mut(&mut self) -> SwsVectorMut<'_> {
         unsafe { SwsVectorMut::from_raw(NonNull::new(self.chrH).unwrap()) }
     }
 
-    pub fn chr_v_mut(&mut self) -> SwsVectorMut {
+    pub fn chr_v_mut(&mut self) -> SwsVectorMut<'_> {
         unsafe { SwsVectorMut::from_raw(NonNull::new(self.chrV).unwrap()) }
     }
 }

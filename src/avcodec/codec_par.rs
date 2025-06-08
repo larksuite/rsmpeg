@@ -46,7 +46,7 @@ impl AVCodecParameters {
     }
 
     /// Get channel layout
-    pub fn ch_layout(&self) -> AVChannelLayoutRef {
+    pub fn ch_layout(&self) -> AVChannelLayoutRef<'_> {
         let inner = NonNull::new(&self.ch_layout as *const _ as *mut _).unwrap();
         unsafe { AVChannelLayoutRef::from_raw(inner) }
     }

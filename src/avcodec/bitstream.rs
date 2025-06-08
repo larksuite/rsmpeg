@@ -13,7 +13,7 @@ wrap_ref!(AVBitStreamFilter: ffi::AVBitStreamFilter);
 
 impl AVBitStreamFilter {
     /// Find a bitstream filter instance with it's short name.
-    pub fn find_by_name(name: &CStr) -> Option<AVBitStreamFilterRef> {
+    pub fn find_by_name(name: &CStr) -> Option<AVBitStreamFilterRef<'_>> {
         unsafe { ffi::av_bsf_get_by_name(name.as_ptr()) }
             .upgrade()
             .map(|x| unsafe { AVBitStreamFilterRef::from_raw(x) })
@@ -174,7 +174,7 @@ impl AVBSFContextUninit {
     }
 
     /// Get `filter` field of current [`AVBSFContext`].
-    pub fn filter(&self) -> AVBitStreamFilterRef {
+    pub fn filter(&self) -> AVBitStreamFilterRef<'_> {
         unsafe { AVBitStreamFilterRef::from_raw(NonNull::new(self.filter as *mut _).unwrap()) }
     }
 

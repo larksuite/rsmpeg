@@ -343,17 +343,17 @@ impl AVCodecContext {
     }
 
     /// Get channel layout
-    pub fn ch_layout(&self) -> AVChannelLayoutRef {
+    pub fn ch_layout(&self) -> AVChannelLayoutRef<'_> {
         let inner = NonNull::new(&self.ch_layout as *const _ as *mut _).unwrap();
         unsafe { AVChannelLayoutRef::from_raw(inner) }
     }
 
-    pub fn hw_frames_ctx(&self) -> Option<AVHWFramesContextRef> {
+    pub fn hw_frames_ctx(&self) -> Option<AVHWFramesContextRef<'_>> {
         let hw_frame_ctx = NonNull::new(self.hw_frames_ctx)?;
         Some(unsafe { AVHWFramesContextRef::from_raw(hw_frame_ctx) })
     }
 
-    pub fn hw_frames_ctx_mut(&mut self) -> Option<AVHWFramesContextMut> {
+    pub fn hw_frames_ctx_mut(&mut self) -> Option<AVHWFramesContextMut<'_>> {
         let hw_frame_ctx = NonNull::new(self.hw_frames_ctx)?;
         Some(unsafe { AVHWFramesContextMut::from_raw(hw_frame_ctx) })
     }
