@@ -30,6 +30,8 @@ default = ["ffmpeg7"]
 # Note that ffmpeg{x} feature is designed to be addable (If it's not, compilation with all-features won't pass)
 ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
 ffmpeg7 = ["ffmpeg6", "rusty_ffmpeg/ffmpeg7"]
+# ffmpeg 7.1+
+ffmpeg7_1 = ["ffmpeg7"]
 
 # Try linking ffmpeg with pkg-config.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]

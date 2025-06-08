@@ -98,14 +98,30 @@ fn open_output_file(
             enc_ctx.set_height(dec_ctx.height);
             enc_ctx.set_width(dec_ctx.width);
             enc_ctx.set_sample_aspect_ratio(dec_ctx.sample_aspect_ratio);
-            // take first format from list of supported formats
+            #[cfg(not(feature = "ffmpeg7_1"))]
             enc_ctx.set_pix_fmt(encoder.pix_fmts().unwrap()[0]);
+            #[cfg(feature = "ffmpeg7_1")]
+            enc_ctx.set_pix_fmt(
+                dec_ctx
+                    .get_supported_pix_fmts(None)
+                    .ok()
+                    .and_then(|x| x.get(0).copied())
+                    .unwrap_or(dec_ctx.pix_fmt),
+            );
             enc_ctx.set_time_base(av_inv_q(dec_ctx.framerate));
         } else if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_AUDIO {
             enc_ctx.set_sample_rate(dec_ctx.sample_rate);
             enc_ctx.set_ch_layout(dec_ctx.ch_layout().clone().into_inner());
-            // take first format from list of supported formats
+            #[cfg(not(feature = "ffmpeg7_1"))]
             enc_ctx.set_sample_fmt(encoder.sample_fmts().unwrap()[0]);
+            #[cfg(feature = "ffmpeg7_1")]
+            enc_ctx.set_sample_fmt(
+                dec_ctx
+                    .get_supported_sample_fmts(None)
+                    .ok()
+                    .and_then(|x| x.get(0).copied())
+                    .unwrap_or(dec_ctx.sample_fmt),
+            );
             enc_ctx.set_time_base(ra(1, dec_ctx.sample_rate));
         } else {
             bail!(

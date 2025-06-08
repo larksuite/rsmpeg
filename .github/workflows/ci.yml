@@ -49,7 +49,7 @@ jobs:
 
       - run: |
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
-          cargo clippy -- -D warnings
+          cargo clippy --no-default-features --features ffmpeg7_1,link_vcpkg_ffmpeg -- -D warnings
 
   rust_clippy_check_windows:
     runs-on: windows-latest
@@ -90,13 +90,13 @@ jobs:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
           LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
           LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
-        run: cargo clippy --no-default-features --features ffmpeg7,link_vcpkg_ffmpeg -- -D warnings
+        run: cargo clippy --no-default-features --features ffmpeg7_1,link_vcpkg_ffmpeg -- -D warnings
 
   build_static_and_test_ubuntu:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.1"]
+        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0", "release/7.1"]
         rust: ["nightly", "1.77.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
@@ -112,6 +112,10 @@ jobs:
             additional-cargo-flags: "--no-default-features --features ffmpeg6"
           - ffmpeg-version: "release/6.1"
             additional-cargo-flags: "--no-default-features --features ffmpeg6"
+          - ffmpeg-version: "release/7.0"
+            additional-cargo-flags: "--no-default-features --features ffmpeg7"
+          - ffmpeg-version: "release/7.1"
+            additional-cargo-flags: "--no-default-features --features ffmpeg7_1"
         exclude:
           # Only run valgrind with latest FFmpeg and stable rust toolchain to reduce resource consumption.
           # valgrind starts to fail on nightly toolchain due to a bug in std: https://github.com/rust-lang/rust/issues/135608

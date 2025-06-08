@@ -1,19 +1,20 @@
+use crate::{
+    avcodec::{AVCodecID, AVCodecParameters, AVPacket},
+    avutil::{
+        AVChannelLayoutRef, AVDictionary, AVFrame, AVHWFramesContext, AVHWFramesContextMut,
+        AVHWFramesContextRef, AVPixelFormat, AVRational, AVSampleFormat,
+    },
+    error::{Result, RsmpegError},
+    ffi,
+    shared::*,
+};
+#[cfg(feature = "ffmpeg7_1")]
+pub use ffi::AVCodecConfig;
 use std::{
     ffi::{c_void, CStr},
     mem,
     ptr::{self, NonNull},
     slice,
-};
-
-use crate::{
-    avcodec::{AVCodecID, AVCodecParameters, AVPacket},
-    avutil::{
-        AVChannelLayoutRef, AVDictionary, AVFrame, AVHWFramesContext, AVHWFramesContextMut,
-        AVHWFramesContextRef, AVPixelFormat, AVRational,
-    },
-    error::{Result, RsmpegError},
-    ffi,
-    shared::*,
 };
 
 wrap_ref!(AVCodec: ffi::AVCodec);
@@ -131,7 +132,7 @@ impl<'codec> AVCodec {
     }
 
     /// Return supported sample_fmts of this [`AVCodec`].
-    pub fn sample_fmts(&'codec self) -> Option<&'codec [ffi::AVSampleFormat]> {
+    pub fn sample_fmts(&'codec self) -> Option<&'codec [AVSampleFormat]> {
         // terminates with -1
         unsafe { Self::build_array(self.sample_fmts, -1) }
     }
@@ -360,6 +361,52 @@ impl AVCodecContext {
 
     pub fn set_hw_frames_ctx(&mut self, hw_frames_ctx: AVHWFramesContext) {
         unsafe { self.deref_mut().hw_frames_ctx = hw_frames_ctx.buffer_ref.into_raw().as_ptr() };
+    }
+
+    /// Retrieve a list of all supported pixel formats.
+    /// Returns `Some(&[])` if all possible pixel formats are supported
+    /// - `avctx`: codec The codec to query, or None to use self.codec
+    #[cfg(feature = "ffmpeg7_1")]
+    pub fn get_supported_pix_fmts(&self, codec: Option<&AVCodec>) -> Result<&[AVPixelFormat]> {
+        unsafe { self.get_supported_config(codec, ffi::AV_CODEC_CONFIG_PIX_FORMAT) }
+    }
+
+    /// Retrieve a list of all supported sample formats.
+    /// Returns `Some(&[])` if all possible sample formats are supported
+    /// - `avctx`: codec The codec to query, or None to use self.codec
+    #[cfg(feature = "ffmpeg7_1")]
+    pub fn get_supported_sample_fmts(&self, codec: Option<&AVCodec>) -> Result<&[AVSampleFormat]> {
+        unsafe { self.get_supported_config(codec, ffi::AV_CODEC_CONFIG_SAMPLE_FORMAT) }
+    }
+
+    /// Retrieve a list of all supported values for a given configuration type.
+    ///
+    /// # Safety
+    /// `config` should matches `T`
+    #[cfg(feature = "ffmpeg7_1")]
+    pub unsafe fn get_supported_config<T>(
+        &self,
+        codec: Option<&AVCodec>,
+        config: AVCodecConfig,
+    ) -> Result<&[T]> {
+        let mut data = ptr::null();
+        let mut num = 0;
+        unsafe {
+            ffi::avcodec_get_supported_config(
+                self.as_ptr(),
+                codec.map(|x| x.as_ptr()).unwrap_or_else(ptr::null),
+                config,
+                0,
+                &mut data,
+                &mut num,
+            )
+        }
+        .upgrade()?;
+        Ok(if data.is_null() {
+            &[]
+        } else {
+            unsafe { slice::from_raw_parts(data.cast(), num as usize) }
+        })
     }
 
     /// Is hardware accelaration enabled in this codec context.
