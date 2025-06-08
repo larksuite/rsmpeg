@@ -8,14 +8,14 @@ use crate::{
     ffi,
     shared::*,
 };
+#[cfg(feature = "ffmpeg7_1")]
+pub use ffi::AVCodecConfig;
 use std::{
     ffi::{c_void, CStr},
     mem,
     ptr::{self, NonNull},
     slice,
 };
-#[cfg(feature = "ffmpeg7_1")]
-pub use ffi::AVCodecConfig;
 
 wrap_ref!(AVCodec: ffi::AVCodec);
 
