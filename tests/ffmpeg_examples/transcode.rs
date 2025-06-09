@@ -171,8 +171,10 @@ fn init_filter<'graph>(
     filter_spec: &CStr,
 ) -> Result<FilterContext<'graph>> {
     let (mut buffersrc_ctx, mut buffersink_ctx) = if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_VIDEO {
-        let buffersrc = AVFilter::get_by_name(c"buffer").unwrap();
-        let buffersink = AVFilter::get_by_name(c"buffersink").unwrap();
+        let buffersrc =
+            AVFilter::get_by_name(c"buffer").context("filtering source element not found")?;
+        let buffersink =
+            AVFilter::get_by_name(c"buffersink").context("filtering sink element not found")?;
 
         let args = format!(
             "video_size={}x{}:pix_fmt={}:time_base={}/{}:pixel_aspect={}/{}",
@@ -192,12 +194,16 @@ fn init_filter<'graph>(
             .context("Cannot create buffer source")?;
 
         let mut buffer_sink_context = filter_graph
-            .create_filter_context(&buffersink, c"out", None)
+            .alloc_filter_context(&buffersink, c"out")
             .context("Cannot create buffer sink")?;
 
         buffer_sink_context
             .opt_set_bin(c"pix_fmts", &enc_ctx.pix_fmt)
             .context("Cannot set output pixel format")?;
+
+        buffer_sink_context
+            .init_dict(&mut None)
+            .context("Cannot initialize buffer sink")?;
 
         (buffer_src_context, buffer_sink_context)
     } else if dec_ctx.codec_type == ffi::AVMEDIA_TYPE_AUDIO {
@@ -229,7 +235,7 @@ fn init_filter<'graph>(
             .context("Cannot create audio buffer source")?;
 
         let mut buffersink_ctx = filter_graph
-            .create_filter_context(&buffersink, c"out", None)
+            .alloc_filter_context(&buffersink, c"out")
             .context("Cannot create audio buffer sink")?;
         buffersink_ctx
             .opt_set_bin(c"sample_fmts", &enc_ctx.sample_fmt)
@@ -240,6 +246,19 @@ fn init_filter<'graph>(
         buffersink_ctx
             .opt_set_bin(c"sample_rates", &enc_ctx.sample_rate)
             .context("Cannot set output sample rate")?;
+
+        // `av_buffersink_set_frame_size` will SIGSEGV even on FFmpeg 7.1, problem persists until
+        // https://github.com/FFmpeg/FFmpeg/commit/6b402cdbf46e4398b3285277f3ff7c3654d57ce6.
+        // Waiting for FFmpeg 7.2 release.
+        /*
+        if enc_ctx.frame_size > 0 {
+            buffersink_ctx.buffersink_set_frame_size(enc_ctx.frame_size as u32);
+        }
+         */
+
+        buffersink_ctx
+            .init_dict(&mut None)
+            .context("Cannot initialize audio buffer sink")?;
 
         (buffersrc_ctx, buffersink_ctx)
     } else {
@@ -268,7 +287,7 @@ fn init_filter<'graph>(
 fn init_filters(
     filter_graphs: &mut [AVFilterGraph],
     stream_contexts: Vec<Option<StreamContext>>,
-) -> Result<Vec<Option<FilteringContext>>> {
+) -> Result<Vec<Option<FilteringContext<'_>>>> {
     let mut filter_ctx = Vec::with_capacity(stream_contexts.len());
 
     for (filter_graph, stream_context) in filter_graphs.iter_mut().zip(stream_contexts.into_iter())

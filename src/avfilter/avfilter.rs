@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    avutil::{AVChannelLayout, AVFrame},
+    avutil::{AVChannelLayout, AVDictionary, AVFrame},
     error::{Result, RsmpegError},
     ffi,
     shared::*,
@@ -30,6 +30,41 @@ impl Drop for AVFilter {
 wrap_mut!(AVFilterContext: ffi::AVFilterContext);
 
 impl AVFilterContext {
+    /// Initialize a filter with the supplied dictionary of options.
+    pub fn init_dict(&mut self, options: &mut Option<AVDictionary>) -> Result<()> {
+        let mut options_ptr = options
+            .as_mut()
+            .map(|x| x.as_mut_ptr())
+            .unwrap_or_else(std::ptr::null_mut);
+
+        unsafe { ffi::avfilter_init_dict(self.as_mut_ptr(), &mut options_ptr) }.upgrade()?;
+
+        // Forget the old options since it's ownership is transferred.
+        let mut new_options = options_ptr
+            .upgrade()
+            .map(|x| unsafe { AVDictionary::from_raw(x) });
+        std::mem::swap(options, &mut new_options);
+        new_options.map(|x| x.into_raw());
+
+        Ok(())
+    }
+
+    /// Initialize a filter with the supplied parameters.
+    /// - @param args Options to initialize the filter with. This must be a
+    ///   ':'-separated list of options in the 'key=value' form.
+    ///   May be NULL if the options have been set directly using the
+    ///   AVOptions API or there are no options that need to be set.
+    pub fn init_str(&mut self, args: Option<&CStr>) -> Result<()> {
+        unsafe {
+            ffi::avfilter_init_str(
+                self.as_mut_ptr(),
+                args.map(|x| x.as_ptr()).unwrap_or_else(ptr::null),
+            )
+        }
+        .upgrade()?;
+        Ok(())
+    }
+
     /// Set property of a [`AVFilterContext`].
     pub fn opt_set_bin<U>(&mut self, key: &CStr, value: &U) -> Result<()> {
         unsafe {
@@ -93,6 +128,15 @@ impl AVFilterContext {
             Err(ffi::AVERROR_EOF) => Err(RsmpegError::BufferSinkEofError),
             Err(err) => Err(RsmpegError::BufferSinkGetFrameError(err)),
         }
+    }
+
+    /// Set the frame size for an audio buffer sink.
+    ///
+    /// All calls to av_buffersink_get_buffer_ref will return a buffer with
+    /// exactly the specified number of samples, or AVERROR(EAGAIN) if there is
+    /// not enough. The last buffer at EOF will be padded with 0.
+    pub fn buffersink_set_frame_size(&mut self, frame_size: u32) {
+        unsafe { ffi::av_buffersink_set_frame_size(self.as_mut_ptr(), frame_size) }
     }
 
     pub fn get_type(&self) -> i32 {
@@ -252,9 +296,9 @@ impl AVFilterGraph {
 }
 
 impl<'graph> AVFilterGraph {
-    /// Create and add a [`AVFilter`] instance into an existing
-    /// [`AVFilterGraph`]. The filter instance is created from the `filter` and
-    /// inited with the parameter `args`.
+    /// A convenience wrapper that allocates and initializes a filter in a single
+    /// step. The filter instance is created from the filter filt and inited with the
+    /// parameter args.
     pub fn create_filter_context(
         &'graph self,
         filter: &AVFilter,
@@ -281,6 +325,26 @@ impl<'graph> AVFilterGraph {
         let filter_context = NonNull::new(filter_context).unwrap();
 
         Ok(unsafe { AVFilterContextMut::from_raw(filter_context) })
+    }
+
+    /// Create a new filter instance in a filter graph.
+    pub fn alloc_filter_context(
+        &'graph self,
+        filter: &AVFilter,
+        name: &CStr,
+    ) -> Option<AVFilterContextMut<'graph>> {
+        unsafe {
+            ffi::avfilter_graph_alloc_filter(
+                // ATTENTION: We restrict the API for not removing filter, then
+                // we can legally add filter and take mutable reference to it in
+                // a filter graph with immutable reference.
+                self.as_ptr() as *mut _,
+                filter.as_ptr(),
+                name.as_ptr(),
+            )
+        }
+        .upgrade()
+        .map(|filter_context| unsafe { AVFilterContextMut::from_raw(filter_context) })
     }
 }
 
