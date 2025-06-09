@@ -247,9 +247,14 @@ fn init_filter<'graph>(
             .opt_set_bin(c"sample_rates", &enc_ctx.sample_rate)
             .context("Cannot set output sample rate")?;
 
+        // `av_buffersink_set_frame_size` will SIGSEGV even on FFmpeg 7.1, problem persists until
+        // https://github.com/FFmpeg/FFmpeg/commit/6b402cdbf46e4398b3285277f3ff7c3654d57ce6.
+        // Waiting for FFmpeg 7.2 release.
+        /*
         if enc_ctx.frame_size > 0 {
             buffersink_ctx.buffersink_set_frame_size(enc_ctx.frame_size as u32);
         }
+         */
 
         buffersink_ctx
             .init_dict(&mut None)
