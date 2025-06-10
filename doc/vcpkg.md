@@ -17,9 +17,9 @@ After installing `cargo-vcpkg`, create a new Rust project using `cargo new <proj
 ```toml
 [dependencies]
 # For FFmpeg 6.*
-rsmpeg = { version = "0.15.1", default-features = false, features = ["ffmpeg6", "link_vcpkg_ffmpeg"] }
+rsmpeg = { version = "0.16", default-features = false, features = ["ffmpeg6", "link_vcpkg_ffmpeg"] }
 # For FFmpeg 7.*
-rsmpeg = { version = "0.15.1", default-features = false, features = ["ffmpeg7", "link_vcpkg_ffmpeg"] }
+rsmpeg = { version = "0.16", default-features = false, features = ["ffmpeg7", "link_vcpkg_ffmpeg"] }
 ```
 
 Add vcpkg dependencies in `Cargo.toml`:

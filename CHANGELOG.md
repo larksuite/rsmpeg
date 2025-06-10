@@ -1,3 +1,15 @@
+## 0.16.0
+
+- Fix `x86_64-pc-windows-gnu` target compilation (#206)
+
+- Add more methods for `AVFilterContext` and `AVFilterGraph` (#207)
+
+- Introduce `AVCodecContext::get_supported_*` methods and `ffmpeg7_1` feature (#208)
+
+## 0.15.2
+
+- Update `thiserror` from `1.0` to `2.0`
+
 ## 0.15.1
 
 - `impl Send` for macro generated types.
