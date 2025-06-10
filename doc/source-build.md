@@ -59,7 +59,7 @@ fn main() {
 
 Prepare a simple image (`./test.jpg`) in your project's root folder:
 
-![test.jpg](./assets/mountain.jpg)
+![test.jpg](../assets/mountain.jpg)
 
 Run your project with the `FFMPEG_PKG_CONFIG_PATH` environment variable set to the `pkgconfig` directory within your FFmpeg build artifacts folder:
 
