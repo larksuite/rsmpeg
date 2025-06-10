@@ -75,7 +75,7 @@ fn main() {
 
 Prepare a simple image (e.g., `./test.jpg`) in your project's root folder:
 
-![test.jpg](./assets/mountain.jpg)
+![test.jpg](../assets/mountain.jpg)
 
 After completing these steps, you can build and run your project:
 
