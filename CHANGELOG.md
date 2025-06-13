@@ -1,3 +1,7 @@
+## 0.16.1
+
+- Add API for `AVFrame::image_copy_to_buffer` and `AVFrame::image_get_buffer_size` (#213)
+
 ## 0.16.0
 
 - Fix `x86_64-pc-windows-gnu` target compilation (#206)
