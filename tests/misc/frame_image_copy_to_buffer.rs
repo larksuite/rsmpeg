@@ -1,13 +1,9 @@
-use anyhow::{bail, Context, Result};
-use image::RgbImage;
+use anyhow::{Context, Result};
+use image::{ImageFormat, RgbImage};
 use rsmpeg::{
-    avcodec::*,
-    avfilter::{AVFilter, AVFilterInOut},
-    avformat::*,
-    avutil::*,
-    error::RsmpegError,
+    avfilter::{AVFilter, AVFilterGraph, AVFilterInOut},
+    avutil::AVFrame,
     ffi,
-    swscale::*,
 };
 use std::{
     ffi::CStr,
@@ -41,7 +37,7 @@ fn get_libav_allocated_frame(filter_spec: &CStr) -> Result<AVFrame> {
     let buffersink_filter =
         AVFilter::get_by_name(c"buffersink").context("could not find buffersink filter")?;
 
-    let filter_graph = rsmpeg::avfilter::AVFilterGraph::new();
+    let filter_graph = AVFilterGraph::new();
 
     let mut testsrc2_ctx = filter_graph.create_filter_context(
         &testsrc2_filter,
@@ -52,7 +48,7 @@ fn get_libav_allocated_frame(filter_spec: &CStr) -> Result<AVFrame> {
     let mut buffersink_ctx = filter_graph
         .alloc_filter_context(&buffersink_filter, c"out")
         .context("could not allocate buffersink context")?;
-    buffersink_ctx.opt_set_bin(c"pix_fmts", &rsmpeg::ffi::AV_PIX_FMT_RGB24)?;
+    buffersink_ctx.opt_set_bin(c"pix_fmts", &ffi::AV_PIX_FMT_RGB24)?;
     buffersink_ctx.init_dict(&mut None)?;
 
     let outputs = AVFilterInOut::new(c"in", &mut testsrc2_ctx, 0);
@@ -83,12 +79,16 @@ fn write_out_rgb24(
             .parent()
             .context("could not get output parent dir")?,
     )?;
-    image.save(output_image_path)?;
+    image.save_with_format(output_image_path, ImageFormat::Png)?;
 
     Ok(())
 }
 
 #[test]
 fn test_frame_copy_to_buffer0() {
-    frame_copy_to_buffer(c"null", "tests/output/frame_copy_to_buffer/0.png").unwrap();
+    frame_copy_to_buffer(c"null", "tests/output/frame_copy_to_buffer/sink.png").unwrap();
+    assert_eq!(
+        fs::read("tests/output/frame_copy_to_buffer/sink.png").unwrap(),
+        fs::read("tests/assets/pics/sink.png").unwrap(),
+    );
 }
