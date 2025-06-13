@@ -177,6 +177,53 @@ impl AVFrame {
         unsafe { ffi::av_hwframe_transfer_data(self.as_mut_ptr(), src.as_ptr(), 0) }.upgrade()?;
         Ok(())
     }
+
+    /// Return the size in bytes of the amount of data required to store the image contained in the frame.
+    ///
+    /// The following fields must be set on frame before calling this function:
+    /// - format
+    /// - width
+    /// - height
+    pub fn image_get_buffer_size(&self, align: i32) -> Result<usize> {
+        let size =
+            unsafe { ffi::av_image_get_buffer_size(self.format, self.width, self.height, align) }
+                .upgrade()
+                .map_err(RsmpegError::AVError)?;
+
+        let size = usize::try_from(size)?;
+
+        Ok(size)
+    }
+
+    /// Copy image data from an image frame into a slice
+    ///
+    /// The following fields must be set on frame before calling this function:
+    /// - format
+    /// - width
+    /// - height
+    ///
+    /// `AVFrame::image_get_buffer_size` can be used to compute the required size for the slice to fill.
+    ///
+    /// Returns the amount of bytes written
+    pub fn image_copy_to_buffer(&self, dst: &mut [u8], align: i32) -> Result<usize> {
+        let n = unsafe {
+            ffi::av_image_copy_to_buffer(
+                dst.as_mut_ptr(),
+                dst.len().try_into()?,
+                self.data.as_ptr().cast(),
+                self.linesize.as_ptr(),
+                self.format,
+                self.width,
+                self.height,
+                align,
+            )
+        }
+        .upgrade()?;
+
+        let n = usize::try_from(n)?;
+
+        Ok(n)
+    }
 }
 
 impl Clone for AVFrame {
