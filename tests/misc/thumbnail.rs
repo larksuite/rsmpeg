@@ -55,8 +55,7 @@ fn thumbnail(
     println!("Cover frame info: {:#?}", cover_frame);
 
     let mut encode_context = {
-        let encoder =
-            AVCodec::find_encoder(ffi::AV_CODEC_ID_MJPEG).context("Encoder not found")?;
+        let encoder = AVCodec::find_encoder(ffi::AV_CODEC_ID_MJPEG).context("Encoder not found")?;
         let mut encode_context = AVCodecContext::new(&encoder);
 
         encode_context.set_bit_rate(decode_context.bit_rate);

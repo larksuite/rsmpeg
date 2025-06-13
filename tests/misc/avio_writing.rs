@@ -7,9 +7,9 @@ use rsmpeg::{
     avformat::{
         AVFormatContextInput, AVFormatContextOutput, AVIOContextContainer, AVIOContextCustom,
     },
-    avutil::{av_inv_q, av_mul_q, AVFrame, AVMem, AVRational},
+    avutil::{av_inv_q, AVFrame, AVMem},
     error::RsmpegError,
-    ffi::{self, AVCodecID_AV_CODEC_ID_H264},
+    ffi,
 };
 use std::{
     ffi::CStr,
@@ -85,8 +85,8 @@ fn open_output_file(
     let mut output_format_context =
         AVFormatContextOutput::create(filename, Some(AVIOContextContainer::Custom(io_context)))?;
 
-    let encoder = AVCodec::find_encoder(AVCodecID_AV_CODEC_ID_H264)
-        .with_context(|| anyhow!("encoder({}) not found.", AVCodecID_AV_CODEC_ID_H264))?;
+    let encoder = AVCodec::find_encoder(ffi::AV_CODEC_ID_H264)
+        .with_context(|| anyhow!("encoder({}) not found.", ffi::AV_CODEC_ID_H264))?;
 
     let mut encode_context = AVCodecContext::new(&encoder);
     encode_context.set_height(decode_context.height);
@@ -97,13 +97,7 @@ fn open_output_file(
     } else {
         decode_context.pix_fmt
     });
-    encode_context.set_time_base(av_inv_q(av_mul_q(
-        decode_context.framerate,
-        AVRational {
-            num: decode_context.ticks_per_frame,
-            den: 1,
-        },
-    )));
+    encode_context.set_time_base(av_inv_q(decode_context.framerate));
 
     // Some formats want stream headers to be separate.
     if output_format_context.oformat().flags & ffi::AVFMT_GLOBALHEADER as i32 != 0 {
