@@ -178,12 +178,24 @@ impl AVFrame {
         Ok(())
     }
 
-    /// Return the size in bytes of the amount of data required to store the image contained in the frame.
+    /// Return the size in bytes of the amount of data required to store the image contained in the frame with the given linesize alignment.
     ///
     /// The following fields must be set on frame before calling this function:
     /// - format
     /// - width
     /// - height
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use rsmpeg::{ffi, avutil::{AVImage, AVFrameWithImage}};
+    /// // 10x10 pixels, 3 bytes per pixel, 30 bytes per line
+    /// let frame = AVFrameWithImage::new(AVImage::new(ffi::AV_PIX_FMT_RGB24, 10, 10, 1).unwrap());
+    /// // alignment 1: no padding
+    /// assert_eq!(frame.image_get_buffer_size(1).unwrap(), 30 * 10);
+    /// // alignment 8: each line padded to 32 bytes
+    /// assert_eq!(frame.image_get_buffer_size(8).unwrap(), 32 * 10)
+    /// ```
     pub fn image_get_buffer_size(&self, align: i32) -> Result<usize> {
         let size =
             unsafe { ffi::av_image_get_buffer_size(self.format, self.width, self.height, align) }
@@ -195,16 +207,46 @@ impl AVFrame {
         Ok(size)
     }
 
-    /// Copy image data from an image frame into a slice
+    /// Copy image data from an image frame into a slice with given linesize alignment.
     ///
     /// The following fields must be set on frame before calling this function:
     /// - format
     /// - width
     /// - height
     ///
-    /// `AVFrame::image_get_buffer_size` can be used to compute the required size for the slice to fill.
+    /// [`AVFrame::image_get_buffer_size`] can be used to compute the required size for the slice to fill.
     ///
-    /// Returns the amount of bytes written
+    /// Returns the amount of bytes written.
+    ///
+    /// Hint: Linesize alignment is the alignment that each horizontal row of pixels will be padded to before being written.
+    /// If you simply want the raw pixel values as a continuous slice, use an alignment of 1.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use rsmpeg::{ffi, avutil::{AVImage, AVFrameWithImage}};
+    /// // 10x10 pixels, 1 byte per pixel, 10 bytes per line
+    /// let frame = AVFrameWithImage::new(AVImage::new(ffi::AV_PIX_FMT_GRAY8, 10, 10, 1).unwrap());
+    /// const NOT_ZERO: u8 = 123;
+    ///
+    /// // alignment 1: no padding
+    /// let size = frame.image_get_buffer_size(1).unwrap();
+    /// let mut buf = vec![NOT_ZERO; size];
+    /// frame.image_copy_to_buffer(&mut buf, 1);
+    /// assert_eq!(buf, &[0u8; 10 * 10]);
+    ///
+    /// // alignment 8: each line padded to 16 bytes
+    /// let size = frame.image_get_buffer_size(8).unwrap();
+    /// let mut buf = vec![NOT_ZERO; size];
+    /// frame.image_copy_to_buffer(&mut buf, 8);
+    /// let chunks = buf.chunks_exact(16);
+    /// assert_eq!(chunks.len(), 10); // 10 lines
+    /// for chunk in chunks {
+    ///     assert_eq!(chunk.len(), 16); // 16 bytes per line
+    ///     assert!(chunk.starts_with(&[0u8; 10])); // 10 bytes of pixel data
+    ///     assert!(chunk.ends_with(&[NOT_ZERO; 6])); // 6 bytes of padding, not overwritten
+    /// }
+    /// ```
     pub fn image_copy_to_buffer(&self, dst: &mut [u8], align: i32) -> Result<usize> {
         let n = unsafe {
             ffi::av_image_copy_to_buffer(
