@@ -31,6 +31,7 @@ Minimum Supported Rust Version is `1.77.0`(stable channel).
 
 Thanks for your contributions!
 
++ [@Dryvnt](https://github.com/Dryvnt)
 + [@Yesterday17](https://github.com/Yesterday17)
 + [@vnghia](https://github.com/vnghia)
 + [@nxtn](https://github.com/nxtn)
