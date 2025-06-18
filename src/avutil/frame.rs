@@ -194,7 +194,7 @@ impl AVFrame {
     /// // alignment 1: no padding
     /// assert_eq!(frame.image_get_buffer_size(1).unwrap(), 30 * 10);
     /// // alignment 8: each line padded to 32 bytes
-    /// assert_eq!(frame.image_get_buffer_size(8).unwrap(), 32 * 10)
+    /// assert_eq!(frame.image_get_buffer_size(8).unwrap(), 32 * 10);
     /// ```
     pub fn image_get_buffer_size(&self, align: i32) -> Result<usize> {
         let size =
@@ -232,13 +232,13 @@ impl AVFrame {
     /// // alignment 1: no padding
     /// let size = frame.image_get_buffer_size(1).unwrap();
     /// let mut buf = vec![NOT_ZERO; size];
-    /// frame.image_copy_to_buffer(&mut buf, 1);
+    /// assert_eq!(frame.image_copy_to_buffer(&mut buf, 1).unwrap(), 100);
     /// assert_eq!(buf, &[0u8; 10 * 10]);
     ///
     /// // alignment 8: each line padded to 16 bytes
     /// let size = frame.image_get_buffer_size(8).unwrap();
     /// let mut buf = vec![NOT_ZERO; size];
-    /// frame.image_copy_to_buffer(&mut buf, 8);
+    /// assert_eq!(frame.image_copy_to_buffer(&mut buf, 8).unwrap(), 160);
     /// let chunks = buf.chunks_exact(16);
     /// assert_eq!(chunks.len(), 10); // 10 lines
     /// for chunk in chunks {
