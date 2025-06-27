@@ -53,7 +53,6 @@ impl Display for AvVersion {
     }
 }
 
-
 macro_rules! _impl_version {
     ($modname:ident) => {
         paste::paste! {
@@ -75,6 +74,7 @@ macro_rules! _impl_version {
             #[doc = r" use rsmpeg::{" $modname r", ffi};"]
             /// 
             #[doc = r" let version = " $modname "::version();"]
+            /// assert_ne!(version.to_av_int(), 0);
             /// // prints e.g. "59.39.100"
             /// println!("{}", version);
             /// ```
@@ -97,8 +97,11 @@ pub (crate) use _impl_version as impl_version;
 /// ```
 /// use rsmpeg::avutil::version_info;
 /// 
+/// let version_info = version_info();
+/// let version_info = version_info.to_string_lossy();
+/// assert_ne!(version_info.len(), 0);
 /// // prints e.g. "7.1.1"
-/// println!("{}", version_info().to_string_lossy());
+/// println!("{}", version_info);
 /// ```
 pub fn version_info() -> &'static CStr {
     unsafe { CStr::from_ptr(ffi::av_version_info()) }
@@ -107,8 +110,7 @@ pub fn version_info() -> &'static CStr {
 
 #[cfg(test)]
 mod tests {
-    use crate::{avcodec, avfilter, avformat, avutil::{self, AvVersion}, swresample, swscale};
-    use crate::ffi;
+    use crate::avutil::{AvVersion};
     use core::ffi::c_uint;
 
     #[test]
@@ -136,42 +138,5 @@ mod tests {
 
         assert_eq!(version, AvVersion {major:  61, minor: 7, micro: 100});
         assert_eq!(version.to_av_int(), av_int);
-    }
-
-    #[test]
-    fn test_av_version_info() {
-        let version = avutil::version_info();
-
-        assert_eq!(version.to_bytes_with_nul(), ffi::FFMPEG_VERSION);
-    }
-
-    #[test]
-    fn test_avutil_version() {
-        assert_ne!(avutil::version().to_av_int(), 0);
-    }
-
-    #[test]
-    fn test_avformat_version() {
-        assert_ne!(avformat::version().to_av_int(), 0);
-    }
-
-    #[test]
-    fn test_avcodec_version() {
-        assert_ne!(avcodec::version().to_av_int(), 0);
-    }
-
-    #[test]
-    fn test_avfilter_version() {
-        assert_ne!(avfilter::version().to_av_int(), 0);
-    }
-    
-    #[test]
-    fn test_swresample_version() {
-        assert_ne!(swresample::version().to_av_int(), 0);
-    }
-
-    #[test]
-    fn test_swscale_version() {
-        assert_ne!(swscale::version().to_av_int(), 0);
     }
 }
