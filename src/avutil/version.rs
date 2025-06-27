@@ -101,7 +101,10 @@ macro_rules! _impl_version {
 
 pub (crate) use _impl_version as impl_version;
 
-
+/// The informative version string of the FFmpeg that ffi bindings were generated against.
+/// 
+/// NOTE: This is not necessarily the same as what is linked into the executable, using [`version_info`] is preferred.
+pub const VERSION_INFO_STATIC: &'static CStr = unsafe { CStr::from_ptr(ffi::FFMPEG_VERSION.as_ptr().cast()) };
 
 /// Return an informative version string.
 /// 
