@@ -81,6 +81,20 @@ macro_rules! _impl_version {
             pub fn version() -> crate::avutil::AvVersion {
                 crate::avutil::AvVersion::from_av_int(unsafe { crate::ffi::[< $modname _version >]() })
             }
+
+            #[doc = r" Returns the license of the `lib" $modname r" that has been linked in the executable (dynamically or statically)."]
+            ///
+            /// # Examples
+            /// ```
+            #[doc = r" use rsmpeg::" $modname r";"]
+            /// 
+            #[doc = r" let license = " $modname "::license();"]
+            /// let license = license.to_string_lossy();
+            /// assert!(license.contains("GPL"));
+            /// ```
+            pub fn license() -> &'static core::ffi::CStr {
+                unsafe { core::ffi::CStr::from_ptr(crate::ffi::[< $modname _license >]()) }
+            }
         }
     }
 }
