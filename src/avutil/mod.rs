@@ -18,6 +18,7 @@ mod rational;
 mod samplefmt;
 mod timestamp;
 mod utils;
+mod version;
 
 pub use audio_fifo::*;
 pub use buffer::*;
@@ -38,3 +39,6 @@ pub use rational::*;
 pub use samplefmt::*;
 pub use timestamp::*;
 pub use utils::*;
+pub use version::*;
+
+impl_version!(avutil);
