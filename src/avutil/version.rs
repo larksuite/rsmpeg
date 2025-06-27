@@ -58,16 +58,16 @@ macro_rules! _impl_version {
         paste::paste! {
             #[doc = r" Descriptive semver version of the `lib" $modname r"` that ffi bindings were generated against."]
             ///
-            /// NOTE: This is not necessarily the same as what is linked into the executable, using [`version`] is preferred.
+            /// NOTE: This is not necessarily the same as what will be linked, using [`version`] is preferred.
             pub const VERSION_STATIC: crate::avutil::AvVersion = crate::avutil::AvVersion::new(
                 crate::ffi::[< LIB $modname:upper _VERSION_MAJOR >] as u8,
                 crate::ffi::[< LIB $modname:upper _VERSION_MINOR >] as u8,
                 crate::ffi::[< LIB $modname:upper _VERSION_MICRO >] as u8,
             );
 
-            #[doc = r" Returns a semver version of the `lib" $modname r"` that has been linked in the executable (dynamically or statically)."]
+            #[doc = r" Returns the semver version of the `lib" $modname r"` that has been linked (whether static or dynamic)."]
             /// 
-            /// NOTE: This is not the same as the version of FFmpeg, see [`avutil::version_info`].
+            /// NOTE: This is not the same as the version of FFmpeg, see [`crate::avutil::version_info`].
             /// 
             /// # Examples
             /// ```
@@ -82,7 +82,7 @@ macro_rules! _impl_version {
                 crate::avutil::AvVersion::from_av_int(unsafe { crate::ffi::[< $modname _version >]() })
             }
 
-            #[doc = r" Returns the license of the `lib" $modname r" that has been linked in the executable (dynamically or statically)."]
+            #[doc = r" Returns the license of the `lib" $modname r"` that has been linked (whether static or dynamic)."]
             ///
             /// # Examples
             /// ```
@@ -103,10 +103,10 @@ pub (crate) use _impl_version as impl_version;
 
 /// The informative version string of the FFmpeg that ffi bindings were generated against.
 /// 
-/// NOTE: This is not necessarily the same as what is linked into the executable, using [`version_info`] is preferred.
+/// NOTE: This is not necessarily the same as what will be linked, using [`version_info`] is preferred.
 pub const VERSION_INFO_STATIC: &'static CStr = unsafe { CStr::from_ptr(ffi::FFMPEG_VERSION.as_ptr().cast()) };
 
-/// Return an informative version string.
+/// Return an informative version string of the FFmpeg that has been linked (whether static or dynamic).
 /// 
 /// This usually is the actual release version number or a git commit description. This string has no fixed format and can change any time. It should never be parsed by code.
 /// 
