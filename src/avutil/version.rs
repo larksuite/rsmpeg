@@ -101,10 +101,14 @@ macro_rules! _impl_version {
 
 pub (crate) use _impl_version as impl_version;
 
-/// The informative version string of the FFmpeg that ffi bindings were generated against.
-/// 
-/// NOTE: This is not necessarily the same as what will be linked, using [`version_info`] is preferred.
-pub const VERSION_INFO_STATIC: &'static CStr = unsafe { CStr::from_ptr(ffi::FFMPEG_VERSION.as_ptr().cast()) };
+// FIXME: LazyLock is usable as an alternative to lazy_static in rust 1.80
+// FIXME: CStr::from_ptr is usable in consts in rust 1.81, letting us drop lazy_static entirely
+lazy_static::lazy_static! {
+    /// The informative version string of the FFmpeg that ffi bindings were generated against.
+    /// 
+    /// NOTE: This is not necessarily the same as what will be linked, using [`version_info`] is preferred.
+    pub static ref VERSION_INFO_STATIC: &'static CStr = unsafe { CStr::from_ptr(ffi::FFMPEG_VERSION.as_ptr().cast()) };
+}
 
 /// Return an informative version string of the FFmpeg that has been linked (whether static or dynamic).
 /// 
