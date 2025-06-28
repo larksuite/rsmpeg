@@ -2,3 +2,5 @@
 mod avfilter;
 
 pub use avfilter::*;
+
+crate::avutil::impl_version!(avfilter);

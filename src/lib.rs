@@ -12,6 +12,7 @@ mod macros;
 mod shared;
 
 pub mod avcodec;
+pub mod avdevice;
 pub mod avfilter;
 pub mod avformat;
 pub mod avutil;

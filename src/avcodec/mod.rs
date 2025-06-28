@@ -12,3 +12,5 @@ pub use codec_id::*;
 pub use codec_par::*;
 pub use packet::*;
 pub use parser::*;
+
+crate::avutil::impl_version!(avcodec);
