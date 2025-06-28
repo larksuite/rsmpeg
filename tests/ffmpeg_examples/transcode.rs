@@ -36,7 +36,7 @@ struct FilterContext<'graph> {
 /// context corresponds to each stream, if the stream is neither audio nor
 /// audio, decode context at this index is set to `None`.
 fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFormatContextInput)> {
-    let mut ifmt_ctx = AVFormatContextInput::open(filename, None, &mut None)?;
+    let mut ifmt_ctx = AVFormatContextInput::builder().url(filename).open()?;
     let mut stream_ctx = Vec::with_capacity(ifmt_ctx.nb_streams as usize);
 
     for (i, input_stream) in ifmt_ctx.streams().into_iter().enumerate() {
