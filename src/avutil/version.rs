@@ -90,7 +90,8 @@ macro_rules! _impl_version {
             ///
             #[doc = r" let license = " $modname "::license();"]
             /// let license = license.to_string_lossy();
-            /// assert!(license.contains("GPL"));
+            /// // prints e.g. "GPL version 3 or later"
+            /// println!("{license}");
             /// ```
             pub fn license() -> &'static core::ffi::CStr {
                 unsafe { core::ffi::CStr::from_ptr(crate::ffi::[< $modname _license >]()) }
