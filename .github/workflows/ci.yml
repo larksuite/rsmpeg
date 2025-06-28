@@ -97,7 +97,7 @@ jobs:
     strategy:
       matrix:
         ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0", "release/7.1"]
-        rust: ["nightly", "1.77.0"]
+        rust: ["nightly", "1.81.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
           # Stop running tests on stable rust or FFmpeg 6.0 (due to specific bug of FFmpeg 6.0)
@@ -249,7 +249,7 @@ jobs:
   build_dynamic_and_test_windows:
     strategy:
       matrix:
-        rust: ["nightly", "1.77.0"]
+        rust: ["nightly", "1.81.0"]
       fail-fast: false
     runs-on: windows-latest
     needs: build_dynamic_and_test_windows_pre

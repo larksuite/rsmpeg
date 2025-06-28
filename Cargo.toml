@@ -11,7 +11,7 @@ documentation = "https://docs.rs/rsmpeg"
 repository = "https://github.com/larksuite/rsmpeg"
 readme = "README.md"
 exclude = ["/.github", "/tests", "/utils"]
-rust-version = "1.77.0"
+rust-version = "1.81.0"
 
 [dependencies]
 rusty_ffmpeg = "0.16.1"
