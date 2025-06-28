@@ -59,7 +59,7 @@ macro_rules! _impl_version {
             #[doc = r" Descriptive semver version of the `lib" $modname r"` that ffi bindings were generated against."]
             ///
             /// NOTE: This is not necessarily the same as what will be linked, using [`version`] is preferred.
-            pub const VERSION_STATIC: crate::avutil::AvVersion = crate::avutil::AvVersion::new(
+            pub const VERSION: crate::avutil::AvVersion = crate::avutil::AvVersion::new(
                 crate::ffi::[< LIB $modname:upper _VERSION_MAJOR >] as u8,
                 crate::ffi::[< LIB $modname:upper _VERSION_MINOR >] as u8,
                 crate::ffi::[< LIB $modname:upper _VERSION_MICRO >] as u8,
@@ -71,12 +71,12 @@ macro_rules! _impl_version {
             ///
             /// # Examples
             /// ```
-            #[doc = r" use rsmpeg::{" $modname r", ffi};"]
+            #[doc = r" use rsmpeg::" $modname r";"]
             ///
             #[doc = r" let version = " $modname "::version();"]
             /// assert_ne!(version.to_av_int(), 0);
             /// // prints e.g. "59.39.100"
-            /// println!("{}", version);
+            /// println!("{version}");
             /// ```
             pub fn version() -> crate::avutil::AvVersion {
                 crate::avutil::AvVersion::from_av_int(unsafe { crate::ffi::[< $modname _version >]() })
@@ -90,11 +90,28 @@ macro_rules! _impl_version {
             ///
             #[doc = r" let license = " $modname "::license();"]
             /// let license = license.to_string_lossy();
+            /// assert_ne!(license.len(), 0);
             /// // prints e.g. "GPL version 3 or later"
             /// println!("{license}");
             /// ```
             pub fn license() -> &'static core::ffi::CStr {
                 unsafe { core::ffi::CStr::from_ptr(crate::ffi::[< $modname _license >]()) }
+            }
+
+            #[doc = r" Returns the configuration of the `lib" $modname r"` that has been linked (whether static or dynamic)."]
+            ///
+            /// # Examples
+            /// ```
+            #[doc = r" use rsmpeg::" $modname r";"]
+            ///
+            #[doc = r" let configuration = " $modname "::configuration();"]
+            /// let configuration = configuration.to_string_lossy();
+            /// assert_ne!(configuration.len(), 0);
+            /// // prints e.g. "--prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu --enable-gpl --enable-version3 --enable-static --disable-shared"
+            /// println!("{configuration}");
+            /// ```
+            pub fn configuration() -> &'static core::ffi::CStr {
+                unsafe { core::ffi::CStr::from_ptr(crate::ffi::[< $modname _configuration >]()) }
             }
         }
     }
@@ -102,14 +119,10 @@ macro_rules! _impl_version {
 
 pub(crate) use _impl_version as impl_version;
 
-// FIXME: LazyLock is usable as an alternative to lazy_static in rust 1.80
-// FIXME: CStr::from_ptr is usable in consts in rust 1.81, letting us drop lazy_static entirely
-lazy_static::lazy_static! {
-    /// The informative version string of the FFmpeg that ffi bindings were generated against.
-    ///
-    /// NOTE: This is not necessarily the same as what will be linked, using [`version_info`] is preferred.
-    pub static ref VERSION_INFO_STATIC: &'static CStr = unsafe { CStr::from_ptr(ffi::FFMPEG_VERSION.as_ptr().cast()) };
-}
+/// The informative version string of the FFmpeg that ffi bindings were generated against.
+///
+/// NOTE: This is not necessarily the same as what will be linked, using [`version_info`] is preferred.
+pub const FFMPEG_VERSION: &CStr = unsafe { CStr::from_ptr(ffi::FFMPEG_VERSION.as_ptr().cast()) };
 
 /// Return an informative version string of the FFmpeg that has been linked (whether static or dynamic).
 ///
@@ -123,7 +136,7 @@ lazy_static::lazy_static! {
 /// let version_info = version_info.to_string_lossy();
 /// assert_ne!(version_info.len(), 0);
 /// // prints e.g. "7.1.1"
-/// println!("{}", version_info);
+/// println!("{version_info}");
 /// ```
 pub fn version_info() -> &'static CStr {
     unsafe { CStr::from_ptr(ffi::av_version_info()) }
