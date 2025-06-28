@@ -1,4 +1,3 @@
-
 use crate::ffi;
 
 use std::{
@@ -7,7 +6,7 @@ use std::{
 };
 
 /// Version information decoded from `av*_version()`
-/// 
+///
 /// See FFmpeg documentation for more details: <https://ffmpeg.org/doxygen/trunk/group__version__utils.html>
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct AvVersion {
@@ -19,7 +18,9 @@ pub struct AvVersion {
 impl AvVersion {
     pub const fn new(major: u8, minor: u8, micro: u8) -> Self {
         Self {
-            major, minor, micro
+            major,
+            minor,
+            micro,
         }
     }
 
@@ -35,7 +36,6 @@ impl AvVersion {
             micro: bytes[0],
         }
     }
-
 
     pub const fn to_av_int(self) -> c_uint {
         let mut bytes = [0u8; std::mem::size_of::<c_uint>()];
@@ -66,13 +66,13 @@ macro_rules! _impl_version {
             );
 
             #[doc = r" Returns the semver version of the `lib" $modname r"` that has been linked (whether static or dynamic)."]
-            /// 
+            ///
             /// NOTE: This is not the same as the version of FFmpeg, see [`crate::avutil::version_info`].
-            /// 
+            ///
             /// # Examples
             /// ```
             #[doc = r" use rsmpeg::{" $modname r", ffi};"]
-            /// 
+            ///
             #[doc = r" let version = " $modname "::version();"]
             /// assert_ne!(version.to_av_int(), 0);
             /// // prints e.g. "59.39.100"
@@ -87,7 +87,7 @@ macro_rules! _impl_version {
             /// # Examples
             /// ```
             #[doc = r" use rsmpeg::" $modname r";"]
-            /// 
+            ///
             #[doc = r" let license = " $modname "::license();"]
             /// let license = license.to_string_lossy();
             /// assert!(license.contains("GPL"));
@@ -99,25 +99,25 @@ macro_rules! _impl_version {
     }
 }
 
-pub (crate) use _impl_version as impl_version;
+pub(crate) use _impl_version as impl_version;
 
 // FIXME: LazyLock is usable as an alternative to lazy_static in rust 1.80
 // FIXME: CStr::from_ptr is usable in consts in rust 1.81, letting us drop lazy_static entirely
 lazy_static::lazy_static! {
     /// The informative version string of the FFmpeg that ffi bindings were generated against.
-    /// 
+    ///
     /// NOTE: This is not necessarily the same as what will be linked, using [`version_info`] is preferred.
     pub static ref VERSION_INFO_STATIC: &'static CStr = unsafe { CStr::from_ptr(ffi::FFMPEG_VERSION.as_ptr().cast()) };
 }
 
 /// Return an informative version string of the FFmpeg that has been linked (whether static or dynamic).
-/// 
+///
 /// This usually is the actual release version number or a git commit description. This string has no fixed format and can change any time. It should never be parsed by code.
-/// 
+///
 /// # Examples
 /// ```
 /// use rsmpeg::avutil::version_info;
-/// 
+///
 /// let version_info = version_info();
 /// let version_info = version_info.to_string_lossy();
 /// assert_ne!(version_info.len(), 0);
@@ -128,27 +128,66 @@ pub fn version_info() -> &'static CStr {
     unsafe { CStr::from_ptr(ffi::av_version_info()) }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::avutil::{AvVersion};
+    use crate::avutil::AvVersion;
     use core::ffi::c_uint;
 
     #[test]
     fn test_avversion_semver_order() {
-        let a = AvVersion {major: 100, minor: 100, micro: 100};
+        let a = AvVersion {
+            major: 100,
+            minor: 100,
+            micro: 100,
+        };
 
         // Major overrules minor and micro
-        assert!(a < AvVersion{major: 101, minor: 0, micro: 0});
-        assert!(a > AvVersion{major: 99, minor: 255, micro: 255});
+        assert!(
+            a < AvVersion {
+                major: 101,
+                minor: 0,
+                micro: 0
+            }
+        );
+        assert!(
+            a > AvVersion {
+                major: 99,
+                minor: 255,
+                micro: 255
+            }
+        );
 
         // Minor overrules micro
-        assert!(a < AvVersion{major: 100, minor: 101, micro: 0});
-        assert!(a > AvVersion{major: 100, minor: 99, micro: 255});
+        assert!(
+            a < AvVersion {
+                major: 100,
+                minor: 101,
+                micro: 0
+            }
+        );
+        assert!(
+            a > AvVersion {
+                major: 100,
+                minor: 99,
+                micro: 255
+            }
+        );
 
         // Micro is not ignored
-        assert!(a < AvVersion{major: 100, minor: 100, micro: 101});
-        assert!(a > AvVersion{major: 100, minor: 100, micro: 99});
+        assert!(
+            a < AvVersion {
+                major: 100,
+                minor: 100,
+                micro: 101
+            }
+        );
+        assert!(
+            a > AvVersion {
+                major: 100,
+                minor: 100,
+                micro: 99
+            }
+        );
     }
 
     #[test]
@@ -157,7 +196,14 @@ mod tests {
         let av_int: c_uint = 3999588;
         let version = AvVersion::from_av_int(av_int);
 
-        assert_eq!(version, AvVersion {major:  61, minor: 7, micro: 100});
+        assert_eq!(
+            version,
+            AvVersion {
+                major: 61,
+                minor: 7,
+                micro: 100
+            }
+        );
         assert_eq!(version.to_av_int(), av_int);
     }
 }
