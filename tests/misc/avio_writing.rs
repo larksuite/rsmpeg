@@ -82,8 +82,10 @@ fn open_output_file(
         )),
     );
 
-    let mut output_format_context =
-        AVFormatContextOutput::create(filename, Some(AVIOContextContainer::Custom(io_context)))?;
+    let mut output_format_context = AVFormatContextOutput::builder()
+        .filename(filename)
+        .io_context(AVIOContextContainer::Custom(io_context))
+        .build()?;
 
     let encoder = AVCodec::find_encoder(ffi::AV_CODEC_ID_H264)
         .with_context(|| anyhow!("encoder({}) not found.", ffi::AV_CODEC_ID_H264))?;

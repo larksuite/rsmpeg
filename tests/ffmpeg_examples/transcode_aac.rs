@@ -41,7 +41,7 @@ fn open_output_file(
 ) -> Result<(AVFormatContextOutput, AVCodecContext)> {
     // Create a new format context for the output container format.
     let mut output_format_context =
-        AVFormatContextOutput::create(output_file, None).context("Failed to open output file.")?;
+        AVFormatContextOutput::create(output_file).context("Failed to open output file.")?;
 
     // Find the encoder to be used by its name.
     let encode_codec =
