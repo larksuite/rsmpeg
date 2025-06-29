@@ -28,7 +28,7 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<()> {
     input_format_context
         .dump(0, input_path)
         .context("Dump input format context failed.")?;
-    let mut output_format_context = AVFormatContextOutput::create(output_path, None)
+    let mut output_format_context = AVFormatContextOutput::create(output_path)
         .context("Create output format context failed.")?;
     let stream_mapping: Vec<_> = {
         let mut stream_index = 0usize;

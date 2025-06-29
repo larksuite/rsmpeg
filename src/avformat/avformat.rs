@@ -21,6 +21,16 @@ pub enum AVIOContextContainer {
     Custom(AVIOContextCustom),
 }
 
+impl AVIOContextContainer {
+    /// Get the raw pointer of the AVIOContext.
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut ffi::AVIOContext {
+        match self {
+            Self::Url(ctx) => ctx.as_mut_ptr(),
+            Self::Custom(ctx) => ctx.as_mut_ptr(),
+        }
+    }
+}
+
 wrap! {
     AVFormatContextInput: ffi::AVFormatContext,
     io_context: Option<AVIOContextContainer> = None,
@@ -267,16 +277,39 @@ wrap! {
 impl AVFormatContextOutput {
     /// Open a file and create a [`AVFormatContextOutput`] instance of that
     /// file. Give it an [`AVIOContext`] if you want custom IO.
-    pub fn create(filename: &CStr, io_context: Option<AVIOContextContainer>) -> Result<Self> {
+    pub fn create(filename: &CStr) -> Result<Self> {
+        Self::builder().filename(filename).build()
+    }
+}
+
+#[bon::bon]
+impl AVFormatContextOutput {
+    /// Builder for [`AVFormatContextOutput`].
+    #[builder]
+    pub fn builder(
+        oformat: Option<&AVOutputFormat>,
+        format_name: Option<&CStr>,
+        filename: Option<&CStr>,
+        io_context: Option<AVIOContextContainer>,
+    ) -> Result<Self> {
         let mut output_format_context = ptr::null_mut();
+        let oformat = oformat
+            .map(AVOutputFormat::as_ptr)
+            .unwrap_or_else(|| ptr::null_mut());
+        let format_name = format_name
+            .map(CStr::as_ptr)
+            .unwrap_or_else(|| ptr::null_mut());
+        let filename_ptr = filename
+            .map(CStr::as_ptr)
+            .unwrap_or_else(|| ptr::null_mut());
 
         // Alloc the context
         unsafe {
             ffi::avformat_alloc_output_context2(
                 &mut output_format_context,
-                ptr::null_mut(),
-                ptr::null_mut(),
-                filename.as_ptr(),
+                oformat,
+                format_name,
+                filename_ptr,
             )
         }
         .upgrade()?;
@@ -290,23 +323,25 @@ impl AVFormatContextOutput {
         // iformat/oformat.flags. In such a case, the (de)muxer will handle I/O
         // in some other way and this field will be NULL.
         //
-        // For safeness, we don't use the user the given AVIOContext even if the
-        // caller provides one.
+        // Therefore, we won't use the user-given AVIOContext even if the caller provides one.
         if output_format_context.oformat().flags & ffi::AVFMT_NOFILE as i32 == 0 {
             // If user provides us an `AVIOCustomContext`, use it, or we create a default one.
-            let mut io_context = match io_context {
-                Some(x) => x,
-                None => {
-                    AVIOContextContainer::Url(AVIOContextURL::open(filename, ffi::AVIO_FLAG_WRITE)?)
-                }
+            let io_context = if let Some(io_context) = io_context {
+                Some(io_context)
+            } else if let Some(filename) = filename {
+                Some(AVIOContextContainer::Url(AVIOContextURL::open(
+                    filename,
+                    ffi::AVIO_FLAG_WRITE,
+                )?))
+            } else {
+                None
             };
-            unsafe {
-                output_format_context.deref_mut().pb = match &mut io_context {
-                    AVIOContextContainer::Url(ctx) => ctx.as_mut_ptr(),
-                    AVIOContextContainer::Custom(ctx) => ctx.as_mut_ptr(),
-                };
+            if let Some(mut io_context) = io_context {
+                unsafe {
+                    output_format_context.deref_mut().pb = io_context.as_mut_ptr();
+                }
+                output_format_context.io_context = Some(io_context);
             }
-            output_format_context.io_context = Some(io_context);
         }
 
         Ok(output_format_context)

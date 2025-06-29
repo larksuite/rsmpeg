@@ -81,7 +81,7 @@ fn open_output_file(
     dec_ctx: Vec<Option<AVCodecContext>>,
     dict: &mut Option<AVDictionary>,
 ) -> Result<(Vec<Option<StreamContext>>, AVFormatContextOutput)> {
-    let mut ofmt_ctx = AVFormatContextOutput::create(filename, None)?;
+    let mut ofmt_ctx = AVFormatContextOutput::create(filename)?;
     let mut stream_ctx = vec![];
 
     for (i, dec_ctx) in dec_ctx.into_iter().enumerate() {
