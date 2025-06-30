@@ -36,22 +36,58 @@ wrap! {
     io_context: Option<AVIOContextContainer> = None,
 }
 
+#[bon::bon]
 impl AVFormatContextInput {
-    /// Create a [`AVFormatContextInput`] instance of a file, and find info of
-    /// all streams.
+    #[builder(finish_fn = open)]
+    /// Create a builder that allows for advanced configuration.
     ///
-    /// - `url`: url of the stream to open.
-    /// - `format`: input format hint. If `format` is some, this parameter forces a specific input format.
-    /// - `options`: A dictionary filled with AVFormatContext and demuxer-private options.
-    ///    On return this parameter will be destroyed and replaced with a dict containing
-    ///    options that were not found.
-    pub fn open(
-        url: &CStr,
-        fmt: Option<&AVInputFormat>,
-        options: &mut Option<AVDictionary>,
+    /// # Examples
+    ///
+    /// ```
+    /// use rsmpeg::avformat::{AVInputFormat, AVFormatContextInput};
+    /// use rsmpeg::avutil::AVDictionary;
+    ///
+    /// let mjpeg_options = AVDictionary::new(c"framerate", c"10", 0);
+    /// let mut mjpeg_options = Some(mjpeg_options);
+    ///
+    /// let input_context = AVFormatContextInput::builder()
+    ///     .url(c"assets/mountain.jpg")
+    ///     .format(&AVInputFormat::find(c"mjpeg").unwrap())
+    ///     .options(&mut mjpeg_options)
+    ///     .open().unwrap();
+    ///
+    /// assert!(mjpeg_options.is_none(), "unconsumed format options: {mjpeg_options:?}");
+    /// ```
+    pub fn builder(
+        /// Url of the stream to open. Can sometimes be omitted when using custom io.
+        url: Option<&CStr>,
+        /// Use provided input format instead of implicit inferrence from url during `avformat_open_input`.
+        format: Option<&AVInputFormat>,
+        /// Format-specific options provided to `avformat_open_input`. After opening, the dictionary will contain any unused values (if any).
+        options: Option<&mut Option<AVDictionary>>,
+        /// Use provided IO context instead of implicit creation during `avformat_open_input`.
+        mut io_context: Option<AVIOContextContainer>,
     ) -> Result<Self> {
-        let mut input_format_context = ptr::null_mut();
-        let fmt = fmt.map(|x| x.as_ptr()).unwrap_or_else(std::ptr::null) as _;
+        let mut input_format_context = {
+            let input_format_context = unsafe { ffi::avformat_alloc_context() };
+
+            if let Some(io_context) = io_context.as_mut() {
+                unsafe {
+                    (*input_format_context).pb = match io_context {
+                        AVIOContextContainer::Url(ctx) => ctx.as_mut_ptr(),
+                        AVIOContextContainer::Custom(ctx) => ctx.as_mut_ptr(),
+                    };
+                }
+            };
+
+            input_format_context
+        };
+
+        let url_ptr = url.map(|x| x.as_ptr()).unwrap_or(std::ptr::null());
+        let fmt_ptr = format.map(|x| x.as_ptr()).unwrap_or_else(std::ptr::null);
+
+        let mut dummy_options = None;
+        let options = options.unwrap_or(&mut dummy_options);
         let mut options_ptr = options
             .as_mut()
             .map(|x| x.as_mut_ptr())
@@ -60,8 +96,8 @@ impl AVFormatContextInput {
         unsafe {
             ffi::avformat_open_input(
                 &mut input_format_context,
-                url.as_ptr(),
-                fmt,
+                url_ptr,
+                fmt_ptr,
                 &mut options_ptr,
             )
         }
@@ -78,6 +114,7 @@ impl AVFormatContextInput {
         // Here we can be sure that context is non null, constructing here for
         // dropping when `avformat_find_stream_info` fails.
         let mut context = unsafe { Self::from_raw(NonNull::new(input_format_context).unwrap()) };
+        context.io_context = io_context;
 
         unsafe { ffi::avformat_find_stream_info(context.as_mut_ptr(), ptr::null_mut()) }
             .upgrade()
@@ -86,50 +123,22 @@ impl AVFormatContextInput {
         Ok(context)
     }
 
+    /// Create a [`AVFormatContextInput`] instance of a file, and find info of
+    /// all streams.
+    ///
+    /// - `url`: url of the stream to open.
+    ///
+    /// For more advanced configuration, see [`Self::builder`].
+    pub fn open(url: &CStr) -> Result<Self> {
+        Self::builder().url(url).open()
+    }
+
     /// Create a [`AVFormatContextInput`] instance from an [`AVIOContext`], and find info of
     /// all streams.
-    pub fn from_io_context(mut io_context: AVIOContextContainer) -> Result<Self> {
-        let input_format_context = {
-            // Only fails on no memory, so unwrap().
-            // `avformat_open_input`'s documentation:
-            //
-            // Note that a user-supplied AVFormatContext will be freed on failure.
-            //
-            // So here we don't construct the `AVFormatContext`, or the
-            // `input_format_context` will be double free.
-            let input_format_context = unsafe { ffi::avformat_alloc_context() }.upgrade().unwrap();
-            unsafe {
-                (*input_format_context.as_ptr()).pb = match &mut io_context {
-                    AVIOContextContainer::Url(ctx) => ctx.as_mut_ptr(),
-                    AVIOContextContainer::Custom(ctx) => ctx.as_mut_ptr(),
-                };
-            }
-            input_format_context
-        };
-
-        unsafe {
-            ffi::avformat_open_input(
-                &mut input_format_context.as_ptr(),
-                ptr::null_mut(),
-                ptr::null_mut(),
-                ptr::null_mut(),
-            )
-        }
-        .upgrade()
-        .map_err(RsmpegError::OpenInputError)?;
-
-        // After `avformat_open_input`, we can `avformat_close_input` after it,
-        // so here we can safely construct a `AVFormatContextInput`.
-        let mut input_format_context = unsafe { Self::from_raw(input_format_context) };
-        input_format_context.io_context = Some(io_context);
-
-        unsafe {
-            ffi::avformat_find_stream_info(input_format_context.as_mut_ptr(), ptr::null_mut())
-        }
-        .upgrade()
-        .map_err(RsmpegError::FindStreamInfoError)?;
-
-        Ok(input_format_context)
+    ///
+    /// For more advanced configuration, see [`Self::builder`].
+    pub fn from_io_context(io_context: AVIOContextContainer) -> Result<Self> {
+        Self::builder().io_context(io_context).open()
     }
 
     /// Dump [`ffi::AVFormatContext`]'s info in the "FFmpeg" way.
