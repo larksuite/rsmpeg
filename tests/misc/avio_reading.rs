@@ -29,10 +29,7 @@ fn avio_reading(filename: &CStr) -> Result<()> {
         None,
     );
 
-    //let mut input_format_context = AVFormatContextInput::from_io_context(AVIOContextContainer::Custom(io_context))?;
-    let mut input_format_context = AVFormatContextInput::builder()
-        .io_context(AVIOContextContainer::Custom(io_context))
-        .open()?;
+    let mut input_format_context = AVFormatContextInput::from_io_context(AVIOContextContainer::Custom(io_context))?;
     input_format_context.dump(0, filename)?;
 
     Ok(())

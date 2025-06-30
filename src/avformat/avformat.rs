@@ -99,33 +99,25 @@ impl AVFormatContextInput {
 
         Ok(context)
     }
-}
 
-impl AVFormatContextInput {
     /// Create a [`AVFormatContextInput`] instance of a file, and find info of
     /// all streams.
     ///
     /// - `url`: url of the stream to open.
-    /// - `format`: input format hint. If `format` is some, this parameter forces a specific input format.
-    /// - `options`: A dictionary filled with AVFormatContext and demuxer-private options.
-    ///    On return this parameter will be destroyed and replaced with a dict containing
-    ///    options that were not found.
-    #[deprecated = "see `AVFormatContextInput::builder`"]
+    /// 
+    /// For more advanced configuration, see [`Self::builder`].
     pub fn open(
         url: &CStr,
-        fmt: Option<&AVInputFormat>,
-        options: &mut Option<AVDictionary>,
     ) -> Result<Self> {
         Self::builder()
             .url(url)
-            .maybe_format(fmt)
-            .options(options)
             .open()
     }
 
     /// Create a [`AVFormatContextInput`] instance from an [`AVIOContext`], and find info of
     /// all streams.
-    #[deprecated = "see `AVFormatContextInput::builder"]
+    /// 
+    /// For more advanced configuration, see [`Self::builder`].
     pub fn from_io_context(io_context: AVIOContextContainer) -> Result<Self> {
         Self::builder().io_context(io_context).open()
     }

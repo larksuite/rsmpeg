@@ -53,7 +53,7 @@ fn decode_packet(
 
 /// Extract motion vectors from a video.
 fn extract_mvs(video_path: &CStr) -> Result<()> {
-    let mut input_format_context = AVFormatContextInput::open(video_path, None, &mut None)?;
+    let mut input_format_context = AVFormatContextInput::open(video_path)?;
     let media_type = ffi::AVMEDIA_TYPE_VIDEO;
 
     let (stream_index, mut decode_context) = {
