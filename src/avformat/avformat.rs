@@ -39,10 +39,33 @@ wrap! {
 #[bon::bon]
 impl AVFormatContextInput {
     #[builder(finish_fn = open)]
+    /// Create a builder that allows for advanced configuration.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use rsmpeg::avformat::{AVInputFormat, AVFormatContextInput};
+    /// use rsmpeg::avutil::AVDictionary;
+    /// 
+    /// let mjpeg_options = AVDictionary::new(c"framerate", c"10", 0);
+    /// let mut mjpeg_options = Some(mjpeg_options);
+    /// 
+    /// let input_context = AVFormatContextInput::builder()
+    ///     .url(c"assets/mountain.jpg")
+    ///     .format(&AVInputFormat::find(c"mjpeg").unwrap())
+    ///     .options(&mut mjpeg_options)
+    ///     .open().unwrap();
+    /// 
+    /// assert!(mjpeg_options.is_none(), "unconsumed format options: {mjpeg_options:?}");
+    /// ```
     pub fn builder(
+        /// Url of the stream to open. Can sometimes be omitted when using custom io.
         url: Option<&CStr>,
+        /// Use provided input format instead of implicit inferrence from url during `avformat_open_input`.
         format: Option<&AVInputFormat>,
+        /// Format-specific options provided to `avformat_open_input`. After opening, the dictionary will contain any unused values (if any).
         options: Option<&mut Option<AVDictionary>>,
+        /// Use provided IO context instead of implicit creation during `avformat_open_input`.
         mut io_context: Option<AVIOContextContainer>,
     ) -> Result<Self> {
         let mut input_format_context = {

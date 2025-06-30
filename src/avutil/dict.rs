@@ -1,9 +1,7 @@
 use crate::{error::Result, ffi, shared::*};
 
 use std::{
-    ffi::{CStr, CString},
-    os::raw::c_void,
-    ptr::{self, NonNull},
+    ffi::{CStr, CString}, fmt::Debug, os::raw::c_void, ptr::{self, NonNull}
 };
 
 wrap_ref_mut!(AVDictionary: ffi::AVDictionary);
@@ -183,6 +181,18 @@ impl<'dict> IntoIterator for &'dict AVDictionary {
     type Item = AVDictionaryEntryRef<'dict>;
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+impl Debug for AVDictionary {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut out = f.debug_map();
+
+        for entry in self.into_iter() {
+            out.entry(&entry.key(), &entry.value());
+        }
+
+        out.finish()
     }
 }
 
