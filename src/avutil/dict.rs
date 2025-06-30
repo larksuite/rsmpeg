@@ -1,7 +1,10 @@
 use crate::{error::Result, ffi, shared::*};
 
 use std::{
-    ffi::{CStr, CString}, fmt::Debug, os::raw::c_void, ptr::{self, NonNull}
+    ffi::{CStr, CString},
+    fmt::Debug,
+    os::raw::c_void,
+    ptr::{self, NonNull},
 };
 
 wrap_ref_mut!(AVDictionary: ffi::AVDictionary);

@@ -40,22 +40,22 @@ wrap! {
 impl AVFormatContextInput {
     #[builder(finish_fn = open)]
     /// Create a builder that allows for advanced configuration.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use rsmpeg::avformat::{AVInputFormat, AVFormatContextInput};
     /// use rsmpeg::avutil::AVDictionary;
-    /// 
+    ///
     /// let mjpeg_options = AVDictionary::new(c"framerate", c"10", 0);
     /// let mut mjpeg_options = Some(mjpeg_options);
-    /// 
+    ///
     /// let input_context = AVFormatContextInput::builder()
     ///     .url(c"assets/mountain.jpg")
     ///     .format(&AVInputFormat::find(c"mjpeg").unwrap())
     ///     .options(&mut mjpeg_options)
     ///     .open().unwrap();
-    /// 
+    ///
     /// assert!(mjpeg_options.is_none(), "unconsumed format options: {mjpeg_options:?}");
     /// ```
     pub fn builder(
@@ -127,19 +127,15 @@ impl AVFormatContextInput {
     /// all streams.
     ///
     /// - `url`: url of the stream to open.
-    /// 
+    ///
     /// For more advanced configuration, see [`Self::builder`].
-    pub fn open(
-        url: &CStr,
-    ) -> Result<Self> {
-        Self::builder()
-            .url(url)
-            .open()
+    pub fn open(url: &CStr) -> Result<Self> {
+        Self::builder().url(url).open()
     }
 
     /// Create a [`AVFormatContextInput`] instance from an [`AVIOContext`], and find info of
     /// all streams.
-    /// 
+    ///
     /// For more advanced configuration, see [`Self::builder`].
     pub fn from_io_context(io_context: AVIOContextContainer) -> Result<Self> {
         Self::builder().io_context(io_context).open()
