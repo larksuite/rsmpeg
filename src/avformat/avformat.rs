@@ -1,5 +1,5 @@
 use std::{
-    ffi::CStr,
+    ffi::{c_void, CStr},
     os::raw::c_int,
     ptr::{self, NonNull},
 };
@@ -505,6 +505,40 @@ impl AVInputFormat {
             .upgrade()
             .map(|x| unsafe { AVInputFormatRef::from_raw(x) })
     }
+
+    /// Iterate over all registered demuxers.
+    pub fn iterate() -> AVInputFormatIter {
+        AVInputFormatIter {
+            opaque: ptr::null_mut(),
+        }
+    }
+
+    /// A comma separated list of short names for the format. New names
+    /// may be appended with a minor bump.
+    pub fn name(&self) -> &CStr {
+        unsafe { CStr::from_ptr(self.name) }
+    }
+
+    /// Descriptive name for the format, meant to be more human-readable
+    /// than name. You should use the NULL_IF_CONFIG_SMALL() macro
+    /// to define it.
+    pub fn long_name(&self) -> &CStr {
+        unsafe { CStr::from_ptr(self.long_name) }
+    }
+}
+
+pub struct AVInputFormatIter {
+    opaque: *mut c_void,
+}
+
+impl Iterator for AVInputFormatIter {
+    type Item = AVInputFormatRef<'static>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        unsafe { ffi::av_demuxer_iterate(&mut self.opaque) }
+            .upgrade()
+            .map(|x| unsafe { AVInputFormatRef::from_raw(x) })
+    }
 }
 
 wrap_ref!(AVOutputFormat: ffi::AVOutputFormat);
@@ -523,6 +557,40 @@ impl AVOutputFormat {
         let mime_type = mime_type.map(|x| x.as_ptr()).unwrap_or_else(ptr::null);
 
         unsafe { ffi::av_guess_format(short_name, filename, mime_type) }
+            .upgrade()
+            .map(|x| unsafe { AVOutputFormatRef::from_raw(x) })
+    }
+
+    /// Iterate over all registered muxers.
+    pub fn iterate() -> AVOutputFormatIter {
+        AVOutputFormatIter {
+            opaque: ptr::null_mut(),
+        }
+    }
+
+    /// A comma separated list of short names for the format. New names
+    /// may be appended with a minor bump.
+    pub fn name(&self) -> &CStr {
+        unsafe { CStr::from_ptr(self.name) }
+    }
+
+    /// Descriptive name for the format, meant to be more human-readable
+    /// than name. You should use the NULL_IF_CONFIG_SMALL() macro
+    /// to define it.
+    pub fn long_name(&self) -> &CStr {
+        unsafe { CStr::from_ptr(self.long_name) }
+    }
+}
+
+pub struct AVOutputFormatIter {
+    opaque: *mut c_void,
+}
+
+impl Iterator for AVOutputFormatIter {
+    type Item = AVOutputFormatRef<'static>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        unsafe { ffi::av_muxer_iterate(&mut self.opaque) }
             .upgrade()
             .map(|x| unsafe { AVOutputFormatRef::from_raw(x) })
     }
@@ -611,19 +679,38 @@ mod test {
     fn test_find_input_format() {
         let name = c"mpeg";
         let filter_ref = AVInputFormat::find(name).unwrap();
-        assert_eq!(
-            unsafe { CStr::from_ptr(filter_ref.long_name) },
-            c"MPEG-PS (MPEG-2 Program Stream)"
-        );
+        assert_eq!(filter_ref.long_name(), c"MPEG-PS (MPEG-2 Program Stream)");
 
         let name = c"asf";
         let filter_ref = AVInputFormat::find(name).unwrap();
         assert_eq!(
-            unsafe { CStr::from_ptr(filter_ref.long_name) },
+            filter_ref.long_name(),
             c"ASF (Advanced / Active Streaming Format)"
         );
 
         let name = c"__random__";
         assert!(AVInputFormat::find(name).is_none());
+    }
+
+    #[test]
+    fn test_iterate_input_formats() {
+        let inputs = AVInputFormat::iterate()
+            .map(|x| x.name().to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+        dbg!(&inputs);
+        assert!(!inputs.is_empty());
+        assert!(inputs.contains(&"mpeg".to_string()));
+        assert!(inputs.contains(&"asf".to_string()));
+    }
+
+    #[test]
+    fn test_iterate_output_formats() {
+        let outputs = AVOutputFormat::iterate()
+            .map(|x| x.name().to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+        dbg!(&outputs);
+        assert!(!outputs.is_empty());
+        assert!(outputs.contains(&"mpeg".to_string()));
+        assert!(outputs.contains(&"asf".to_string()));
     }
 }
