@@ -1,5 +1,5 @@
 use std::{
-    ffi::CStr,
+    ffi::{c_void, CStr},
     ops::Deref,
     ptr::{self, NonNull},
     slice,
@@ -185,5 +185,80 @@ impl Drop for AVIOContextCustom {
             let _ = unsafe { AVMem::from_raw(buffer) };
         }
         unsafe { ffi::avio_context_free(&mut self.as_mut_ptr()) };
+    }
+}
+
+pub struct AVIOProtocol;
+
+impl AVIOProtocol {
+    /// Return the name of the protocol that will handle the passed URL.
+    pub fn find_protocol_name(url: &CStr) -> Option<&'static CStr> {
+        unsafe {
+            ffi::avio_find_protocol_name(url.as_ptr())
+                .upgrade()
+                .map(|x| CStr::from_ptr(x.as_ptr()))
+        }
+    }
+
+    /// Iterate through names of available output protocols.
+    pub fn outputs() -> AVIOProtocolIter {
+        AVIOProtocolIter {
+            opaque: ptr::null_mut(),
+            output: 1,
+        }
+    }
+
+    /// Iterate through names of available input protocols.
+    pub fn inputs() -> AVIOProtocolIter {
+        AVIOProtocolIter {
+            opaque: ptr::null_mut(),
+            output: 0,
+        }
+    }
+}
+
+pub struct AVIOProtocolIter {
+    opaque: *mut c_void,
+    output: i32,
+}
+
+impl Iterator for AVIOProtocolIter {
+    type Item = &'static CStr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        unsafe {
+            ffi::avio_enum_protocols(&mut self.opaque, self.output)
+                .upgrade()
+                .map(|x| CStr::from_ptr(x.as_ptr()))
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_iterate_output_protocols() {
+        let outputs = AVIOProtocol::outputs()
+            .map(|x| x.to_str().unwrap())
+            .collect::<Vec<_>>();
+        dbg!(&outputs);
+        assert!(!outputs.is_empty());
+        assert!(outputs.contains(&"file"));
+        assert!(outputs.contains(&"http"));
+        assert!(outputs.contains(&"rtmp"));
+    }
+
+    #[test]
+    fn test_iterate_input_protocols() {
+        let inputs = AVIOProtocol::inputs()
+            .map(|x| x.to_str().unwrap())
+            .collect::<Vec<_>>();
+        dbg!(&inputs);
+        assert!(!inputs.is_empty());
+        assert!(inputs.contains(&"file"));
+        assert!(inputs.contains(&"http"));
+        assert!(inputs.contains(&"async"));
     }
 }
