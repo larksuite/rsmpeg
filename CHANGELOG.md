@@ -1,3 +1,17 @@
+## 0.17.0
+
+- Add builder pattern for `AVFormatContextInput` and `AVFormatContextOutput` (#225, #226)
+
+- Add iterator and name accessors for `AVInputFormat` and `AVOutputFormat` (#227)
+
+- Add protocol enumeration and name lookup for `AVIOProtocol` (#228)
+
+- Add safe wrappers for component versions, configuration and licenses (#220)
+
+- Bump MSRV to 1.81.0 (#223)
+
+- Minor documentation updates and refactorings (#216, #217, #218, #222, #224)
+
 ## 0.16.1
 
 - Add API for `AVFrame::image_copy_to_buffer` and `AVFrame::image_get_buffer_size` (#213)
