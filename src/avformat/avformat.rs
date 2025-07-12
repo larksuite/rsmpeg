@@ -38,7 +38,6 @@ wrap! {
 
 #[bon::bon]
 impl AVFormatContextInput {
-    #[builder(finish_fn = open)]
     /// Create a builder that allows for advanced configuration.
     ///
     /// # Examples
@@ -58,6 +57,7 @@ impl AVFormatContextInput {
     ///
     /// assert!(mjpeg_options.is_none(), "unconsumed format options: {mjpeg_options:?}");
     /// ```
+    #[builder(finish_fn = open)]
     pub fn builder(
         /// Url of the stream to open. Can sometimes be omitted when using custom io.
         url: Option<&CStr>,
@@ -167,6 +167,13 @@ impl AVFormatContextInput {
             Err(ffi::AVERROR_EOF) => Ok(None),
             Err(x) => Err(x)?,
         }
+    }
+
+    /// Seek to the keyframe at timestamp, 'timestamp' in 'stream_index'.
+    pub fn seek(&mut self, stream_index: i32, timestamp: i64, flags: i32) -> Result<()> {
+        unsafe { ffi::av_seek_frame(self.as_mut_ptr(), stream_index, timestamp, flags) }
+            .upgrade()?;
+        Ok(())
     }
 
     /// Return the stream index and stream decoder if there is any "best" stream.
