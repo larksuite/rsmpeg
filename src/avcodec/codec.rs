@@ -417,6 +417,23 @@ impl AVCodecContext {
         // point in future it will not be externally visible at all.
         !self.hwaccel.is_null()
     }
+
+    /// Reset the internal codec state / flush internal buffers.
+    /// Should be called e.g. when seeking or when switching to a different stream.
+    ///
+    /// For decoders, this function just releases any references the decoder
+    /// might keep internally, but the caller's references remain valid.
+    ///
+    /// For encoders, this function will only do something if the encoder
+    /// declares support for AV_CODEC_CAP_ENCODER_FLUSH. When called, the encoder
+    /// will drain any remaining packets, and can then be re-used for a different
+    /// stream (as opposed to sending a null frame which will leave the encoder
+    /// in a permanent EOF state after draining).
+    /// This can be desirable if the cost of tearing down and replacing the
+    /// encoder instance is high.
+    pub fn flush_buffers(&mut self) {
+        unsafe { ffi::avcodec_flush_buffers(self.as_mut_ptr()) }
+    }
 }
 
 impl<'ctx> AVCodecContext {
