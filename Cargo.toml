@@ -21,8 +21,8 @@ bon = "3"
 
 [dev-dependencies]
 libc = "0.2"
-anyhow = "1.0.57"
-camino = "1.1.6"
+anyhow = "1.0.98"
+camino = "1.1.10"
 image = { version = "0.25.6", default-features = false, features = ["png"] }
 
 [features]
