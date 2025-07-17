@@ -306,6 +306,7 @@ impl AVFormatContextOutput {
         oformat: Option<&AVOutputFormat>,
         format_name: Option<&CStr>,
         filename: Option<&CStr>,
+        options: Option<&mut Option<AVDictionary>>,
         io_context: Option<AVIOContextContainer>,
     ) -> Result<Self> {
         let mut output_format_context = ptr::null_mut();
@@ -348,6 +349,7 @@ impl AVFormatContextOutput {
                 Some(AVIOContextContainer::Url(AVIOContextURL::open(
                     filename,
                     ffi::AVIO_FLAG_WRITE,
+                    options,
                 )?))
             } else {
                 None

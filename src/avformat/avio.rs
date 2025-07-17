@@ -5,7 +5,12 @@ use std::{
     slice,
 };
 
-use crate::{avutil::AVMem, error::*, ffi, shared::*};
+use crate::{
+    avutil::{AVDictionary, AVMem},
+    error::*,
+    ffi,
+    shared::*,
+};
 
 wrap!(AVIOContext: ffi::AVIOContext);
 
@@ -29,9 +34,39 @@ impl AVIOContextURL {
     ///
     /// When the resource indicated by url has been opened in read+write mode,
     /// the [`AVIOContextURL`] can be used only for writing.
-    pub fn open(url: &CStr, flags: u32) -> Result<Self> {
+    ///
+    /// `options` A dictionary filled with protocol-private options.
+    pub fn open(
+        url: &CStr,
+        flags: u32,
+        options: Option<&mut Option<AVDictionary>>,
+    ) -> Result<Self> {
         let mut io_context = ptr::null_mut();
-        unsafe { ffi::avio_open(&mut io_context, url.as_ptr(), flags as _) }.upgrade()?;
+        let mut dummy_options = None;
+        let options = options.unwrap_or(&mut dummy_options);
+        let mut options_ptr = options
+            .as_mut()
+            .map(|x| x.as_mut_ptr())
+            .unwrap_or_else(ptr::null_mut);
+
+        unsafe {
+            ffi::avio_open2(
+                &mut io_context,
+                url.as_ptr(),
+                flags as _,
+                ptr::null(),
+                &mut options_ptr,
+            )
+        }
+        .upgrade()?;
+
+        // Forget the old options since it's ownership is transferred.
+        let mut new_options = options_ptr
+            .upgrade()
+            .map(|x| unsafe { AVDictionary::from_raw(x) });
+        std::mem::swap(options, &mut new_options);
+        std::mem::forget(new_options);
+
         Ok(Self(unsafe {
             AVIOContext::from_raw(NonNull::new(io_context).unwrap())
         }))
