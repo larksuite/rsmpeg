@@ -12,6 +12,20 @@ use std::{
 
 wrap_ref!(AVChannelLayout: ffi::AVChannelLayout);
 
+impl std::fmt::Debug for AVChannelLayout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let desc = self
+            .describe()
+            .map(|x| x.to_string_lossy().into_owned())
+            .unwrap_or_else(|e| format!("Error describing channel layout: {}", e));
+        f.debug_struct("AVChannelLayout")
+            .field("description", &desc)
+            .field("nb_channels", &self.nb_channels)
+            .field("order", &self.order)
+            .finish()
+    }
+}
+
 impl Drop for AVChannelLayout {
     fn drop(&mut self) {
         let layout = self.as_mut_ptr();
