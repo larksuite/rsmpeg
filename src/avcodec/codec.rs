@@ -162,6 +162,7 @@ settable!(AVCodecContext {
     strict_std_compliance: i32,
     gop_size: i32,
     max_b_frames: i32,
+    get_format: Option<unsafe extern "C" fn(s: *mut ffi::AVCodecContext, fmt: *const ffi::AVPixelFormat) -> AVPixelFormat>
 });
 
 impl AVCodecContext {
