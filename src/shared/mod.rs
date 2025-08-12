@@ -1,7 +1,7 @@
 //! Internal shared convenient things.
 use crate::error::{Result, Ret, RsmpegError};
 use rusty_ffmpeg::ffi;
-use std::{ops::Deref, os::raw::c_int, ptr::NonNull};
+use std::{mem, ops::Deref, os::raw::c_int, ptr::NonNull, slice};
 
 /// Triage a pointer to Some(non-null) or None
 pub trait PointerUpgrade<T>: Sized {
@@ -81,3 +81,36 @@ pub trait UnsafeDerefMut: Deref {
 /// yet been implemented, we currently create a const value here as a workaround.
 pub const AVERROR_EAGAIN: i32 = ffi::AVERROR(ffi::EAGAIN);
 pub const AVERROR_ENOMEM: i32 = ffi::AVERROR(ffi::ENOMEM);
+
+/// Probing specific memory pattern and return the offset.
+///
+/// # Safety
+/// ptr needs to be terminated by tail
+unsafe fn probe_len<T>(mut ptr: *const T, tail: T) -> usize {
+    for len in 0.. {
+        let left = ptr as *const u8;
+        let left = unsafe { slice::from_raw_parts(left, mem::size_of::<T>()) };
+        let right = &tail as *const _ as *const u8;
+        let right = unsafe { slice::from_raw_parts(right, mem::size_of::<T>()) };
+        if left == right {
+            return len;
+        }
+        unsafe {
+            ptr = ptr.add(1);
+        }
+    }
+    usize::MAX
+}
+
+/// Building a memory slice ends begin with `ptr` and ends with given `tail`.
+///
+/// # Safety
+/// ptr needs to be terminated by tail
+pub unsafe fn build_array<'a, T>(ptr: *const T, tail: T) -> Option<&'a [T]> {
+    if ptr.is_null() {
+        None
+    } else {
+        let len = unsafe { probe_len(ptr, tail) };
+        Some(unsafe { slice::from_raw_parts(ptr, len) })
+    }
+}
