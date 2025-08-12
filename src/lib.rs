@@ -21,4 +21,4 @@ pub mod swscale;
 
 pub mod error;
 
-pub use shared::UnsafeDerefMut;
+pub use shared::{build_array, UnsafeDerefMut};

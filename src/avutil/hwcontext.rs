@@ -4,6 +4,7 @@ use crate::{
     ffi,
     shared::{PointerUpgrade, RetUpgrade},
 };
+pub use ffi::AVHWDeviceType;
 use std::{
     ffi::CStr,
     ops::{Deref, DerefMut},
@@ -11,14 +12,15 @@ use std::{
     ptr::{self, NonNull},
 };
 
+#[derive(Clone)]
 #[repr(transparent)]
 pub struct AVHWDeviceContext {
-    buffer_ref: AVBufferRef,
+    pub(crate) buffer_ref: AVBufferRef,
 }
 
 impl AVHWDeviceContext {
     /// Allocate an [`AVHWDeviceContext`] for a given hardware type.
-    pub fn alloc(r#type: ffi::AVHWDeviceType) -> Self {
+    pub fn alloc(r#type: AVHWDeviceType) -> Self {
         let buffer_ref = unsafe { ffi::av_hwdevice_ctx_alloc(r#type) };
         // this only panic on OOM
         let buffer_ref = buffer_ref.upgrade().unwrap();
@@ -47,7 +49,7 @@ impl AVHWDeviceContext {
     /// the created [`AVHWDeviceContext`] are set by this function and should not be
     /// touched by the caller.
     pub fn create(
-        r#type: ffi::AVHWDeviceType,
+        r#type: AVHWDeviceType,
         device: Option<&CStr>,
         opts: Option<&AVDictionary>,
         flags: c_int,
@@ -76,7 +78,7 @@ impl AVHWDeviceContext {
     /// device.  If direct derivation to the new type is not implemented, it will
     /// attempt the same derivation from each ancestor of the source device in
     /// turn looking for an implemented derivation method.
-    pub fn create_derived(&self, r#type: ffi::AVHWDeviceType) -> Result<Self> {
+    pub fn create_derived(&self, r#type: AVHWDeviceType) -> Result<Self> {
         let mut ptr = ptr::null_mut();
         // `flags` parameter of av_hwdevice_ctx_create_derived is unused and need to be set to 0
         unsafe {
@@ -96,7 +98,7 @@ impl AVHWDeviceContext {
     /// however, it is able to set options for the new device to be derived.
     pub fn create_derived_opts(
         &self,
-        r#type: ffi::AVHWDeviceType,
+        r#type: AVHWDeviceType,
         options: Option<&AVDictionary>,
     ) -> Result<Self> {
         let mut ptr = ptr::null_mut();
@@ -162,7 +164,7 @@ impl DerefMut for AVHWDeviceContext {
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct AVHWFramesContext {
-    pub(crate) buffer_ref: AVBufferRef,
+    buffer_ref: AVBufferRef,
 }
 
 // Here we manually use `wrap_ref_pure` and `wrap_mut_pure` for owned-reference type which can be used by `AVCodecContext::hw_frames_ctx*`.
@@ -220,5 +222,66 @@ impl Deref for AVHWFramesContext {
 impl DerefMut for AVHWFramesContext {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.buffer_ref
+    }
+}
+
+/// Look up an AVHWDeviceType by name.
+pub fn hwdevice_find_type_by_name(name: &CStr) -> AVHWDeviceType {
+    unsafe { ffi::av_hwdevice_find_type_by_name(name.as_ptr()) }
+}
+
+/// Get the string name of an AVHWDeviceType.
+pub fn hwdevice_get_type_name(r#type: AVHWDeviceType) -> Option<&'static CStr> {
+    unsafe {
+        ffi::av_hwdevice_get_type_name(r#type)
+            .upgrade()
+            .map(|x| CStr::from_ptr(x.as_ptr()))
+    }
+}
+
+/// Iterate over supported device types.
+pub fn hwdevice_iterate_types() -> AVHWDeviceTypeIter {
+    AVHWDeviceTypeIter::new()
+}
+
+/// Iterator over supported device types.
+pub struct AVHWDeviceTypeIter {
+    prev: AVHWDeviceType,
+}
+
+impl AVHWDeviceTypeIter {
+    /// Create a new iterator over AVHWDeviceType.
+    pub fn new() -> Self {
+        Self {
+            prev: ffi::AV_HWDEVICE_TYPE_NONE,
+        }
+    }
+}
+
+impl Iterator for AVHWDeviceTypeIter {
+    type Item = AVHWDeviceType;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = unsafe { ffi::av_hwdevice_iterate_types(self.prev) };
+        if next == ffi::AV_HWDEVICE_TYPE_NONE {
+            None
+        } else {
+            self.prev = next;
+            Some(next)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hw_device_iterate_types() {
+        let mut iter = hwdevice_iterate_types();
+        while let Some(device_type) = iter.next() {
+            dbg!(hwdevice_get_type_name(device_type).unwrap());
+            assert_ne!(device_type, ffi::AV_HWDEVICE_TYPE_NONE);
+        }
     }
 }

@@ -1,8 +1,8 @@
 use crate::{
     avcodec::{AVCodecID, AVCodecParameters, AVPacket},
     avutil::{
-        AVChannelLayoutRef, AVDictionary, AVFrame, AVHWFramesContext, AVHWFramesContextMut,
-        AVHWFramesContextRef, AVPixelFormat, AVRational, AVSampleFormat,
+        AVChannelLayoutRef, AVDictionary, AVFrame, AVHWDeviceContext, AVHWFramesContext,
+        AVHWFramesContextMut, AVHWFramesContextRef, AVPixelFormat, AVRational, AVSampleFormat,
     },
     error::{Result, RsmpegError},
     ffi,
@@ -62,6 +62,13 @@ impl AVCodec {
         AVCodecIter {
             opaque: std::ptr::null_mut(),
         }
+    }
+
+    /// Retrieve supported hardware configurations for a codec.
+    pub fn hw_config(&self, index: usize) -> Option<ffi::AVCodecHWConfig> {
+        unsafe { ffi::avcodec_get_hw_config(self.as_ptr(), index as i32) }
+            .upgrade()
+            .map(|x| unsafe { *x.as_ptr() })
     }
 }
 
@@ -327,7 +334,11 @@ impl AVCodecContext {
     }
 
     pub fn set_hw_frames_ctx(&mut self, hw_frames_ctx: AVHWFramesContext) {
-        unsafe { self.deref_mut().hw_frames_ctx = hw_frames_ctx.buffer_ref.into_raw().as_ptr() };
+        unsafe { self.deref_mut().hw_frames_ctx = hw_frames_ctx.into_inner().into_raw().as_ptr() };
+    }
+
+    pub fn set_hw_device_ctx(&mut self, hw_device_ctx: AVHWDeviceContext) {
+        unsafe { self.deref_mut().hw_device_ctx = hw_device_ctx.into_inner().into_raw().as_ptr() };
     }
 
     /// Retrieve a list of all supported pixel formats.
