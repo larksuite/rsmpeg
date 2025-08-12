@@ -10,10 +10,11 @@ use crate::{
 };
 #[cfg(feature = "ffmpeg7_1")]
 pub use ffi::AVCodecConfig;
+#[cfg(feature = "ffmpeg7_1")]
+use std::slice;
 use std::{
     ffi::{c_void, CStr},
     ptr::{self, NonNull},
-    slice,
 };
 
 wrap_ref!(AVCodec: ffi::AVCodec);

@@ -251,7 +251,7 @@ pub struct AVHWDeviceTypeIter {
 
 impl AVHWDeviceTypeIter {
     /// Create a new iterator over AVHWDeviceType.
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             prev: ffi::AV_HWDEVICE_TYPE_NONE,
         }
