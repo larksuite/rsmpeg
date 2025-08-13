@@ -130,7 +130,9 @@ fn hw_decode(device_type_raw: &CStr, input_file: &CStr, output_file: &CStr) -> R
     Ok(())
 }
 
+// Only macOS has videotoolbox in Github Actions
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore)]
 fn test_hw_decode() {
     let device_type = hwdevice_iterate_types().next().unwrap();
     // ffplay -f rawvideo -video_size 320x180 tests/output/transcode/bear.frames
