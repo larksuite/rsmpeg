@@ -58,6 +58,27 @@ impl AVPixFmtDescriptorRef {
     }
 }
 
+/// Return the name of the given pixel format, or `None` if `pix_fmt` is not recognized.
+///
+/// This is a thin safe wrapper over `av_get_pix_fmt_name` from libavutil/pixdesc.h.
+///
+/// Examples
+/// ```rust
+/// # use rsmpeg::avutil::get_pix_fmt_name;
+/// # use rsmpeg::ffi::AV_PIX_FMT_YUV420P;
+/// # use std::ffi::CString;
+/// let name = get_pix_fmt_name(AV_PIX_FMT_YUV420P)
+///     .map(|s| s.to_string_lossy().into_owned());
+/// assert_eq!(name.as_deref(), Some("yuv420p"));
+/// ```
+pub fn get_pix_fmt_name(pix_fmt: ffi::AVPixelFormat) -> Option<&'static CStr> {
+    unsafe {
+        ffi::av_get_pix_fmt_name(pix_fmt)
+            .upgrade()
+            .map(|x| CStr::from_ptr(x.as_ptr()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -108,5 +129,12 @@ mod tests {
         let pix_fmt = ffi::AV_PIX_FMT_YUVA444P12LE;
         let pix_fmt_desc = AVPixFmtDescriptorRef::get(pix_fmt).unwrap();
         assert_eq!(pix_fmt_desc.get_id(), pix_fmt);
+    }
+
+    #[test]
+    fn test_get_pix_fmt_name() {
+        let s = get_pix_fmt_name(ffi::AV_PIX_FMT_YUV420P).unwrap();
+        assert_eq!(s, c"yuv420p");
+        assert!(get_pix_fmt_name(ffi::AV_PIX_FMT_NONE).is_none());
     }
 }
