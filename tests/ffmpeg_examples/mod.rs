@@ -1,5 +1,6 @@
 mod decode_audio;
 mod decode_video;
+mod demux_decode;
 mod encode_video;
 mod extract_mvs;
 mod hw_decode;
