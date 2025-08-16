@@ -99,8 +99,11 @@ fn encode_video(codec_name: &CStr, file_name: &str) -> Result<()> {
     }
     encode(&mut encode_context, None, &mut writer)?;
 
-    let endcode: [u8; 4] = [0, 0, 1, 0xb7];
-    writer.write_all(&endcode).context("Write endcode failed")?;
+    let codec_id = encode_context.codec().id;
+    if codec_id == ffi::AV_CODEC_ID_MPEG1VIDEO || codec_id == ffi::AV_CODEC_ID_MPEG2VIDEO {
+        let endcode: [u8; 4] = [0, 0, 1, 0xb7];
+        writer.write_all(&endcode).context("Write endcode failed")?;
+    }
 
     writer.flush().context("Flush file failed.")
 }
