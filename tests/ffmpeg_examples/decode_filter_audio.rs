@@ -190,19 +190,9 @@ fn decode_filter_audio(input: &CStr, out_path: &str) -> Result<()> {
         }
     }
     // EOF: signal to the filter graph
-    {
-        let mut src = filt
-            .graph
-            .get_filter(c"in")
-            .ok_or_else(|| anyhow!("buffersrc not found"))?;
-        src.buffersrc_add_frame(None, None)
-            .context("Error while closing the filtergraph")?;
-    }
+    src.buffersrc_add_frame(None, None)
+        .context("Error while closing the filtergraph")?;
     loop {
-        let mut sink = filt
-            .graph
-            .get_filter(c"out")
-            .ok_or_else(|| anyhow!("buffersink not found"))?;
         match sink.buffersink_get_frame(None) {
             Ok(f) => {
                 print_and_write_frame(&out, &f)?;
