@@ -15,7 +15,7 @@ use std::{
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct AVHWDeviceContext {
-    pub(crate) buffer_ref: AVBufferRef,
+    buffer_ref: AVBufferRef,
 }
 
 impl AVHWDeviceContext {
