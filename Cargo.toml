@@ -35,6 +35,7 @@ ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
 ffmpeg7 = ["ffmpeg6", "rusty_ffmpeg/ffmpeg7"]
 # ffmpeg 7.1+
 ffmpeg7_1 = ["ffmpeg7"]
+ffmpeg8 = ["ffmpeg7_1"]
 
 # Try linking ffmpeg with pkg-config.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
