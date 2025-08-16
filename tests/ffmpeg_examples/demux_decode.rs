@@ -284,7 +284,7 @@ fn demux_decode(input_raw: &CStr, video_out: &str, audio_out: &str) -> Result<()
             .unwrap_or("unknown");
         println!("Play the output video file with the command:");
         println!(
-            "ffplay -f rawvideo -vf format={} -video_size {}x{} {}",
+            "ffplay -f rawvideo -pixel_format {} -video_size {}x{} {}",
             pix_name, vc.width, vc.height, video_out
         );
     }
@@ -310,7 +310,7 @@ fn demux_decode(input_raw: &CStr, video_out: &str, audio_out: &str) -> Result<()
         })?;
         println!("Play the output audio file with the command:");
         println!(
-            "ffplay -f {} -ch_layout {} -ar {} {}",
+            "ffplay -f {} -ch_layout {} -sample_rate {} {}",
             fmt,
             ch_layout.describe().unwrap().to_string_lossy(),
             ac.sample_rate,
