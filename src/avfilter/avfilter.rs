@@ -94,6 +94,45 @@ impl AVFilterContext {
         Ok(())
     }
 
+    /// Add, replace, or remove elements for an array option.
+    ///
+    /// This is a safe wrapper around `av_opt_set_array`.
+    /// - key: option name
+    /// - start_elem: index of the first array element to modify
+    /// - vals: None to remove elements, Some(&[T]) to insert/replace elements
+    /// - val_type: the `AVOptionType` corresponding to T (e.g. AV_OPT_TYPE_INT)
+    ///
+    /// Note: This wrapper always searches children (AV_OPT_SEARCH_CHILDREN).
+    #[cfg(feature = "ffmpeg7_1")]
+    pub fn opt_set_array<T>(
+        &mut self,
+        key: &CStr,
+        start_elem: u32,
+        vals: Option<&[T]>,
+        val_type: ffi::AVOptionType,
+    ) -> Result<()> {
+        let (nb_elems, val_ptr) = match vals {
+            Some(slice) => (
+                slice.len() as u32,
+                slice.as_ptr() as *const std::os::raw::c_void,
+            ),
+            None => (0u32, std::ptr::null()),
+        };
+        unsafe {
+            ffi::av_opt_set_array(
+                self.as_mut_ptr().cast(),
+                key.as_ptr(),
+                ffi::AV_OPT_SEARCH_CHILDREN as i32,
+                start_elem,
+                nb_elems,
+                val_type,
+                val_ptr,
+            )
+        }
+        .upgrade()?;
+        Ok(())
+    }
+
     /// Add a frame to the buffer source.
     pub fn buffersrc_add_frame(
         &mut self,
