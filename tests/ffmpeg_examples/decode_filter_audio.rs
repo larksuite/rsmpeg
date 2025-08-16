@@ -36,7 +36,7 @@ fn init_filters(
     audio_stream_index: usize,
     filters_descr: &CStr,
 ) -> Result<FilterState> {
-    let mut graph = AVFilterGraph::new();
+    let graph = AVFilterGraph::new();
     let abuffer = AVFilter::get_by_name(c"abuffer").context("Cannot find abuffer")?;
     let abuffersink = AVFilter::get_by_name(c"abuffersink").context("Cannot find abuffersink")?;
 
@@ -103,18 +103,12 @@ fn init_filters(
             .parse_ptr(filters_descr, Some(inputs), Some(outputs))
             .context("avfilter_graph_parse_ptr failed")?;
         graph.config().context("avfilter_graph_config failed")?;
-    }
 
-    // Print output summary like the C example (after graph is configured)
-    {
-        let sink = graph
-            .get_filter(c"out")
-            .ok_or_else(|| anyhow!("buffersink not found"))?;
-        let out_srate = sink.get_sample_rate();
-        let out_fmt = get_sample_fmt_name(sink.get_format())
+        let out_srate = buffersink_ctx.get_sample_rate();
+        let out_fmt = get_sample_fmt_name(buffersink_ctx.get_format())
             .and_then(|s| s.to_str().ok())
             .unwrap_or("?");
-        let ch_layout = sink.get_ch_layout();
+        let ch_layout = buffersink_ctx.get_ch_layout();
         let ch_desc = ch_layout
             .describe()
             .ok()
@@ -142,12 +136,21 @@ fn print_and_write_frame(mut out: &File, frame: &AVFrame) -> Result<()> {
 
 fn decode_filter_audio(input: &CStr, out_path: &str) -> Result<()> {
     let (mut fmt, mut dec_ctx, audio_idx) = open_input_file(input)?;
-    let mut filt = init_filters(&fmt, &mut dec_ctx, audio_idx, FILTER_DESCR)?;
+    let filt = init_filters(&fmt, &mut dec_ctx, audio_idx, FILTER_DESCR)?;
 
     if let Some(dir) = Path::new(out_path).parent() {
         std::fs::create_dir_all(dir).ok();
     }
     let out = File::create(out_path).with_context(|| format!("open {}", out_path))?;
+
+    let mut src = filt
+        .graph
+        .get_filter(c"in")
+        .context("buffersrc not found")?;
+    let mut sink = filt
+        .graph
+        .get_filter(c"out")
+        .context("buffersink not found")?;
 
     while let Some(packet) = fmt.read_packet()? {
         if packet.stream_index == audio_idx as i32 {
@@ -159,10 +162,6 @@ fn decode_filter_audio(input: &CStr, out_path: &str) -> Result<()> {
                     Ok(frame) => {
                         // push decoded frame into graph
                         {
-                            let mut src = filt
-                                .graph
-                                .get_filter(c"in")
-                                .context("buffersrc not found")?;
                             src.buffersrc_add_frame(
                                 Some(frame),
                                 Some(ffi::AV_BUFFERSRC_FLAG_KEEP_REF as i32),
@@ -170,10 +169,6 @@ fn decode_filter_audio(input: &CStr, out_path: &str) -> Result<()> {
                             .context("Error while feeding the audio filtergraph")?;
                         }
                         // pull all available filtered frames
-                        let mut sink = filt
-                            .graph
-                            .get_filter(c"out")
-                            .ok_or_else(|| anyhow!("buffersink not found"))?;
                         loop {
                             match sink.buffersink_get_frame(None) {
                                 Ok(f) => {
