@@ -1,4 +1,6 @@
 mod decode_audio;
+#[cfg(feature = "ffmpeg8")]
+mod decode_filter_audio;
 mod decode_video;
 mod demux_decode;
 mod encode_video;
