@@ -20,6 +20,15 @@ use std::{
 };
 
 fn get_format_from_sample_fmt(sample_fmt: AVSampleFormat) -> Option<&'static str> {
+    #[cfg(target_endian = "big")]
+    let sample_fmt_entries = [
+        (ffi::AV_SAMPLE_FMT_U8, "u8"),
+        (ffi::AV_SAMPLE_FMT_S16, "s16be"),
+        (ffi::AV_SAMPLE_FMT_S32, "s32be"),
+        (ffi::AV_SAMPLE_FMT_FLT, "f32be"),
+        (ffi::AV_SAMPLE_FMT_DBL, "f64be"),
+    ];
+    #[cfg(target_endian = "little")]
     let sample_fmt_entries = [
         (ffi::AV_SAMPLE_FMT_U8, "u8"),
         (ffi::AV_SAMPLE_FMT_S16, "s16le"),
