@@ -264,6 +264,13 @@ impl AVFilterContext {
     pub fn get_sample_rate(&self) -> i32 {
         unsafe { ffi::av_buffersink_get_sample_rate(self.as_ptr()) }
     }
+
+    /// Link this filter's output pad to another filter's input pad.
+    pub fn link(&mut self, srcpad: u32, dst: &mut AVFilterContext, dstpad: u32) -> Result<()> {
+        unsafe { ffi::avfilter_link(self.as_mut_ptr(), srcpad, dst.as_mut_ptr(), dstpad) }
+            .upgrade()?;
+        Ok(())
+    }
 }
 
 wrap!(AVFilterInOut: ffi::AVFilterInOut);
