@@ -94,6 +94,48 @@ impl AVFilterContext {
         Ok(())
     }
 
+    /// Set integer property of a [`AVFilterContext`].
+    pub fn opt_set_int(&mut self, key: &CStr, value: i64) -> Result<()> {
+        unsafe {
+            ffi::av_opt_set_int(
+                self.as_mut_ptr().cast(),
+                key.as_ptr(),
+                value,
+                ffi::AV_OPT_SEARCH_CHILDREN as i32,
+            )
+        }
+        .upgrade()?;
+        Ok(())
+    }
+
+    /// Set double property of a [`AVFilterContext`].
+    pub fn opt_set_double(&mut self, key: &CStr, value: f64) -> Result<()> {
+        unsafe {
+            ffi::av_opt_set_double(
+                self.as_mut_ptr().cast(),
+                key.as_ptr(),
+                value,
+                ffi::AV_OPT_SEARCH_CHILDREN as i32,
+            )
+        }
+        .upgrade()?;
+        Ok(())
+    }
+
+    /// Set AVRational property of a [`AVFilterContext`].
+    pub fn opt_set_q(&mut self, key: &CStr, value: ffi::AVRational) -> Result<()> {
+        unsafe {
+            ffi::av_opt_set_q(
+                self.as_mut_ptr().cast(),
+                key.as_ptr(),
+                value,
+                ffi::AV_OPT_SEARCH_CHILDREN as i32,
+            )
+        }
+        .upgrade()?;
+        Ok(())
+    }
+
     /// Add, replace, or remove elements for an array option.
     ///
     /// This is a safe wrapper around `av_opt_set_array`.
