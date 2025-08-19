@@ -8,7 +8,7 @@ use crate::{
     avcodec::{
         AVCodecParameters, AVCodecParametersMut, AVCodecParametersRef, AVCodecRef, AVPacket,
     },
-    avformat::{AVIOContext, AVIOContextCustom, AVIOContextURL},
+    avformat::{AVIOContext, AVIOContextCustom, AVIOContextOpaque, AVIOContextURL},
     avutil::{AVDictionary, AVDictionaryMut, AVDictionaryRef, AVRational},
     error::{Result, RsmpegError},
     ffi,
@@ -19,6 +19,7 @@ use crate::{
 pub enum AVIOContextContainer {
     Url(AVIOContextURL),
     Custom(AVIOContextCustom),
+    Opaque(AVIOContextOpaque),
 }
 
 impl AVIOContextContainer {
@@ -27,6 +28,7 @@ impl AVIOContextContainer {
         match self {
             Self::Url(ctx) => ctx.as_mut_ptr(),
             Self::Custom(ctx) => ctx.as_mut_ptr(),
+            Self::Opaque(ctx) => ctx.as_mut_ptr(),
         }
     }
 }
@@ -73,10 +75,7 @@ impl AVFormatContextInput {
 
             if let Some(io_context) = io_context.as_mut() {
                 unsafe {
-                    (*input_format_context).pb = match io_context {
-                        AVIOContextContainer::Url(ctx) => ctx.as_mut_ptr(),
-                        AVIOContextContainer::Custom(ctx) => ctx.as_mut_ptr(),
-                    };
+                    (*input_format_context).pb = io_context.as_mut_ptr();
                 }
             };
 

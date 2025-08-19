@@ -257,13 +257,12 @@ impl Drop for AVIOContextCustom {
 // pub type WritePacketCallback = Box<dyn FnMut(&mut Vec<u8>, &[u8]) -> i32 + Send + 'static>;
 // pub type SeekCallback = Box<dyn FnMut(&mut Vec<u8>, i64, i32) -> i64 + Send + 'static>;
 
-pub struct AVIOContextOpaque<'a, T> {
+pub struct AVIOContextOpaque {
     inner: AVIOContext,
-    _marker: PhantomData<&'a T>,
 }
 
-impl<'a, T: Send + Sync + 'a> AVIOContextOpaque<'a, T> {
-    pub fn alloc_context(
+impl<'a> AVIOContextOpaque {
+    pub fn alloc_context<T: Send + Sync + 'a>(
         mut buffer: AVMem,
         write_flag: bool,
         opaque: &T,
@@ -297,25 +296,24 @@ impl<'a, T: Send + Sync + 'a> AVIOContextOpaque<'a, T> {
 
         Self {
             inner: unsafe { AVIOContext::from_raw(context) },
-            _marker: PhantomData,
         }
     }
 }
 
-impl<'a, T> Deref for AVIOContextOpaque<'a, T> {
+impl Deref for AVIOContextOpaque {
     type Target = AVIOContext;
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl<'a, T> std::ops::DerefMut for AVIOContextOpaque<'a, T> {
+impl std::ops::DerefMut for AVIOContextOpaque {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
 }
 
-impl<'a, T> Drop for AVIOContextOpaque<'a, T> {
+impl Drop for AVIOContextOpaque {
     fn drop(&mut self) {
         // Recover the `AVMem` fom the buffer and drop it. We don't attach the
         // AVMem to this type because according to the documentation, the buffer
