@@ -261,11 +261,11 @@ pub struct AVIOContextOpaque {
     inner: AVIOContext,
 }
 
-impl<'a> AVIOContextOpaque {
-    pub fn alloc_context<T: Send + Sync + 'a>(
+impl AVIOContextOpaque {
+    pub fn alloc_context<T: Send + Sync>(
         mut buffer: AVMem,
         write_flag: bool,
-        opaque: &T,
+        opaque: T,
         read_packet: Option<ReadOpaqueCallback<T>>,
         write_packet: Option<WriteOpaqueCallback<T>>,
         seek_packet: Option<SeekOpaqueCallback<T>>,
@@ -280,12 +280,18 @@ impl<'a> AVIOContextOpaque {
             )
         };
 
+        let mut opaque = Opaque {
+            data: opaque,
+            read_packet,
+            write_packet,
+            seek: seek_packet,
+        };
         let context = unsafe {
             ffi::avio_alloc_context(
                 buffer.as_mut_ptr(),
                 buffer.len as _,
                 if write_flag { 1 } else { 0 },
-                std::ptr::from_ref(opaque) as *mut _,
+                std::ptr::from_mut(&mut opaque) as *mut _,
                 read_c,
                 write_c,
                 seek_c,
