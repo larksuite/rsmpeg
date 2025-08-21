@@ -280,18 +280,18 @@ impl AVIOContextOpaque {
             )
         };
 
-        let mut opaque = Opaque {
+        let opaque = Box::new(Opaque {
             data: opaque,
             read_packet,
             write_packet,
             seek: seek_packet,
-        };
+        });
         let context = unsafe {
             ffi::avio_alloc_context(
                 buffer.as_mut_ptr(),
                 buffer.len as _,
                 if write_flag { 1 } else { 0 },
-                std::ptr::from_mut(&mut opaque) as *mut _,
+                Box::into_raw(opaque) as *mut _ as _,
                 read_c,
                 write_c,
                 seek_c,
