@@ -14,7 +14,7 @@ exclude = ["/.github", "/tests", "/utils"]
 rust-version = "1.81.0"
 
 [dependencies]
-rusty_ffmpeg = "0.16.1"
+rusty_ffmpeg = "0.16.7"
 paste = "1.0"
 thiserror = "2.0"
 bon = "3"
