@@ -47,6 +47,15 @@ impl Clone for AVChannelLayout {
 }
 
 impl AVChannelLayout {
+    /// Create a new channel layout from raw
+    ///
+    /// # Safety
+    ///
+    /// The raw channel layout need to be correctly constructed.
+    pub unsafe fn new(ch_layout: ffi::AVChannelLayout) -> Self {
+        unsafe { Self::from_raw(NonNull::new(Box::into_raw(Box::new(ch_layout))).unwrap()) }
+    }
+
     /// Convert self into [`ffi::AVChannelLayout`]`.
     ///
     /// Be careful when using it. Since this fucntion leaks the raw type,
@@ -200,6 +209,17 @@ impl AVChannelLayout {
         let ret =
             unsafe { ffi::av_channel_layout_compare(self.as_ptr(), other.as_ptr()) }.upgrade()?;
         Ok(ret == 0)
+    }
+}
+
+impl AVChannelLayoutRef<'_> {
+    /// Create a new channel layout reference from raw.
+    ///
+    /// # Safety
+    ///
+    /// The raw channel layout need to be correctly constructed.
+    pub unsafe fn new(ch_layout: &ffi::AVChannelLayout) -> Self {
+        unsafe { Self::from_raw(NonNull::new(ch_layout as *const _ as *mut _).unwrap()) }
     }
 }
 
