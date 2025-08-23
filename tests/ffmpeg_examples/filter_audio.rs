@@ -3,11 +3,12 @@ use anyhow::{Context, Result};
 use rsmpeg::{
     avfilter::{AVFilter, AVFilterGraph},
     avutil::{
-        get_bytes_per_sample, get_sample_fmt_name, sample_fmt_is_planar, AVChannelLayout,
+        get_bytes_per_sample, get_sample_fmt_name, sample_fmt_is_planar, AVChannelLayoutRef,
         AVDictionary, AVFrame, AVMD5,
     },
-    ffi,
+    ffi::{self, AV_CHANNEL_LAYOUT_5POINT0},
 };
+use std::f32::consts::PI;
 
 const INPUT_SAMPLERATE: i32 = 48_000;
 const FRAME_SIZE: i32 = 1024;
@@ -20,7 +21,7 @@ fn init_filter_graph() -> Result<AVFilterGraph> {
     let aformat = AVFilter::get_by_name(c"aformat").context("aformat not found")?;
 
     // abuffer options via AVOptions, like the C example
-    let ch_layout = AVChannelLayout::from_nb_channels(5).describe()?;
+    let ch_layout = unsafe { AVChannelLayoutRef::new(&AV_CHANNEL_LAYOUT_5POINT0) }.describe()?;
     let sample_fmt = get_sample_fmt_name(ffi::AV_SAMPLE_FMT_FLTP).unwrap_or(c"fltp");
 
     // Create abuffer as "src"
@@ -119,26 +120,28 @@ fn process_output(md5: &mut AVMD5, frame: &AVFrame) -> Result<()> {
 }
 
 fn get_input(frame_num: i64) -> Result<AVFrame> {
-    let mut f = AVFrame::new();
-    f.set_sample_rate(INPUT_SAMPLERATE);
-    f.set_format(ffi::AV_SAMPLE_FMT_FLTP);
-    f.set_ch_layout(rsmpeg::avutil::AVChannelLayout::from_nb_channels(5).into_inner());
-    f.set_nb_samples(FRAME_SIZE);
-    f.set_pts(frame_num * FRAME_SIZE as i64);
-    f.get_buffer(0)?;
+    // Replicate C example: FRAME_SIZE samples, 5 channels (5.0 layout), FLTP
+    let mut frame = AVFrame::new();
+    frame.set_sample_rate(INPUT_SAMPLERATE);
+    frame.set_format(ffi::AV_SAMPLE_FMT_FLTP);
+    // Use exact 5.0 channel layout constant instead of default-from-count
+    frame.set_ch_layout(AV_CHANNEL_LAYOUT_5POINT0);
+    frame.set_nb_samples(FRAME_SIZE);
+    frame.set_pts(frame_num * FRAME_SIZE as i64);
+    frame.get_buffer(0)?;
 
-    // fill planar float samples: 5 channels
+    // Fill each planar channel with: sin(2 * PI * (frame_num + sample_index) * (channel+1) / FRAME_SIZE)
     unsafe {
         for ch in 0..5 {
-            let ptr = f.data[ch] as *mut f32;
-            for i in 0..FRAME_SIZE as isize {
-                let val =
-                    ((frame_num as f32 + i as f32) * (ch as f32 + 1.0) / FRAME_SIZE as f32).sin();
-                *ptr.offset(i) = val;
+            let base = frame.data[ch] as *mut f32;
+            for j in 0..FRAME_SIZE as isize {
+                let phase = 2.0 * PI * (frame_num as f32 + j as f32) * (ch as f32 + 1.0)
+                    / FRAME_SIZE as f32;
+                *base.offset(j) = phase.sin();
             }
         }
     }
-    Ok(f)
+    Ok(frame)
 }
 
 pub fn filter_audio_process(duration: f32) -> Result<usize> {

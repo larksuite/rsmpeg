@@ -20,6 +20,10 @@ fn encode(
     frame: Option<&AVFrame>,
     file: &mut BufWriter<File>,
 ) -> Result<()> {
+    if let Some(frame) = frame {
+        println!("Send frame {:3}", frame.pts);
+    }
+
     encode_context.send_frame(frame)?;
     loop {
         let packet = match encode_context.receive_packet() {
@@ -27,6 +31,7 @@ fn encode(
             Err(RsmpegError::EncoderDrainError) | Err(RsmpegError::EncoderFlushedError) => break,
             Err(e) => return Err(e.into()),
         };
+        println!("Write packet {:3} (size={:5})", packet.pts, packet.size);
         let data = unsafe { std::slice::from_raw_parts(packet.data, packet.size as usize) };
         file.write_all(data)?;
     }
