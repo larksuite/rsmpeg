@@ -2,14 +2,12 @@ use std::os::raw::c_int;
 
 use crate::ffi;
 
-pub use ffi::AVRational;
-
 /// return `AVRational: num / den`;
 pub const fn ra(num: i32, den: i32) -> AVRational {
     AVRational { num, den }
 }
 
-pub use ffi::{av_cmp_q, av_inv_q, av_make_q, av_q2d};
+pub use ffi::{av_cmp_q, av_inv_q, av_make_q, av_q2d, AVRational, AVRounding};
 
 #[inline]
 /// Convert a double precision floating point number to a rational.
@@ -83,6 +81,14 @@ pub fn av_rescale_q(a: i64, bq: AVRational, cq: AVRational) -> i64 {
 ///
 /// The operation is mathematically equivalent to `a * bq / cq`.
 #[inline]
-pub fn av_rescale_q_rnd(a: i64, bq: AVRational, cq: AVRational, rnd: u32) -> i64 {
-    unsafe { ffi::av_rescale_q_rnd(a, bq, cq, rnd as _) }
+pub fn av_rescale_q_rnd(a: i64, bq: AVRational, cq: AVRational, rnd: AVRounding) -> i64 {
+    unsafe { ffi::av_rescale_q_rnd(a, bq, cq, rnd) }
+}
+
+/// Rescale a 64-bit integer with specified rounding.
+///
+/// Mathematically: returns `a * b / c` with the given rounding mode.
+#[inline]
+pub fn av_rescale_rnd(a: i64, b: i64, c: i64, rnd: AVRounding) -> i64 {
+    unsafe { ffi::av_rescale_rnd(a, b, c, rnd) }
 }
