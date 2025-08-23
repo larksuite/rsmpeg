@@ -8,7 +8,7 @@ use rsmpeg::{
         get_sample_fmt_name, sample_fmt_is_planar, ts2timestr, AVChannelLayout, AVFrame,
     },
     error::RsmpegError,
-    ffi,
+    ffi::{self, AV_CHANNEL_LAYOUT_MONO},
 };
 use std::{ffi::CStr, fs, io::Write, path::Path};
 
@@ -300,7 +300,7 @@ fn demux_decode(input_raw: &CStr, video_out: &str, audio_out: &str) -> Result<()
                 planar_name
             );
             sfmt = get_packed_sample_fmt(sfmt).context("Cannot get packed sample fmt")?;
-            ch_layout = AVChannelLayout::from_nb_channels(1);
+            ch_layout = unsafe { AVChannelLayout::new(AV_CHANNEL_LAYOUT_MONO) };
         }
         let fmt = get_format_from_sample_fmt(sfmt).ok_or_else(|| {
             let name = get_sample_fmt_name(sfmt)
