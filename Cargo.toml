@@ -1,6 +1,6 @@
 [package]
 name = "rsmpeg"
-version = "0.17.0+ffmpeg.7.1"
+version = "0.18.0+ffmpeg.8.0"
 authors = ["liudingming <liudingming@bytedance.com>"]
 edition = "2021"
 license = "MIT"
@@ -27,15 +27,15 @@ once_cell = "1"
 image = { version = "0.25.6", default-features = false, features = ["png"] }
 
 [features]
-# Use FFmpeg 7 by default
-default = ["ffmpeg7"]
+# Use FFmpeg 8 by default
+default = ["ffmpeg8"]
 
 # Note that ffmpeg{x} feature is designed to be addable (If it's not, compilation with all-features won't pass)
 ffmpeg6 = ["rusty_ffmpeg/ffmpeg6"]
 ffmpeg7 = ["ffmpeg6", "rusty_ffmpeg/ffmpeg7"]
 # ffmpeg 7.1+
 ffmpeg7_1 = ["ffmpeg7"]
-ffmpeg8 = ["ffmpeg7_1"]
+ffmpeg8 = ["ffmpeg7_1", "rusty_ffmpeg/ffmpeg8"]
 
 # Try linking ffmpeg with pkg-config.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]

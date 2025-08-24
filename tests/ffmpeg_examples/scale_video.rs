@@ -55,7 +55,7 @@ pub fn scale_video_run(out_path: &str, dst_w: i32, dst_h: i32, nframes: i32) -> 
         dst_w,
         dst_h,
         ffi::AV_PIX_FMT_RGB24,
-        ffi::SWS_BILINEAR as u32,
+        ffi::SWS_BILINEAR,
         None,
         None,
         None,
