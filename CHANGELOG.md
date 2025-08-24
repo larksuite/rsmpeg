@@ -1,3 +1,31 @@
+## 0.18.0
+
+- Update rusty_ffmpeg to version `0.16.7`
+
+- Add `AVMD5` for MD5 hashing functionality
+
+- Add `AVFormatContextInput::seek`
+
+- Add `options` params for `AVFormatContextOutput::open`
+
+- Add `AVCodecContext::flush_buffers`
+
+- Add `get_format` setter to `AVCodecContext`
+
+- Add `AVFilterContext::link`, `AVFilterContext::opt_set*`
+
+- Relax `AVFilterGraph::get_filter` method to use immutable reference
+
+- Implement `Debug` for `AVChannelLayout`
+
+- Add unsafe constructors for `AVChannelLayout` and `AVChannelLayoutRef`
+
+- Better hardware decode support
+
+- Add more tests&examples for audio and video/audio filtering, demuxing, resampling, and scaling
+
+- Update `av_rescale_q_rnd` to use `AVRounding` and add `av_rescale_rnd` function
+
 ## 0.17.0
 
 - Add builder pattern for `AVFormatContextInput` and `AVFormatContextOutput` (#225, #226)
