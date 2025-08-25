@@ -1,5 +1,6 @@
 use std::{
     ffi::{c_void, CStr},
+    marker::PhantomData,
     ops::Deref,
     ptr::{self, NonNull},
     slice,
@@ -81,10 +82,73 @@ impl Drop for AVIOContextURL {
     }
 }
 
+mod opaque {
+    use std::{ffi::c_void, slice};
+
+    pub type ReadOpaqueCallback<T> = Box<dyn FnMut(&mut T, &mut [u8]) -> i32 + Send + 'static>;
+    pub type WriteOpaqueCallback<T> = Box<dyn FnMut(&mut T, &[u8]) -> i32 + Send + 'static>;
+    pub type SeekOpaqueCallback<T> = Box<dyn FnMut(&mut T, i64, i32) -> i64 + Send + 'static>;
+
+    pub type ReadPacketCallback = ReadOpaqueCallback<Vec<u8>>;
+    pub type WritePacketCallback = WriteOpaqueCallback<Vec<u8>>;
+    pub type SeekCallback = SeekOpaqueCallback<Vec<u8>>;
+
+    pub struct Opaque<T: Send + Sync> {
+        pub data: T,
+        pub read_packet: Option<ReadOpaqueCallback<T>>,
+        pub write_packet: Option<WriteOpaqueCallback<T>>,
+        pub seek: Option<SeekOpaqueCallback<T>>,
+    }
+
+    pub unsafe extern "C" fn read_c<T: Send + Sync>(
+        opaque: *mut c_void,
+        data: *mut u8,
+        len: i32,
+    ) -> i32 {
+        let buf = unsafe { slice::from_raw_parts_mut(data, len as usize) };
+        let opaque = unsafe { (opaque as *mut Opaque<T>).as_mut() }.unwrap();
+        opaque.read_packet.as_mut().unwrap()(&mut opaque.data, buf)
+    }
+
+    pub unsafe extern "C" fn write_c<T: Send + Sync>(
+        opaque: *mut c_void,
+        data: *const u8,
+        len: i32,
+    ) -> i32 {
+        let buf = unsafe { slice::from_raw_parts(data, len as usize) };
+        let opaque = unsafe { (opaque as *mut Opaque<T>).as_mut() }.unwrap();
+        opaque.write_packet.as_mut().unwrap()(&mut opaque.data, buf)
+    }
+
+    #[cfg(not(feature = "ffmpeg7"))]
+    unsafe extern "C" fn write_c<T: Send + Sync>(
+        opaque: *mut c_void,
+        data: *mut u8,
+        len: i32,
+    ) -> i32 {
+        let buf = unsafe { slice::from_raw_parts(data, len as usize) };
+        let opaque = unsafe { (opaque as *mut Opaque<T>).as_mut() }.unwrap();
+        opaque.write_packet.as_mut().unwrap()(&mut opaque.data, buf)
+    }
+    pub unsafe extern "C" fn seek_c<T: Send + Sync>(
+        opaque: *mut c_void,
+        offset: i64,
+        whence: i32,
+    ) -> i64 {
+        let opaque = unsafe { (opaque as *mut Opaque<T>).as_mut() }.unwrap();
+        opaque.seek.as_mut().unwrap()(&mut opaque.data, offset, whence)
+    }
+}
+
+pub use opaque::{
+    Opaque, ReadOpaqueCallback, ReadPacketCallback, SeekCallback, SeekOpaqueCallback,
+    WriteOpaqueCallback, WritePacketCallback,
+};
+
 /// Custom [`AVIOContext`], used for custom IO.
 pub struct AVIOContextCustom {
     inner: AVIOContext,
-    _opaque: Box<Opaque>,
+    _opaque: Box<Opaque<Vec<u8>>>,
 }
 
 impl Deref for AVIOContextCustom {
@@ -98,17 +162,6 @@ impl std::ops::DerefMut for AVIOContextCustom {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
-}
-
-pub type ReadPacketCallback = Box<dyn FnMut(&mut Vec<u8>, &mut [u8]) -> i32 + Send + 'static>;
-pub type WritePacketCallback = Box<dyn FnMut(&mut Vec<u8>, &[u8]) -> i32 + Send + 'static>;
-pub type SeekCallback = Box<dyn FnMut(&mut Vec<u8>, i64, i32) -> i64 + Send + 'static>;
-
-pub struct Opaque {
-    data: Vec<u8>,
-    read_packet: Option<ReadPacketCallback>,
-    write_packet: Option<WritePacketCallback>,
-    seek: Option<SeekCallback>,
 }
 
 impl AVIOContextCustom {
@@ -130,35 +183,12 @@ impl AVIOContextCustom {
         // So this function accepts `AVMem` rather than ordinary `*mut u8`.
 
         let (read_packet_c, write_packet_c, seek_c) = {
-            use std::os::raw::c_void;
-            // Function is called when the function is given and opaque is not null.
-            unsafe extern "C" fn read_c(opaque: *mut c_void, data: *mut u8, len: i32) -> i32 {
-                let buf = unsafe { slice::from_raw_parts_mut(data, len as usize) };
-                let opaque = unsafe { (opaque as *mut Opaque).as_mut() }.unwrap();
-                opaque.read_packet.as_mut().unwrap()(&mut opaque.data, buf)
-            }
-            #[cfg(not(feature = "ffmpeg7"))]
-            unsafe extern "C" fn write_c(opaque: *mut c_void, data: *mut u8, len: i32) -> i32 {
-                let buf = unsafe { slice::from_raw_parts(data, len as usize) };
-                let opaque = unsafe { (opaque as *mut Opaque).as_mut() }.unwrap();
-                opaque.write_packet.as_mut().unwrap()(&mut opaque.data, buf)
-            }
-            #[cfg(feature = "ffmpeg7")]
-            unsafe extern "C" fn write_c(opaque: *mut c_void, data: *const u8, len: i32) -> i32 {
-                let buf = unsafe { slice::from_raw_parts(data, len as usize) };
-                let opaque = unsafe { (opaque as *mut Opaque).as_mut() }.unwrap();
-                opaque.write_packet.as_mut().unwrap()(&mut opaque.data, buf)
-            }
-            unsafe extern "C" fn seek_c(opaque: *mut c_void, offset: i64, whence: i32) -> i64 {
-                let opaque = unsafe { (opaque as *mut Opaque).as_mut() }.unwrap();
-                opaque.seek.as_mut().unwrap()(&mut opaque.data, offset, whence)
-            }
-
+            use opaque::{read_c, seek_c, write_c};
             (
-                read_packet.is_some().then_some(read_c as _),
+                read_packet.is_some().then_some(read_c::<Vec<u8>> as _),
                 // Note: If compiler errors here, you might have used wrong feature flag(ffmpeg6|ffmpeg7).
-                write_packet.is_some().then_some(write_c as _),
-                seek.is_some().then_some(seek_c as _),
+                write_packet.is_some().then_some(write_c::<Vec<u8>> as _),
+                seek.is_some().then_some(seek_c::<Vec<u8>> as _),
             )
         };
 
@@ -209,6 +239,87 @@ impl AVIOContextCustom {
 }
 
 impl Drop for AVIOContextCustom {
+    fn drop(&mut self) {
+        // Recover the `AVMem` fom the buffer and drop it. We don't attach the
+        // AVMem to this type because according to the documentation, the buffer
+        // pointer may be changed during it's usage.
+        //
+        // There is no need to change self.buffer to null because
+        // avio_context_free is just `av_freep`.
+        if let Some(buffer) = NonNull::new(self.buffer) {
+            let _ = unsafe { AVMem::from_raw(buffer) };
+        }
+        unsafe { ffi::avio_context_free(&mut self.as_mut_ptr()) };
+    }
+}
+
+// pub type ReadPacketCallback = Box<dyn FnMut(&mut Vec<u8>, &mut [u8]) -> i32 + Send + 'static>;
+// pub type WritePacketCallback = Box<dyn FnMut(&mut Vec<u8>, &[u8]) -> i32 + Send + 'static>;
+// pub type SeekCallback = Box<dyn FnMut(&mut Vec<u8>, i64, i32) -> i64 + Send + 'static>;
+
+pub struct AVIOContextOpaque {
+    inner: AVIOContext,
+}
+
+impl AVIOContextOpaque {
+    pub fn alloc_context<T: Send + Sync>(
+        mut buffer: AVMem,
+        write_flag: bool,
+        opaque: T,
+        read_packet: Option<ReadOpaqueCallback<T>>,
+        write_packet: Option<WriteOpaqueCallback<T>>,
+        seek_packet: Option<SeekOpaqueCallback<T>>,
+    ) -> Self {
+        use opaque::{read_c, seek_c, write_c};
+
+        let (read_c, write_c, seek_c) = {
+            (
+                read_packet.is_some().then_some(read_c::<T> as _),
+                write_packet.is_some().then_some(write_c::<T> as _),
+                seek_packet.is_some().then_some(seek_c::<T> as _),
+            )
+        };
+
+        let opaque = Box::new(Opaque {
+            data: opaque,
+            read_packet,
+            write_packet,
+            seek: seek_packet,
+        });
+        let context = unsafe {
+            ffi::avio_alloc_context(
+                buffer.as_mut_ptr(),
+                buffer.len as _,
+                if write_flag { 1 } else { 0 },
+                Box::into_raw(opaque) as *mut _ as _,
+                read_c,
+                write_c,
+                seek_c,
+            )
+        }
+        .upgrade()
+        .unwrap();
+
+        Self {
+            inner: unsafe { AVIOContext::from_raw(context) },
+        }
+    }
+}
+
+impl Deref for AVIOContextOpaque {
+    type Target = AVIOContext;
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl std::ops::DerefMut for AVIOContextOpaque {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
+impl Drop for AVIOContextOpaque {
     fn drop(&mut self) {
         // Recover the `AVMem` fom the buffer and drop it. We don't attach the
         // AVMem to this type because according to the documentation, the buffer
