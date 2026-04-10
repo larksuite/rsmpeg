@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0", "release/7.1", "release/8.0"]
+        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0", "release/7.1", "release/8.0", "release/8.1"]
         rust: ["nightly", "1.81.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
@@ -111,6 +111,9 @@ jobs:
           - rust: "nightly"
             ffmpeg-version: "release/8.0"
             should_test: "true"
+          - rust: "nightly"
+            ffmpeg-version: "release/8.1"
+            should_test: "true"
           - ffmpeg-version: "release/6.0"
             additional-cargo-flags: "--no-default-features --features ffmpeg6"
           - ffmpeg-version: "release/6.1"
@@ -120,6 +123,8 @@ jobs:
           - ffmpeg-version: "release/7.1"
             additional-cargo-flags: "--no-default-features --features ffmpeg7_1"
           - ffmpeg-version: "release/8.0"
+            additional-cargo-flags: "--no-default-features --features ffmpeg8"
+          - ffmpeg-version: "release/8.1"
             additional-cargo-flags: "--no-default-features --features ffmpeg8"
         exclude:
           # Only run valgrind with latest FFmpeg and stable rust toolchain to reduce resource consumption.
