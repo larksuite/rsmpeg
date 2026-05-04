@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0", "release/7.1", "release/8.0"]
+        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0", "release/7.1", "release/8.0", "release/8.1"]
         rust: ["nightly", "1.81.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
@@ -109,7 +109,7 @@ jobs:
             ffmpeg-version: "release/7.1"
             should_test: "true"
           - rust: "nightly"
-            ffmpeg-version: "release/8.0"
+            ffmpeg-version: "release/8.1"
             should_test: "true"
           - ffmpeg-version: "release/6.0"
             additional-cargo-flags: "--no-default-features --features ffmpeg6"
@@ -121,6 +121,8 @@ jobs:
             additional-cargo-flags: "--no-default-features --features ffmpeg7_1"
           - ffmpeg-version: "release/8.0"
             additional-cargo-flags: "--no-default-features --features ffmpeg8"
+          - ffmpeg-version: "release/8.1"
+            additional-cargo-flags: "--no-default-features --features ffmpeg8_1"
         exclude:
           # Only run valgrind with latest FFmpeg and stable rust toolchain to reduce resource consumption.
           # valgrind starts to fail on nightly toolchain due to a bug in std: https://github.com/rust-lang/rust/issues/135608
@@ -130,6 +132,8 @@ jobs:
             ffmpeg-version: "release/6.1"
           - valgrind: "valgrind"
             ffmpeg-version: "release/7.0"
+          - valgrind: "valgrind"
+            ffmpeg-version: "release/8.0"
           - valgrind: "valgrind"
             rust: "nightly"
       fail-fast: false
@@ -182,6 +186,11 @@ jobs:
 
       - name: Build Linux FFmpeg
         run: bash utils/linux_ffmpeg.rs ${{ matrix.ffmpeg-version }}
+      
+      - name: Update transient dependencies to version compatible with rustc 1.81.0
+        if: ${{ matrix.rust == '1.81.0' }}
+        run: |
+          cargo update darling --precise 0.21.3
 
       - name: Test
         run: |
@@ -280,6 +289,11 @@ jobs:
         with:
           version: "10.0"
           directory: ${{ github.workspace }}/clang
+
+      - name: Update transient dependencies to version compatible with rustc 1.81.0
+        if: ${{ matrix.rust == '1.81.0' }}
+        run: |
+          cargo update darling --precise 0.21.3
 
       # `--tests` to disable glfw-sys building on windows_x86(which is currently not working)
       - env:

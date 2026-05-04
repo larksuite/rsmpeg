@@ -14,7 +14,7 @@ exclude = ["/.github", "/tests", "/utils"]
 rust-version = "1.81.0"
 
 [dependencies]
-rusty_ffmpeg = "0.16.7"
+rusty_ffmpeg = "0.17.0"
 paste = "1.0"
 thiserror = "2.0"
 bon = "3"
@@ -24,7 +24,8 @@ libc = "0.2"
 anyhow = "1.0.98"
 camino = "1.1.10"
 once_cell = "1"
-image = { version = "0.25.6", default-features = false, features = ["png"] }
+# fixing the version of image prevents regressions in the exact byte output used in tests
+image = { version = "=0.25.6", default-features = false, features = ["png"] }
 
 [features]
 # Use FFmpeg 8 by default
@@ -36,6 +37,7 @@ ffmpeg7 = ["ffmpeg6", "rusty_ffmpeg/ffmpeg7"]
 # ffmpeg 7.1+
 ffmpeg7_1 = ["ffmpeg7"]
 ffmpeg8 = ["ffmpeg7_1", "rusty_ffmpeg/ffmpeg8"]
+ffmpeg8_1 = ["ffmpeg8", "rusty_ffmpeg/ffmpeg8_1"]
 
 # Try linking ffmpeg with pkg-config.
 link_system_ffmpeg = ["rusty_ffmpeg/link_system_ffmpeg"]
