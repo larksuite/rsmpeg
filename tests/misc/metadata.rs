@@ -11,8 +11,14 @@ fn metadata(file: &str) -> Result<Vec<(String, String)>> {
     let input_format_context = AVFormatContextInput::open(&file).unwrap();
 
     // Get `duration` and `bit_rate` from `input_format_context`.
-    result.push(("duration".into(), input_format_context.duration.to_string()));
-    result.push(("bit_rate".into(), input_format_context.bit_rate.to_string()));
+    result.push((
+        "duration".into(),
+        input_format_context.duration().to_string(),
+    ));
+    result.push((
+        "bit_rate".into(),
+        input_format_context.bit_rate().to_string(),
+    ));
 
     // Get additional info from `input_format_context.metadata()`
     if let Some(metadata) = input_format_context.metadata() {

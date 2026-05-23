@@ -15,6 +15,41 @@ use crate::{
     shared::*,
 };
 
+// Mirrors avformat.h:1269-1501 (FFmpeg 8)
+#[repr(C)]
+struct AVFormatContextRepr {
+    av_class: *const ffi::AVClass,
+    iformat: *const ffi::AVInputFormat,
+    oformat: *const ffi::AVOutputFormat,
+    priv_data: *mut c_void,
+    pb: *mut ffi::AVIOContext,
+    ctx_flags: c_int,
+    nb_streams: std::os::raw::c_uint,
+    streams: *mut *mut ffi::AVStream,
+    nb_stream_groups: std::os::raw::c_uint,
+    stream_groups: *mut *mut ffi::AVStreamGroup,
+    nb_chapters: std::os::raw::c_uint,
+    chapters: *mut *mut ffi::AVChapter,
+    url: *mut std::os::raw::c_char,
+    start_time: i64,
+    duration: i64,
+    bit_rate: i64,
+    packet_size: std::os::raw::c_uint,
+    max_delay: c_int,
+    flags: c_int,
+    probesize: i64,
+    max_analyze_duration: i64,
+    key: *const u8,
+    keylen: c_int,
+    nb_programs: std::os::raw::c_uint,
+    programs: *mut *mut ffi::AVProgram,
+    video_codec_id: ffi::AVCodecID,
+    audio_codec_id: ffi::AVCodecID,
+    subtitle_codec_id: ffi::AVCodecID,
+    data_codec_id: ffi::AVCodecID,
+    metadata: *mut ffi::AVDictionary,
+}
+
 /// Container of all kinds of AVIOContexts.
 pub enum AVIOContextContainer {
     Url(AVIOContextURL),
@@ -73,7 +108,8 @@ impl AVFormatContextInput {
 
             if let Some(io_context) = io_context.as_mut() {
                 unsafe {
-                    (*input_format_context).pb = match io_context {
+                    let repr = input_format_context as *mut AVFormatContextRepr;
+                    (*repr).pb = match io_context {
                         AVIOContextContainer::Url(ctx) => ctx.as_mut_ptr(),
                         AVIOContextContainer::Custom(ctx) => ctx.as_mut_ptr(),
                     };
@@ -208,22 +244,16 @@ impl AVFormatContextInput {
 impl<'stream> AVFormatContextInput {
     /// Return slice of [`AVStreamRef`].
     pub fn streams(&'stream self) -> &'stream [AVStreamRef<'stream>] {
-        // #define `<->` as "has the same layout due to repr(transparent)"
-        // ```
-        // NonNull<ffi::AVStream> <-> *const ffi::AVStream
-        // AVStream <-> NonNull<ffi::AVStream>
-        // AVStreamRef <-> AVStream
-        // ```
-        // indicates: AVStreamRef <-> *const ffi::AVStream
-        let streams = self.streams as *const *const ffi::AVStream as *const AVStreamRef<'stream>;
-        // u32 to usize, safe
-        let len = self.nb_streams as usize;
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        let streams = unsafe {
+            (*repr).streams as *const *const ffi::AVStream as *const AVStreamRef<'stream>
+        };
+        let len = unsafe { (*repr).nb_streams as usize };
 
-        // I trust that FFmpeg won't give me null pointers :-(
         #[cfg(debug_assertions)]
         {
-            let arr = unsafe {
-                std::slice::from_raw_parts(self.streams as *const *const ffi::AVStream, len)
+            let arr: &[*const ffi::AVStream] = unsafe {
+                std::slice::from_raw_parts((*repr).streams as *const *const ffi::AVStream, len)
             };
             for ptr in arr {
                 assert!(!ptr.is_null());
@@ -235,22 +265,14 @@ impl<'stream> AVFormatContextInput {
 
     /// Return slice of [`AVStreamMut`].
     pub fn streams_mut(&'stream mut self) -> &'stream mut [AVStreamMut<'stream>] {
-        // #define `<->` as "has the same layout due to repr(transparent)"
-        // ```
-        // NonNull<ffi::AVStream> <-> *const ffi::AVStream
-        // AVStream <-> NonNull<ffi::AVStream>
-        // AVStreamMut <-> AVStream
-        // ```
-        // indicates: AVStreamMut <-> *const ffi::AVStream
-        let streams = self.streams as *mut AVStreamMut<'stream>;
-        // u32 to usize, safe
-        let len = self.nb_streams as usize;
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        let streams = unsafe { (*repr).streams as *mut AVStreamMut<'stream> };
+        let len = unsafe { (*repr).nb_streams as usize };
 
-        // I trust that FFmpeg won't give me null pointers :-(
         #[cfg(debug_assertions)]
         {
-            let arr = unsafe {
-                std::slice::from_raw_parts(self.streams as *const *const ffi::AVStream, len)
+            let arr: &[*const ffi::AVStream] = unsafe {
+                std::slice::from_raw_parts((*repr).streams as *const *const ffi::AVStream, len)
             };
             for ptr in arr {
                 assert!(!ptr.is_null());
@@ -262,19 +284,34 @@ impl<'stream> AVFormatContextInput {
 
     /// Get [`AVInputFormatRef`] in the [`AVFormatContextInput`].
     pub fn iformat(&'stream self) -> AVInputFormatRef<'stream> {
-        // From the implementation of FFmpeg's `avformat_open_input`, we can be
-        // sure that iformat won't be null when demuxing.
-        unsafe { AVInputFormatRef::from_raw(NonNull::new(self.iformat as *mut _).unwrap()) }
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        unsafe { AVInputFormatRef::from_raw(NonNull::new((*repr).iformat as *mut _).unwrap()) }
     }
 
     /// Get metadata of the [`ffi::AVFormatContext`] in [`crate::avutil::AVDictionary`].
     /// demuxing: set by libavformat in `avformat_open_input()`
     /// muxing: may be set by the caller before `avformat_write_header()`
     pub fn metadata(&'stream self) -> Option<AVDictionaryRef<'stream>> {
-        // From implementation:
-        // `avformat_find_stream_info()->()read_frame_internal()`, we know
-        // `metadata` can be null.
-        NonNull::new(self.metadata).map(|x| unsafe { AVDictionaryRef::from_raw(x) })
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        unsafe { NonNull::new((*repr).metadata).map(|x| AVDictionaryRef::from_raw(x)) }
+    }
+
+    /// Get number of streams.
+    pub fn nb_streams(&self) -> u32 {
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        unsafe { (*repr).nb_streams }
+    }
+
+    /// Get duration of the stream, in AV_TIME_BASE fractional seconds.
+    pub fn duration(&self) -> i64 {
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        unsafe { (*repr).duration }
+    }
+
+    /// Get total stream bitrate in bit/s.
+    pub fn bit_rate(&self) -> i64 {
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        unsafe { (*repr).bit_rate }
     }
 }
 
@@ -356,7 +393,8 @@ impl AVFormatContextOutput {
             };
             if let Some(mut io_context) = io_context {
                 unsafe {
-                    output_format_context.deref_mut().pb = io_context.as_mut_ptr();
+                    let repr = output_format_context.as_mut_ptr() as *mut AVFormatContextRepr;
+                    (*repr).pb = io_context.as_mut_ptr();
                 }
                 output_format_context.io_context = Some(io_context);
             }
@@ -436,22 +474,16 @@ impl AVFormatContextOutput {
 impl<'stream> AVFormatContextOutput {
     /// Return slice of [`AVStreamRef`].
     pub fn streams(&'stream self) -> &'stream [AVStreamRef<'stream>] {
-        // #define `<->` as "has the same layout due to repr(transparent)"
-        // ```
-        // NonNull<ffi::AVStream> <-> *const ffi::AVStream
-        // AVStream <-> NonNull<ffi::AVStream>
-        // AVStreamRef <-> AVStream
-        // ```
-        // indicates: AVStreamRef <-> *const ffi::AVStream
-        let streams = self.streams as *const *const ffi::AVStream as *const AVStreamRef<'stream>;
-        // u32 to usize, safe
-        let len = self.nb_streams as usize;
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        let streams = unsafe {
+            (*repr).streams as *const *const ffi::AVStream as *const AVStreamRef<'stream>
+        };
+        let len = unsafe { (*repr).nb_streams as usize };
 
-        // I trust that FFmpeg won't give me null pointers :-(
         #[cfg(debug_assertions)]
         {
-            let arr = unsafe {
-                std::slice::from_raw_parts(self.streams as *const *const ffi::AVStream, len)
+            let arr: &[*const ffi::AVStream] = unsafe {
+                std::slice::from_raw_parts((*repr).streams as *const *const ffi::AVStream, len)
             };
             for ptr in arr {
                 assert!(!ptr.is_null());
@@ -463,16 +495,15 @@ impl<'stream> AVFormatContextOutput {
 
     /// Get [`AVOutputFormat`] from the [`AVFormatContextOutput`].
     pub fn oformat(&self) -> AVOutputFormatRef<'static> {
-        // From the implementation of FFmpeg's `avformat_alloc_output_context2`,
-        // we can be sure that `oformat` won't be null when muxing.
-        unsafe { AVOutputFormatRef::from_raw(NonNull::new(self.oformat as *mut _).unwrap()) }
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        unsafe { AVOutputFormatRef::from_raw(NonNull::new((*repr).oformat as *mut _).unwrap()) }
     }
 
     /// Set [`AVOutputFormat`] in the [`AVFormatContextOutput`].
     pub fn set_oformat(&mut self, format: AVOutputFormatRef<'static>) {
-        // `as _` is for compatibility with older FFmpeg versions(< 5.0)
         unsafe {
-            self.deref_mut().oformat = format.as_ptr() as _;
+            let repr = self.as_mut_ptr() as *mut AVFormatContextRepr;
+            (*repr).oformat = format.as_ptr() as _;
         }
     }
 
@@ -491,10 +522,10 @@ impl<'stream> AVFormatContextOutput {
 
 impl Drop for AVFormatContextOutput {
     fn drop(&mut self) {
-        // Here we drop the io context, which won't be touched by
-        // avformat_free_context, so let it dangling is safe.
-        if unsafe { *self.oformat }.flags & ffi::AVFMT_NOFILE as i32 == 0 {
-            if let Some(pb) = NonNull::new(self.pb) {
+        let repr = self.as_ptr() as *const AVFormatContextRepr;
+        let oformat_ptr = unsafe { (*repr).oformat };
+        if unsafe { oformat_ptr.as_ref() }.unwrap().flags & ffi::AVFMT_NOFILE as i32 == 0 {
+            if let Some(pb) = unsafe { NonNull::new((*repr).pb) } {
                 let _ = unsafe { AVIOContext::from_raw(pb) };
             }
         }

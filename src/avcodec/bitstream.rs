@@ -9,6 +9,13 @@ use std::{
     ptr::{self, NonNull},
 };
 
+#[repr(C)]
+struct AVBitStreamFilterRepr {
+    name: *const std::os::raw::c_char,
+    codec_ids: *const ffi::AVCodecID,
+    priv_class: *const ffi::AVClass,
+}
+
 wrap_ref!(AVBitStreamFilter: ffi::AVBitStreamFilter);
 
 impl AVBitStreamFilter {
@@ -21,9 +28,8 @@ impl AVBitStreamFilter {
 
     /// Get name of the bitstream filter.
     pub fn name(&self) -> &CStr {
-        // We assume name is always NonNull, so we do check here.
-        let name = NonNull::new(self.name as *mut _).unwrap();
-        unsafe { CStr::from_ptr(name.as_ptr()) }
+        let repr = self.as_ptr() as *const AVBitStreamFilterRepr;
+        unsafe { CStr::from_ptr((*repr).name) }
     }
 
     /// Create an iterator on all the [`AVBitStreamFilterRef`]s.

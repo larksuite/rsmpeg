@@ -37,7 +37,7 @@ struct FilterContext<'graph> {
 /// audio, decode context at this index is set to `None`.
 fn open_input_file(filename: &CStr) -> Result<(Vec<Option<AVCodecContext>>, AVFormatContextInput)> {
     let mut ifmt_ctx = AVFormatContextInput::open(filename)?;
-    let mut stream_ctx = Vec::with_capacity(ifmt_ctx.nb_streams as usize);
+    let mut stream_ctx = Vec::with_capacity(ifmt_ctx.nb_streams() as usize);
 
     for (i, input_stream) in ifmt_ctx.streams().into_iter().enumerate() {
         let codecpar = input_stream.codecpar();
