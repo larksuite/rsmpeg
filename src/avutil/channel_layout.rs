@@ -36,7 +36,8 @@ impl Drop for AVChannelLayout {
 
 impl Clone for AVChannelLayout {
     fn clone(&self) -> Self {
-        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::uninit();
+        // `av_channel_layout_copy` uninits `dst` first, so it must be a valid layout.
+        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::zeroed();
         // unwrap: this function only fail on OOM.
         unsafe { ffi::av_channel_layout_copy(layout.as_mut_ptr(), self.as_ptr()) }
             .upgrade()
@@ -69,7 +70,8 @@ impl AVChannelLayout {
 
     /// Initialize a native channel layout from a bitmask indicating which channels are present.
     pub fn from_mask(mask: u64) -> Option<Self> {
-        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::uninit();
+        // FFmpeg does not set `opaque`, zero it like the `{0}` initializer.
+        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::zeroed();
         if unsafe { ffi::av_channel_layout_from_mask(layout.as_mut_ptr(), mask) } == 0 {
             let layout = unsafe { layout.assume_init() };
             Some(unsafe { Self::from_raw(NonNull::new(Box::into_raw(Box::new(layout))).unwrap()) })
@@ -90,7 +92,8 @@ impl AVChannelLayout {
     /// - the ambisonic order followed by optional non-diegetic channels (eg.
     ///   "ambisonic 2+stereo")
     pub fn from_string(str: &CStr) -> Option<Self> {
-        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::uninit();
+        // Before FFmpeg 7.0 some string forms leave `opaque` and `u` unset.
+        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::zeroed();
         if unsafe { ffi::av_channel_layout_from_string(layout.as_mut_ptr(), str.as_ptr()) } == 0 {
             let layout = unsafe { layout.assume_init() };
             Some(unsafe { Self::from_raw(NonNull::new(Box::into_raw(Box::new(layout))).unwrap()) })
@@ -101,7 +104,8 @@ impl AVChannelLayout {
 
     /// Get the default channel layout for a given number of channels.
     pub fn from_nb_channels(nb_channels: i32) -> Self {
-        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::uninit();
+        // Without a standard layout FFmpeg sets only `order` and `nb_channels`.
+        let mut layout = MaybeUninit::<ffi::AVChannelLayout>::zeroed();
         unsafe { ffi::av_channel_layout_default(layout.as_mut_ptr(), nb_channels) }
         let layout = unsafe { layout.assume_init() };
         unsafe { Self::from_raw(NonNull::new(Box::into_raw(Box::new(layout))).unwrap()) }
@@ -262,5 +266,22 @@ mod tests {
             assert!(!item.describe().unwrap().to_str().unwrap().is_empty())
         }
         assert_eq!(item.describe().unwrap().to_str().unwrap(), "22.2");
+    }
+
+    #[test]
+    fn channel_layout_clone_test() {
+        // A custom order layout owns a heap allocated channel map.
+        let layout = AVChannelLayout::from_string(c"FL@Left+FR@Right").unwrap();
+        assert_eq!(layout.order, ffi::AV_CHANNEL_ORDER_CUSTOM);
+        // The second clone reuses the stack slot the first clone left its copy in.
+        let a = layout.clone();
+        let b = layout.clone();
+        for x in [&a, &b] {
+            assert!(x.equal(&layout).unwrap());
+            assert_eq!(
+                x.describe().unwrap().to_str().unwrap(),
+                "2 channels (FL@Left+FR@Right)"
+            );
+        }
     }
 }
