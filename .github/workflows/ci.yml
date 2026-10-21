@@ -140,12 +140,18 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
 
+      - name: Resolve dependencies that support Rust 1.81.0
+        if: ${{ matrix.rust == '1.81.0' }}
+        env:
+          CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: fallback
+        run: cargo +stable generate-lockfile
+
       - name: Install valgrind dependencies
         # On Debian and Ubuntu, libc6-dbg is required for valgrind
         run: |
           sudo apt-get update -qq
           sudo apt-get -y install libc6-dbg
-          cargo install cargo-valgrind --version 2.0.2
+          cargo install --locked cargo-valgrind --version 2.0.2
 
       - name: Cache valgrind
         id: cache
@@ -267,6 +273,12 @@ jobs:
         with:
           target: i686-pc-windows-msvc
           toolchain: ${{ matrix.rust }}
+
+      - name: Resolve dependencies that support Rust 1.81.0
+        if: ${{ matrix.rust == '1.81.0' }}
+        env:
+          CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: fallback
+        run: cargo +stable generate-lockfile
 
       - name: Download Cross Compiled FFmpeg for Windows
         uses: actions/download-artifact@v4
