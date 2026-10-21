@@ -49,7 +49,7 @@ jobs:
 
       - run: |
           export FFMPEG_PKG_CONFIG_PATH=${PWD}/tmp/ffmpeg_build/lib/pkgconfig
-          cargo clippy --no-default-features --features ffmpeg7_1,link_vcpkg_ffmpeg -- -D warnings
+          cargo clippy --no-default-features --features ffmpeg9,link_vcpkg_ffmpeg -- -D warnings
 
   rust_clippy_check_windows:
     runs-on: windows-latest
@@ -90,13 +90,13 @@ jobs:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
           LIBCLANG_PATH: ${{ github.workspace }}/clang/lib
           LLVM_CONFIG_PATH: ${{ github.workspace }}/clang/bin/llvm-config
-        run: cargo clippy --no-default-features --features ffmpeg7_1,link_vcpkg_ffmpeg -- -D warnings
+        run: cargo clippy --no-default-features --features ffmpeg9,link_vcpkg_ffmpeg -- -D warnings
 
   build_static_and_test_ubuntu:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0", "release/7.1", "release/8.0"]
+        ffmpeg-version: ["release/6.0", "release/6.1", "release/7.0", "release/7.1", "release/8.0", "release/8.1", "release/9.0"]
         rust: ["nightly", "1.81.0"]
         valgrind: ["valgrind", "no valgrind"]
         include:
@@ -111,6 +111,12 @@ jobs:
           - rust: "nightly"
             ffmpeg-version: "release/8.0"
             should_test: "true"
+          - rust: "nightly"
+            ffmpeg-version: "release/8.1"
+            should_test: "true"
+          - rust: "nightly"
+            ffmpeg-version: "release/9.0"
+            should_test: "true"
           - ffmpeg-version: "release/6.0"
             additional-cargo-flags: "--no-default-features --features ffmpeg6"
           - ffmpeg-version: "release/6.1"
@@ -121,6 +127,10 @@ jobs:
             additional-cargo-flags: "--no-default-features --features ffmpeg7_1"
           - ffmpeg-version: "release/8.0"
             additional-cargo-flags: "--no-default-features --features ffmpeg8"
+          - ffmpeg-version: "release/8.1"
+            additional-cargo-flags: "--no-default-features --features ffmpeg8"
+          - ffmpeg-version: "release/9.0"
+            additional-cargo-flags: "--no-default-features --features ffmpeg9"
         exclude:
           # Only run valgrind with latest FFmpeg and stable rust toolchain to reduce resource consumption.
           # valgrind starts to fail on nightly toolchain due to a bug in std: https://github.com/rust-lang/rust/issues/135608
@@ -222,6 +232,9 @@ jobs:
       - name: Make shared
         run: |
           cd ./tmp/ffmpeg_build/lib
+          # Since FFmpeg 9, libswscale also builds libavfilter/framepool.c.
+          # Drop that copy, or the merged DLL defines the ff_frame_pool_* symbols twice.
+          i686-w64-mingw32-ar d libswscale.a framepool.o
           i686-w64-mingw32-gcc -shared -o libffmpeg.dll \
             -Wl,--out-implib,libffmpeg.lib \
             -Wl,--whole-archive *.a -Wl,--no-whole-archive \

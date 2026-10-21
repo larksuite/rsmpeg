@@ -37,7 +37,9 @@ Start by adding `rsmpeg` to your `Cargo.toml` file. Choose the feature flag that
 rsmpeg = { version = "0.18", default-features = false, features = ["ffmpeg6"] }
 # FFmpeg 7.*
 rsmpeg = { version = "0.18", default-features = false, features = ["ffmpeg7"] }
-# FFmpeg 8.* (feature `ffmpeg8` is enabled by default)
+# FFmpeg 8.*
+rsmpeg = { version = "0.18", default-features = false, features = ["ffmpeg8"] }
+# FFmpeg 9.* (feature `ffmpeg9` is enabled by default)
 rsmpeg = "0.18"
 ```
 

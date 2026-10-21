@@ -22,6 +22,8 @@ rsmpeg = { version = "0.18", default-features = false, features = ["ffmpeg6", "l
 rsmpeg = { version = "0.18", default-features = false, features = ["ffmpeg7", "link_vcpkg_ffmpeg"] }
 # For FFmpeg 8.*
 rsmpeg = { version = "0.18", default-features = false, features = ["ffmpeg8", "link_vcpkg_ffmpeg"] }
+# For FFmpeg 9.*
+rsmpeg = { version = "0.18", default-features = false, features = ["ffmpeg9", "link_vcpkg_ffmpeg"] }
 ```
 
 Add vcpkg dependencies in `Cargo.toml`:

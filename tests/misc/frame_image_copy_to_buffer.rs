@@ -48,7 +48,10 @@ fn get_libav_allocated_frame(filter_spec: &CStr) -> Result<AVFrame> {
     let mut buffersink_ctx = filter_graph
         .alloc_filter_context(&buffersink_filter, c"out")
         .context("could not allocate buffersink context")?;
+    #[cfg(not(feature = "ffmpeg8"))]
     buffersink_ctx.opt_set_bin(c"pix_fmts", &ffi::AV_PIX_FMT_RGB24)?;
+    #[cfg(feature = "ffmpeg8")]
+    buffersink_ctx.opt_set(c"pixel_formats", c"rgb24")?;
     buffersink_ctx.init_dict(&mut None)?;
 
     let outputs = AVFilterInOut::new(c"in", &mut testsrc2_ctx, 0);

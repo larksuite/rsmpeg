@@ -197,8 +197,18 @@ fn init_filter<'graph>(
             .alloc_filter_context(&buffersink, c"out")
             .context("Cannot create buffer sink")?;
 
+        #[cfg(not(feature = "ffmpeg8"))]
         buffer_sink_context
             .opt_set_bin(c"pix_fmts", &enc_ctx.pix_fmt)
+            .context("Cannot set output pixel format")?;
+        #[cfg(feature = "ffmpeg8")]
+        buffer_sink_context
+            .opt_set_array(
+                c"pixel_formats",
+                0,
+                Some(&[enc_ctx.pix_fmt]),
+                ffi::AV_OPT_TYPE_PIXEL_FMT,
+            )
             .context("Cannot set output pixel format")?;
 
         buffer_sink_context
@@ -237,15 +247,45 @@ fn init_filter<'graph>(
         let mut buffersink_ctx = filter_graph
             .alloc_filter_context(&buffersink, c"out")
             .context("Cannot create audio buffer sink")?;
-        buffersink_ctx
-            .opt_set_bin(c"sample_fmts", &enc_ctx.sample_fmt)
-            .context("Cannot set output sample format")?;
-        buffersink_ctx
-            .opt_set(c"ch_layouts", &enc_ctx.ch_layout().describe().unwrap())
-            .context("Cannot set output channel layout")?;
-        buffersink_ctx
-            .opt_set_bin(c"sample_rates", &enc_ctx.sample_rate)
-            .context("Cannot set output sample rate")?;
+        #[cfg(not(feature = "ffmpeg8"))]
+        {
+            buffersink_ctx
+                .opt_set_bin(c"sample_fmts", &enc_ctx.sample_fmt)
+                .context("Cannot set output sample format")?;
+            buffersink_ctx
+                .opt_set(c"ch_layouts", &enc_ctx.ch_layout().describe().unwrap())
+                .context("Cannot set output channel layout")?;
+            buffersink_ctx
+                .opt_set_bin(c"sample_rates", &enc_ctx.sample_rate)
+                .context("Cannot set output sample rate")?;
+        }
+        #[cfg(feature = "ffmpeg8")]
+        {
+            buffersink_ctx
+                .opt_set_array(
+                    c"sample_formats",
+                    0,
+                    Some(&[enc_ctx.sample_fmt]),
+                    ffi::AV_OPT_TYPE_SAMPLE_FMT,
+                )
+                .context("Cannot set output sample format")?;
+            buffersink_ctx
+                .opt_set_array(
+                    c"channel_layouts",
+                    0,
+                    Some(&[enc_ctx.ch_layout]),
+                    ffi::AV_OPT_TYPE_CHLAYOUT,
+                )
+                .context("Cannot set output channel layout")?;
+            buffersink_ctx
+                .opt_set_array(
+                    c"samplerates",
+                    0,
+                    Some(&[enc_ctx.sample_rate]),
+                    ffi::AV_OPT_TYPE_INT,
+                )
+                .context("Cannot set output sample rate")?;
+        }
 
         // `av_buffersink_set_frame_size` will SIGSEGV even on FFmpeg 7.1, problem persists until
         // https://github.com/FFmpeg/FFmpeg/commit/6b402cdbf46e4398b3285277f3ff7c3654d57ce6.
@@ -568,4 +608,38 @@ fn transcode_test5() {
 
     // Ensure `dict` is consumed.
     assert!(dict.is_none());
+}
+
+#[test]
+fn init_filter_custom_channel_layout_test() {
+    // The channel name contains `,`, the separator of the buffersink array options.
+    let ch_layout = c"FL@Left,Main+FR@Right";
+    let codec = AVCodec::find_decoder(ffi::AV_CODEC_ID_PCM_S16LE).unwrap();
+    let mut dec_ctx = AVCodecContext::new(&codec);
+    dec_ctx.set_pkt_timebase(ra(1, 48000));
+    dec_ctx.set_sample_rate(48000);
+    dec_ctx.set_sample_fmt(ffi::AV_SAMPLE_FMT_S16);
+    dec_ctx.set_ch_layout(
+        AVChannelLayout::from_string(ch_layout)
+            .unwrap()
+            .into_inner(),
+    );
+    let codec = AVCodec::find_encoder(ffi::AV_CODEC_ID_PCM_S16LE).unwrap();
+    let mut enc_ctx = AVCodecContext::new(&codec);
+    enc_ctx.set_sample_rate(48000);
+    enc_ctx.set_sample_fmt(ffi::AV_SAMPLE_FMT_S16);
+    enc_ctx.set_ch_layout(
+        AVChannelLayout::from_string(ch_layout)
+            .unwrap()
+            .into_inner(),
+    );
+
+    let mut filter_graph = AVFilterGraph::new();
+    let filter_ctx = init_filter(&mut filter_graph, &mut dec_ctx, &mut enc_ctx, c"anull").unwrap();
+
+    let sink_ch_layout = filter_ctx.buffersink_ctx.get_ch_layout();
+    assert_eq!(
+        sink_ch_layout.describe().unwrap().to_str().unwrap(),
+        "2 channels (FL@Left,Main+FR@Right)"
+    );
 }
