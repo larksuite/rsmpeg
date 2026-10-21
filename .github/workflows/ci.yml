@@ -232,6 +232,9 @@ jobs:
       - name: Make shared
         run: |
           cd ./tmp/ffmpeg_build/lib
+          # Since FFmpeg 9, libswscale also builds libavfilter/framepool.c.
+          # Drop that copy, or the merged DLL defines the ff_frame_pool_* symbols twice.
+          i686-w64-mingw32-ar d libswscale.a framepool.o
           i686-w64-mingw32-gcc -shared -o libffmpeg.dll \
             -Wl,--out-implib,libffmpeg.lib \
             -Wl,--whole-archive *.a -Wl,--no-whole-archive \
