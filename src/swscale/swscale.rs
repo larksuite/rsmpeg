@@ -4,7 +4,7 @@ use crate::{
     ffi,
     shared::*,
 };
-use std::ptr;
+use std::{os::raw::c_int, ptr};
 wrap!(SwsContext: ffi::SwsContext);
 
 impl SwsContext {
@@ -35,7 +35,7 @@ impl SwsContext {
                 dst_w,
                 dst_h,
                 dst_format,
-                flags as i32,
+                flags as c_int,
                 src_filter
                     .map(|x| x as *const _ as *mut _)
                     .unwrap_or_else(ptr::null_mut),
@@ -85,7 +85,7 @@ impl SwsContext {
                 dst_w,
                 dst_h,
                 dst_format,
-                flags as i32,
+                flags as c_int,
                 src_filter
                     .map(|x| x as *const _ as *mut _)
                     .unwrap_or_else(ptr::null_mut),
